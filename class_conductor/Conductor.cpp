@@ -1,32 +1,59 @@
 #include "Conductor.hpp"
-
-Conductor::Conductor(int total_data_num, int batch_num, int each_data_size, double lr)
-:total_data_num(total_data_num)
-,batch_num(batch_num)
-,each_data_size(each_data_size)
+#include <iomanip>
+Conductor::Conductor(int TotalDataNum, int BatchNum, int EachDataSize, double lr)
+:mTotalDataNum(TotalDataNum)
+,mBatchNum(BatchNum)
+,mEachDataSize(EachDataSize)
 ,lr(lr)
 {
+    #ifdef ___ANNOUNCE
+    std::cout << std::endl << std::endl;
+    std::cout << "--------- Conductor class constructor started ----------" << std::endl;
+    #endif
+
+    std::cout << "オプティマイザー" << std::endl;
     Optimizer = new Adam();
 
+    int ID = 1;
     //第一層
-    layer_list.push_back(new Affine(     batch_num, each_data_size, 300));
-    layer_list.push_back(new BatchNormal(batch_num,                 300));
-    layer_list.push_back(new Relu(       batch_num,                 300));
+    std::cout << "第" << ID++ << "層" << std::endl;
+    layer_list.push_back(new Convolution(mBatchNum, 5, mEachDataSize, 256, 4, 2, 1));
+    layer_list.push_back(new Relu       (mBatchNum, 256 * (mEachDataSize / 2) * (mEachDataSize / 2)));
+    layer_list.push_back(new BatchNormal(mBatchNum, 256 * (mEachDataSize / 2) * (mEachDataSize / 2)));
     //第二層
-    layer_list.push_back(new Affine(     batch_num, 300           , 100));
-    layer_list.push_back(new BatchNormal(batch_num,                 100));
-    layer_list.push_back(new Relu(       batch_num,                 100));
+    std::cout << "第" << ID++ << "層" << std::endl;
+    layer_list.push_back(new Convolution(mBatchNum, 256, mEachDataSize / 2, 512, 4, 2, 1));
+    layer_list.push_back(new Relu       (mBatchNum, 16 * (mEachDataSize / 4) * (mEachDataSize / 4)));
+    layer_list.push_back(new BatchNormal(mBatchNum, 16 * (mEachDataSize / 4) * (mEachDataSize / 4)));
     //第三層
-    layer_list.push_back(new Affine(     batch_num, 100           , 50));
-    layer_list.push_back(new BatchNormal(batch_num,                 50));
-    layer_list.push_back(new Relu(       batch_num,                 50));
+    std::cout << "第" << ID++ << "層" << std::endl;
+    layer_list.push_back(new Deconvolution(mBatchNum, 512, mEachDataSize / 4, 256, 4, 2, 1));
+    layer_list.push_back(new Relu         (mBatchNum, 256 * (mEachDataSize / 2) * (mEachDataSize / 2)));
+    layer_list.push_back(new BatchNormal  (mBatchNum, 256 * (mEachDataSize / 2) * (mEachDataSize / 2)));
     //第四層
-    layer_list.push_back(new Affine(     batch_num, 50            , 10)); 
-    soft = new SoftmaxWithLoss(          batch_num,                 10);
-    layer_list.push_back(soft);
+    std::cout << "第" << ID++ << "層" << std::endl;
+    layer_list.push_back(new Deconvolution(mBatchNum, 256, mEachDataSize / 2, 128, 4, 2, 1));
+    layer_list.push_back(new Relu         (mBatchNum, 128 * mEachDataSize * mEachDataSize));
+    layer_list.push_back(new BatchNormal  (mBatchNum, 128 * mEachDataSize * mEachDataSize));
+    //第五層
+    std::cout << "第" << ID++ << "層" << std::endl;
+    layer_list.push_back(new Deconvolution(mBatchNum, 128, mEachDataSize, 64, 4, 2, 1));
+    layer_list.push_back(new Relu         (mBatchNum, 64 * (2 * mEachDataSize) * (2 * mEachDataSize)));
+    layer_list.push_back(new BatchNormal  (mBatchNum, 64 * (2 * mEachDataSize) * (2 * mEachDataSize)));
+    //第五層
+    std::cout << "第" << ID++ << "層" << std::endl;
+    layer_list.push_back(new Deconvolution(mBatchNum, 64, 2 * mEachDataSize, 5, 4, 2, 1));
 
+    output_layer = new L2Loss(mBatchNum, 4 * mEachDataSize);
+    layer_list.push_back(output_layer);
     
-    ptr_keeper = new double*[total_data_num];
+
+    originalData = new double*[mTotalDataNum];
+
+    #ifdef ___ANNOUNCE
+    std::cout << "--------- Conductor class constructor Success ----------" << std::endl;
+    std::cout << std::endl << std::endl;
+    #endif
 }
 
 void Conductor::forward(double **input)
@@ -38,64 +65,65 @@ void Conductor::forward(double **input)
     }
 }
 
-void Conductor::backward(double **d_input)
+void Conductor::backward(double **dout)
 {
     for (int i = layer_list.size() - 1; i >= 0; i--)
     {
-        layer_list[i]->backward(d_input);
+        layer_list[i]->backward(dout);
     }
 }
 
 void Conductor::update()
 {
-#ifdef _OPENMP
-    #pragma omp parallel for
     for (int i = 0; i < layer_list.size(); i++)
     {
         Optimizer->update(i,layer_list[i], lr);
     }
-#else
-    for (int i = 0; i < layer_list.size(); i++)
-    {
-        Optimizer->update(i,layer_list[i], lr);
-    }
-#endif
 }
 
-void Conductor::learning(double **data, double *label, int epochs)
+void Conductor::learning(void * v_data, void * v_label, int epochs)
 {
-    data_flatter(data, total_data_num, each_data_size);
-    for (int i = 0; i < total_data_num; i++){
-        ptr_keeper[i] = data[i];
+    double ** data = (double **)v_data;
+    int * label = (int*)v_label;
+
+    dataFlatter(data, mTotalDataNum, mEachDataSize);
+
+    for (int i = 0; i < mTotalDataNum; i++) 
+    {
+        originalData[i] = data[i];
     }
     int counter = 0;
     double min_loss = 10000.0;
+    int startPoint = 0;
 
     for (int epoch = 0; epoch < epochs; epoch++)
     {
-        std::cout << "epoch : " << epoch + 1 << " start" << std::endl;
-        for (int iter = 0; iter < (total_data_num / batch_num)/1; iter++)
+        std::cout << "<<<< epoch : " << epoch + 1 << " start >>>>" << std::endl;
+        for (int iter = 0; iter < (mTotalDataNum / mBatchNum); iter++)
         {
-            if (iter % 10 == 0)
+            if ((iter+1) % 10 == 0)
             {
-                std::cout << "iter = " << iter << " |  loss = " << soft->get_loss() << std::endl;   
+                std::cout << "iter = " << std::setw(4) << iter + 1 << " |  loss = " << std::setprecision(3) <<output_layer->get_loss() << std::endl;   
             }
+            
+            startPoint = iter * mBatchNum;
             //ラベルの設定
-            soft->set_label(&label[iter * batch_num]);
+            output_layer->set_label(&(originalData[startPoint]));
             //順伝搬
-            forward(&data[iter * batch_num]);
+            forward(&(data[startPoint]));
             //逆伝搬
-            backward(&data[iter * batch_num]);
+            backward(&(data[startPoint]));
             //パラメータ更新
             update();
-            if (min_loss > soft->get_loss())
+
+            if (min_loss > output_layer->get_loss())
             {
                 counter = 0;
-                min_loss = soft->get_loss();
+                min_loss = output_layer->get_loss();
             } 
             else 
             {
-                if (counter < 100)
+                if (counter < 100 || epoch < 3)
                     counter++;
                 else
                 {
@@ -103,51 +131,72 @@ void Conductor::learning(double **data, double *label, int epochs)
                 }
             }
         }
-        for (int i = 0; i < total_data_num; i++) data[i] = ptr_keeper[i];
+        for (int i = 0; i < mTotalDataNum; i++) 
+        {
+            data[i] = originalData[i];
+        }
+        std::cout << std::endl;
     }
 END:
-    std::cout << "Forced Termination" << std::endl;
+    std::cout << std::endl << std::endl << std::endl;
+    std::cout << "<<< Normal Termination >>>" << std::endl;
+    std::cout << "Learning was forced to terminate" << std::endl;
+    std::cout << "because the decrease in the loss function reached its peak." << std::endl;
+    std::cout << "This is normal termination." << std::endl;
+    std::cout << std::endl << std::endl << std::endl;
+    for (int i = 0; i < mTotalDataNum; i++) data[i] = originalData[i];
 }
 
-void Conductor::data_flatter(double **p, int total_data_num, int each_data_size)
+void Conductor::dataFlatter(double **p, int mTotalDataNum, int mEachDataSize)
 {
-    double ep = 0.0000001;
-    for (int i = 0; i < total_data_num; i++)
+    double ep = 1e-7;
+    for (int i = 0; i < mTotalDataNum; i++)
     {
         double mean = 0;
-        for (int j = 0; j < each_data_size; j++) mean += p[i][j];
-        mean = mean / each_data_size;
+        for (int j = 0; j < mEachDataSize; j++) mean += p[i][j];
+        mean = mean / mEachDataSize;
         double sigma2 = 0;
-        for (int j = 0; j < each_data_size; j++) sigma2 += (p[i][j] - mean) * (p[i][j] - mean);
+        for (int j = 0; j < mEachDataSize; j++) sigma2 += (p[i][j] - mean) * (p[i][j] - mean);
         double sigma = std::sqrt(sigma2 + ep);
-        for (int j = 0; j < each_data_size; j++) p[i][j] = (p[i][j] - mean) / sigma;
+        for (int j = 0; j < mEachDataSize; j++) p[i][j] = (p[i][j] - mean) / sigma;
     }
 }
 
-void Conductor::verifying(double** data, double* label, int total_data_num_for_verify)
+void Conductor::verification(void * v_data, void * v_label, int total_data_num_for_verify)
 {
-    data_flatter(data, total_data_num_for_verify, each_data_size);
+    double ** data = (double **)v_data; 
+    int * label = (int *)v_label;
+
+    double ** p = new double*[total_data_num_for_verify];
+    for (int i = 0; i < total_data_num_for_verify; i++) p[i] = data[i];
+
+    dataFlatter(data, total_data_num_for_verify, mEachDataSize);
     double result = 0.0;
-    for (int iter = 0; iter < (total_data_num_for_verify / batch_num); iter++)
+
+    for (int iter = 0; iter < (total_data_num_for_verify / mBatchNum); iter++)
     {
         for (int i = 0; i < layer_list.size() - 1; i++)
         {
-            layer_list[i]->forward(&data[iter * batch_num]);
+            layer_list[i]->forward(&data[iter * mBatchNum]);
         }
 
-        for (int i = 0; i < batch_num; i++)
+        for (int i = 0; i < mBatchNum; i++)
         {
             int index = 0;
             for (int j = 0; j < 10; j++)
             {
-                if (data[iter * batch_num + i][index] < data[iter * batch_num + i][j])
+                if (data[iter * mBatchNum + i][index] < data[iter * mBatchNum + i][j])
                     index = j;
                 else
                     ;
             }
-            if (index == label[iter * batch_num + i]) result += 1;   
+            if (index == label[iter * mBatchNum + i]) result += 1;   
         }
     }
+
+    for (int i = 0; i < total_data_num_for_verify; i++) data[i] = p[i];
+    delete[] p;
+
     result = result / total_data_num_for_verify;
     std::cout << "virification result = " << 100 * result << "%" << std::endl;
 }
