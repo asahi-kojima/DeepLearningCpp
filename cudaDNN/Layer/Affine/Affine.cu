@@ -11,7 +11,9 @@ namespace miduho {
 		namespace
 		{
 			using flowDataType = BaseLayer::flowDataType;
-			__global__ void matrixProduct(
+
+
+			__global__ void AffineForward(
 				flowDataType* y, flowDataType* A, 
 				flowDataType* x, flowDataType* b, u32 outputSize, u32 inputSize, u32 batchSize)
 			{
@@ -52,6 +54,38 @@ namespace miduho {
 #endif
 				y[id] = result + b[xid];
 			}
+
+			__global__ void AffineBackward()
+			{
+
+			}
+
+			__global__ void biasBackward(flowDataType * dBias, flowDataType * dout, u32 outputSize,u32 batchSize)
+			{
+				u32 id = blockIdx.x * blockDim.x + threadIdx.x;
+				if (id >= outputSize)
+				{
+					return;
+				}
+				f32 result = 0.0f;
+				for (u32 N = 0; N < batchSize; N++)
+				{
+#if _DEBUG
+					if ((N * outputSize + id) >= batchSize * outputSize)
+					{
+						assert(0);
+					}
+#endif
+					result += dout[N * outputSize + id];
+				}
+#if _DEBUG
+				if (id >= outputSize)
+				{
+					assert(0);
+				}
+#endif
+				dBias[id] = result;
+			}
 		}
 
 		void Affine::forwardOnGPU()
@@ -61,7 +95,7 @@ namespace miduho {
 				(mOutputSize + block.x - 1) / block.x,
 				(mBatchSize + block.y - 1) / block.y);
 
-			matrixProduct << <grid, block >> > (
+			AffineForward << <grid, block >> > (
 				mForwardResultOnGPU.dataAddress,
 				pParametersOnGPU[0].paramAddress,
 				mInputDataOnGPU->dataAddress,
@@ -69,12 +103,25 @@ namespace miduho {
 				mOutputSize,
 				mInputSize,
 				mBatchSize);
+#if _DEBUG
 			CHECK(cudaDeviceSynchronize());
+#endif
 		}
 
 		void Affine::backwardOnGPU()
 		{
-
+			{
+				dim3 block(16);
+				dim3 grid((mOutputSize + block.x - 1) / block.x);
+				biasBackward << <grid, block >> > (
+					pDParametersOnGPU[1].paramAddress,
+					mDInputDataOnGPU->dataAddress,
+					mOutputSize,
+					mBatchSize);
+#if _DEBUG
+				CHECK(cudaDeviceSynchronize());
+#endif
+			}
 		}
 
 		void Affine::setupParamOnGPU()

@@ -57,11 +57,6 @@ namespace miduho
 
 	bool Machine::initialize()
 	{
-		auto entryLayer = [pLayerList = &mLayerList](std::unique_ptr<layer::BaseLayer>&& pLayer)
-		{
-			pLayerList->push_back(std::forward<std::unique_ptr<layer::BaseLayer>>(pLayer));
-		};
-
 		printDoubleLine();
 		std::cout << "Machine initialize start\n" << std::endl;
 
@@ -82,6 +77,12 @@ namespace miduho
 		return true;
 
 	}
+
+	void Machine::entryLayer(std::unique_ptr<layer::BaseLayer>&& pLayer)
+	{
+		mLayerList.push_back(std::forward<std::unique_ptr<layer::BaseLayer>>(pLayer));
+	}
+
 	/// <summary>
 	/// 各層の内部パラメータを計算する。
 	/// flowDataには入力データの形状が入っているので、

@@ -34,6 +34,7 @@ namespace miduho
 		/// </summary>
 		/// <returns></returns>
 		bool initialize();
+		void entryLayer(std::unique_ptr<layer::BaseLayer>&&);
 		void initializeLayer();
 		void setupLayer();
 
