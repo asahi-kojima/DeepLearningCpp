@@ -21,7 +21,8 @@ namespace miduho
 
 	private:
 		using flowDataType = layer::BaseLayer::flowDataType;
-		
+		using dataMemory = layer::BaseLayer::dataMemory;
+
 		Machine() = default;
 		~Machine() = default;
 
@@ -33,6 +34,9 @@ namespace miduho
 		/// </summary>
 		/// <returns></returns>
 		bool initialize();
+		void initializeLayer();
+		void setupLayer();
+
 
 		bool preProcess();
 		bool mainProcess();
@@ -44,10 +48,11 @@ namespace miduho
 		/// <returns></returns>
 		bool terminate();
 
-		void initializeLayer();
-		void setupLayer();
+
+		void makeTestData();
 
 		std::vector<std::unique_ptr<layer::BaseLayer> > mLayerList;
+		dataMemory mLearningData;
 		layer::BaseLayer::flowDataFormat mFlowData = layer::BaseLayer::flowDataFormat{100, 1, 1, 100};
 	};
 }

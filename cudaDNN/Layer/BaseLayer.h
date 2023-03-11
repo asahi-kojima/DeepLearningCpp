@@ -11,12 +11,19 @@ namespace miduho
 		public:
 			using parameterType = f32;
 			using flowDataType = f32;
+
 			struct flowDataFormat
 			{
 				u32 batchSize;
 				u32 channel;
 				u32 height;
 				u32 width;
+			};
+
+			struct dataMemory
+			{
+				flowDataType* dataAddress;
+				u32 dataNum;
 			};
 
 		public:
@@ -36,11 +43,28 @@ namespace miduho
 
 
 			virtual void terminate() = 0;
-			virtual void forward(flowDataType**) = 0;
-			virtual void backward(flowDataType**) = 0;
+			virtual void forward() = 0;
+			virtual void backward() = 0;
 			virtual void memcpyHostToDevice() = 0;
 			virtual void memcpyDeviceToHost() = 0;
 			
+			void setInputDataOnGPU(dataMemory* pInputDataOnGPU)
+			{
+				mInputDataOnGPU = pInputDataOnGPU;
+			}
+			void setDInputDataOnGPU(dataMemory* pDInputDataOnGPU)
+			{
+				mDInputDataOnGPU = pDInputDataOnGPU;
+			}
+			dataMemory* getDataMemory()
+			{
+				return &mForwardResultOnGPU;
+			}
+			
+			dataMemory* getDDataMemory()
+			{
+				return &mBackwardResultOnGPU;
+			}
 
 		protected:
 			struct paramMemory
@@ -49,23 +73,21 @@ namespace miduho
 				u32 paramNum;
 			};
 			
-			struct dataMemory
-			{
-				flowDataType* dataAddress;
-				u32 dataNum;
-			};
 			
-			virtual void forwardOnGPU(flowDataType**) = 0;
-			virtual void forwardOnCPU(flowDataType**) = 0;
+			virtual void forwardOnGPU() = 0;
+			virtual void forwardOnCPU() = 0;
 			virtual void backwardOnGPU() = 0;
 			virtual void backwardOnCPU() = 0;
 
 			std::vector<paramMemory> pParametersOnCPU;
 			std::vector<paramMemory> pDParametersOnCPU;
+
 			std::vector<paramMemory> pParametersOnGPU;
 			std::vector<paramMemory> pDParametersOnGPU;
-
+			
+			dataMemory* mInputDataOnGPU;
 			dataMemory mForwardResultOnGPU;
+			dataMemory* mDInputDataOnGPU;
 			dataMemory mBackwardResultOnGPU;
 
 			bool isInitialized = false;

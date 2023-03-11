@@ -119,17 +119,17 @@ namespace miduho::layer
 
 	}
 
-	void Affine::forward(flowDataType** ppFlowData)
+	void Affine::forward()
 	{
 #ifdef GPUA_VAILABLE
-		forwardOnGPU(ppFlowData);
+		forwardOnGPU();
 #else
 		forwardOnCPU(ppFlowDataType);
 #endif	
 
 	}
 
-	void Affine::backward(flowDataType**)
+	void Affine::backward()
 	{
 #ifdef GPUA_VAILABLE
 		backwardOnGPU();
@@ -155,7 +155,7 @@ namespace miduho::layer
 	//CPU ä÷êî
 	//////////////////////////////////////
 
-	void Affine::forwardOnCPU(flowDataType**)
+	void Affine::forwardOnCPU()
 	{
 
 	}

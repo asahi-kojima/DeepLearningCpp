@@ -1,7 +1,7 @@
 #include <iostream>
 #include <thread>
 
-#include "Layer.h"
+#include "./Layer/Layer.h"
 #include "Machine.h"
 #include "commonGPU.cuh"
 #include "commonCPU.h"
@@ -61,46 +61,75 @@ namespace miduho
 		{
 			pLayerList->push_back(std::forward<std::unique_ptr<layer::BaseLayer>>(pLayer));
 		};
-#if _DEBUG
+
 		printDoubleLine();
 		std::cout << "Machine initialize start\n" << std::endl;
-#endif
+
 
 		entryLayer(CREATELAYER(layer::Affine, 10));
 		entryLayer(CREATELAYER(layer::Affine, 20));
 		entryLayer(CREATELAYER(layer::Affine, 30));
+		entryLayer(CREATELAYER(layer::Affine, 40));
+		entryLayer(CREATELAYER(layer::Affine, 50));
 
 		initializeLayer();
 		setupLayer();
 
-#if _DEBUG
+
 		std::cout << "Machine initialize finish" << std::endl;
 		printDoubleLine();
-#endif
+
 		return true;
 
 	}
-
+	/// <summary>
+	/// 各層の内部パラメータを計算する。
+	/// flowDataには入力データの形状が入っているので、
+	/// それを基にカーネルのサイズやパラメータの数を計算。
+	/// </summary>
 	void Machine::initializeLayer()
 	{
-		layer::BaseLayer::flowDataFormat flowData;
+		layer::BaseLayer::flowDataFormat flowDataShape;
 		{
-			flowData.batchSize	= mFlowData.batchSize;
-			flowData.channel	= mFlowData.channel;
-			flowData.height		= mFlowData.height;
-			flowData.width		= mFlowData.width;
+			flowDataShape.batchSize	= mFlowData.batchSize;
+			flowDataShape.channel	= mFlowData.channel;
+			flowDataShape.height		= mFlowData.height;
+			flowDataShape.width		= mFlowData.width;
 		}
 		for (auto& layer : mLayerList)
 		{
-			layer->initialize(&flowData);
+			layer->initialize(&flowDataShape);
 		}
 	}
+
+	/// <summary>
+	///　各層におけるパラメータのためのメモリ確保や初期化、
+	/// そして学習時に各層が必要となる前の層の出力データのアドレスを登録。
+	/// </summary>
 	void Machine::setupLayer()
 	{
+		//GPU状のメモリの確保やそれの初期化
 		for (auto& layer : mLayerList)
 		{
 			layer->setup();
 		}
+
+		//学習時の各層が参照する前層のデータのアドレスを登録
+		dataMemory* pInputData = &mLearningData;
+
+		for (auto& layer : mLayerList)
+		{
+			layer->setInputDataOnGPU(pInputData);
+			pInputData = layer->getDataMemory();
+		}
+		for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)
+		{
+			(*rit)->setDInputDataOnGPU(pInputData);
+			pInputData = (*rit)->getDDataMemory();
+		}
+
+		//デバッグ用
+
 	}
 
 
@@ -110,12 +139,7 @@ namespace miduho
 		std::cout << "Machine preProcess start" << std::endl;
 #endif
 
-		for (auto& pLayer : mLayerList)
-		{
-			pLayer->memcpyHostToDevice();
-		}
-
-
+		makeTestData();
 
 #if _DEBUG
 		std::cout << "Machine preProcess finish" << std::endl;
@@ -129,9 +153,15 @@ namespace miduho
 #if _DEBUG
 		std::cout << "Machine mainProcess start" << std::endl;
 #endif
+		for (auto& layer : mLayerList)
+		{
+			layer->forward();
+		}
 
-
-
+		for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)
+		{
+			(*rit)->backward();
+		}
 
 
 #if _DEBUG
@@ -175,6 +205,22 @@ namespace miduho
 #endif
 		return true;
 
+	}
+
+
+	void Machine::makeTestData()
+	{
+		mLearningData.dataNum = (mFlowData.batchSize * mFlowData.width);
+		flowDataType* tmp = new flowDataType[mLearningData.dataNum];
+		for (u32 idx = 0; idx < mLearningData.dataNum; idx++)
+		{
+			tmp[idx] = 0.1f;
+		}
+
+		CHECK(cudaMalloc((void**)(&(mLearningData.dataAddress)), mLearningData.dataNum * sizeof(f32)));
+		CHECK(cudaMemcpy(mLearningData.dataAddress, tmp, mLearningData.dataNum * sizeof(f32), cudaMemcpyHostToDevice));
+
+		delete[] tmp;
 	}
 
 }

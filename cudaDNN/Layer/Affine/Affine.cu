@@ -3,13 +3,73 @@
 
 #include "Affine.h"
 #include "../../commonGPU.cuh"
+#include <cassert>
 
 namespace miduho {
 	namespace layer
 	{
-		void Affine::forwardOnGPU(flowDataType** ppFlowData)
+		namespace
 		{
+			using flowDataType = BaseLayer::flowDataType;
+			__global__ void matrixProduct(
+				flowDataType* y, flowDataType* A, 
+				flowDataType* x, flowDataType* b, u32 outputSize, u32 inputSize, u32 batchSize)
+			{
+				u32 xid = blockIdx.x * blockDim.x + threadIdx.x;
+				u32 yid = blockIdx.y * blockDim.y + threadIdx.y;
+				if (xid >= outputSize || yid >= batchSize)
+				{
+					return;
+				}
+				u32 id = yid * outputSize + xid;
 
+				f32 result = 0.0f;
+				for (u32 i = 0; i < inputSize; i++)
+				{
+#if _DEBUG
+					u32 tmp = xid * inputSize + i;
+					if (tmp < 0 || tmp >= inputSize * outputSize)
+					{
+						printf("Affine A parameter : out of range : %d\n", tmp);
+						printf("threadId x = %d  ,  y = %d\n", threadIdx.x, threadIdx.y);
+						assert(0);
+					}
+					tmp = yid * inputSize + i;
+					if (tmp < 0 || tmp >= inputSize * batchSize)
+					{
+						printf("Affine x parameter : out of range : %d", tmp);
+						assert(0);
+					}
+#endif
+					result += A[xid * inputSize + i] * x[yid * inputSize + i]; 
+				}
+#if _DEBUG
+				if (!(id >= 0 && id < batchSize * outputSize))
+				{
+					printf("Affine y parameter : out of range : %d", id);
+					assert(0);
+				}
+#endif
+				y[id] = result + b[xid];
+			}
+		}
+
+		void Affine::forwardOnGPU()
+		{
+			dim3 block(16,16);
+			dim3 grid(
+				(mOutputSize + block.x - 1) / block.x,
+				(mBatchSize + block.y - 1) / block.y);
+
+			matrixProduct << <grid, block >> > (
+				mForwardResultOnGPU.dataAddress,
+				pParametersOnGPU[0].paramAddress,
+				mInputDataOnGPU->dataAddress,
+				pParametersOnGPU[1].paramAddress,
+				mOutputSize,
+				mInputSize,
+				mBatchSize);
+			CHECK(cudaDeviceSynchronize());
 		}
 
 		void Affine::backwardOnGPU()
@@ -75,10 +135,10 @@ namespace miduho {
 			//åvéZåãâ Çäiî[Ç∑ÇÈÇΩÇﬂÇÃÉÅÉÇÉäämï€
 			mForwardResultOnGPU.dataNum = mBatchSize * mOutputSize;
 			mBackwardResultOnGPU.dataNum = mBatchSize * mInputSize;
-			cudaMalloc((void**)(&(mForwardResultOnGPU.dataAddress)), 
-				mForwardResultOnGPU.dataNum * sizeof(flowDataType));
-			cudaMalloc((void**)(&(mBackwardResultOnGPU.dataAddress)), 
-				mBackwardResultOnGPU.dataNum * sizeof(flowDataType));
+			CHECK(cudaMalloc((void**)(&(mForwardResultOnGPU.dataAddress)), 
+				mForwardResultOnGPU.dataNum * sizeof(flowDataType)));
+			CHECK(cudaMalloc((void**)(&(mBackwardResultOnGPU.dataAddress)), 
+				mBackwardResultOnGPU.dataNum * sizeof(flowDataType)));
 			{
 				flowDataType* tmp = new flowDataType[mForwardResultOnGPU.dataNum];
 				for (u32 idx = 0; idx < mForwardResultOnGPU.dataNum; idx++)

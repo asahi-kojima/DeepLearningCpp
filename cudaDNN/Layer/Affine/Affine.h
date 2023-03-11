@@ -17,14 +17,14 @@ namespace miduho
 			void setup() override;
 			void terminate() override;
 
-			void forward(flowDataType**) override;
-			void backward(flowDataType**) override;
+			void forward() override;
+			void backward() override;
 			void memcpyHostToDevice() override;
 			void memcpyDeviceToHost() override;
 
 		private:
-			void forwardOnGPU(flowDataType**)  override;
-			void forwardOnCPU(flowDataType**)  override;
+			void forwardOnGPU()  override;
+			void forwardOnCPU()  override;
 			void backwardOnGPU() override;
 			void backwardOnCPU() override;
 
