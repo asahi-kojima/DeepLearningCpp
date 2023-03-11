@@ -4,7 +4,7 @@
 #include <cassert>
 
 #include "Affine.h"
-#include "commonCPU.h"
+#include "../../commonCPU.h"
 
 namespace miduho::layer
 {

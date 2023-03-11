@@ -16,24 +16,21 @@
     <Filter Include="ソース ファイル\Layer">
       <UniqueIdentifier>{63f292cd-b41c-4524-b673-ba0236af74f1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\Layer\Affine">
+      <UniqueIdentifier>{19a07c14-860d-40f0-bdf5-1927bd6a6e38}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="t.cpp">
-      <Filter>ソース ファイル</Filter>
-    </CudaCompile>
-    <CudaCompile Include="Affine.cu">
-      <Filter>ソース ファイル\Layer</Filter>
-    </CudaCompile>
     <CudaCompile Include="Machine.cu">
       <Filter>ソース ファイル</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Layer\Affine\Affine.cu">
+      <Filter>ソース ファイル\Layer\Affine</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="commonGPU.cuh">
       <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="BaseLayer.h">
-      <Filter>ソース ファイル\Layer</Filter>
     </ClInclude>
     <ClInclude Include="setting.h">
       <Filter>ヘッダー ファイル</Filter>
@@ -41,22 +38,25 @@
     <ClInclude Include="Machine.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Layer.h">
-      <Filter>ソース ファイル\Layer</Filter>
-    </ClInclude>
-    <ClInclude Include="Affine.h">
-      <Filter>ソース ファイル\Layer</Filter>
-    </ClInclude>
     <ClInclude Include="commonCPU.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Layer\Affine\Affine.h">
+      <Filter>ソース ファイル\Layer\Affine</Filter>
+    </ClInclude>
+    <ClInclude Include="Layer\BaseLayer.h">
+      <Filter>ソース ファイル\Layer</Filter>
+    </ClInclude>
+    <ClInclude Include="Layer\Layer.h">
+      <Filter>ソース ファイル\Layer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Affine.cpp">
-      <Filter>ソース ファイル\Layer</Filter>
+    <ClCompile Include="Layer\Affine\Affine.cpp">
+      <Filter>ソース ファイル\Layer\Affine</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

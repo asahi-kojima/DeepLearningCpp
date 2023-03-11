@@ -148,19 +148,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Affine.cpp" />
+    <CudaCompile Include="Layer\Affine\Affine.cu" />
     <CudaCompile Include="Machine.cu">
       <FileType>Document</FileType>
     </CudaCompile>
-    <CudaCompile Include="Affine.cu" />
-    <CudaCompile Include="t.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Affine.h" />
-    <ClInclude Include="BaseLayer.h" />
     <ClInclude Include="commonCPU.h" />
     <ClInclude Include="commonGPU.cuh">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
@@ -168,11 +161,14 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Layer.h" />
+    <ClInclude Include="Layer\Affine\Affine.h" />
+    <ClInclude Include="Layer\BaseLayer.h" />
+    <ClInclude Include="Layer\Layer.h" />
     <ClInclude Include="Machine.h" />
     <ClInclude Include="setting.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Layer\Affine\Affine.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

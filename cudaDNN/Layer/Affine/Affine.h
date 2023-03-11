@@ -1,6 +1,6 @@
 #pragma once
-#include "setting.h"
-#include "BaseLayer.h"
+#include "../../setting.h"
+#include "../BaseLayer.h"
 
 
 namespace miduho

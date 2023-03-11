@@ -2,7 +2,7 @@
 #include <cuda_runtime.h>
 
 #include "Affine.h"
-#include "commonGPU.cuh"
+#include "../../commonGPU.cuh"
 
 namespace miduho {
 	namespace layer
