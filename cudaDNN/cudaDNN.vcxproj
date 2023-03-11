@@ -149,9 +149,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Affine.cpp" />
-    <ClCompile Include="Machine.cpp">
+    <CudaCompile Include="Machine.cu">
       <FileType>Document</FileType>
-    </ClCompile>
+    </CudaCompile>
     <CudaCompile Include="Affine.cu" />
     <CudaCompile Include="t.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -161,6 +161,7 @@
   <ItemGroup>
     <ClInclude Include="Affine.h" />
     <ClInclude Include="BaseLayer.h" />
+    <ClInclude Include="commonCPU.h" />
     <ClInclude Include="commonGPU.cuh">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>

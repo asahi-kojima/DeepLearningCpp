@@ -1,7 +1,6 @@
 #pragma once
-
-#include <cuda_runtime.h>
 #include <iostream>
+#include <cuda_runtime.h>
 
 #define CHECK(call)                                                            \
 {                                                                              \

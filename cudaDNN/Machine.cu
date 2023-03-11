@@ -1,8 +1,10 @@
 #include <iostream>
 #include <thread>
+
 #include "Layer.h"
 #include "Machine.h"
-
+#include "commonGPU.cuh"
+#include "commonCPU.h"
 
 #define CREATELAYER(classname, ...) std::make_unique<classname>(__VA_ARGS__)
 
@@ -11,6 +13,14 @@ namespace miduho
 {
 	u32 Machine::entry()
 	{
+#ifdef GPUA_VAILABLE
+		printLine();
+		std::cout << "GPU Information" << std::endl;
+		printGpuDriverInfo();
+		printLine();
+#endif // GPUA_VAILABLE
+
+
 		bool isInitializeSuccess = initialize();
 		if (!isInitializeSuccess)
 		{
@@ -52,22 +62,46 @@ namespace miduho
 			pLayerList->push_back(std::forward<std::unique_ptr<layer::BaseLayer>>(pLayer));
 		};
 #if _DEBUG
-		std::cout << "Machine initialize start" << std::endl;
+		printDoubleLine();
+		std::cout << "Machine initialize start\n" << std::endl;
 #endif
 
+		entryLayer(CREATELAYER(layer::Affine, 10));
+		entryLayer(CREATELAYER(layer::Affine, 20));
+		entryLayer(CREATELAYER(layer::Affine, 30));
 
-		entryLayer(CREATELAYER(layer::TestLayer));
-		entryLayer(CREATELAYER(layer::TestLayer, 1));
-
-
+		initializeLayer();
+		setupLayer();
 
 #if _DEBUG
 		std::cout << "Machine initialize finish" << std::endl;
+		printDoubleLine();
 #endif
 		return true;
 
 	}
 
+	void Machine::initializeLayer()
+	{
+		layer::BaseLayer::flowDataFormat flowData;
+		{
+			flowData.batchSize	= mFlowData.batchSize;
+			flowData.channel	= mFlowData.channel;
+			flowData.height		= mFlowData.height;
+			flowData.width		= mFlowData.width;
+		}
+		for (auto& layer : mLayerList)
+		{
+			layer->initialize(&flowData);
+		}
+	}
+	void Machine::setupLayer()
+	{
+		for (auto& layer : mLayerList)
+		{
+			layer->setup();
+		}
+	}
 
 
 	bool Machine::preProcess()
