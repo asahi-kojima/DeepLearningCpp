@@ -82,9 +82,10 @@ namespace miduho
 			std::vector<paramMemory> pParametersOnCPU;
 			std::vector<paramMemory> pDParametersOnCPU;
 
+
+			//GPUü‚è‚Ì•Ï”
 			std::vector<paramMemory> pParametersOnGPU;
 			std::vector<paramMemory> pDParametersOnGPU;
-			
 			dataMemory* mInputDataOnGPU;
 			dataMemory mForwardResultOnGPU;
 			dataMemory* mDInputDataOnGPU;

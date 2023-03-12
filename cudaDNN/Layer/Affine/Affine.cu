@@ -55,9 +55,34 @@ namespace miduho {
 				y[id] = result + b[xid];
 			}
 
-			__global__ void AffineBackward()
+			__global__ void AffineBackward(flowDataType* dA, flowDataType* dout, flowDataType* input, u32 outputSize, u32 inputSize, u32 batchSize)
 			{
+				u32 xid = blockIdx.x * blockDim.x + threadIdx.x;
+				u32 yid = blockIdx.y * blockDim.y + threadIdx.y;
+				if (xid >= inputSize || yid >= outputSize)
+				{
+					return;
+				}
 
+				u32 id = yid * inputSize + xid;
+
+				f32 result = 0.0f;
+				for (u32 N = 0; N < batchSize; N++)
+				{
+#if _DEBUG
+					if (N * inputSize + xid >= batchSize * inputSize)
+					{
+						assert(0);
+					}
+					if (N * outputSize + yid >= batchSize * outputSize)
+					{
+						assert(0);
+					}
+#endif
+					result += input[N * inputSize + xid] * dout[N * outputSize + yid];
+				}
+
+				dA[id] = result;
 			}
 
 			__global__ void biasBackward(flowDataType * dBias, flowDataType * dout, u32 outputSize,u32 batchSize)
@@ -86,6 +111,34 @@ namespace miduho {
 #endif
 				dBias[id] = result;
 			}
+
+			__global__ void doutBackward(flowDataType* dOut ,flowDataType * A, flowDataType* dIn,u32 outputSize, u32 inputSize, u32 batchSize)
+			{
+				u32 xid = blockIdx.x * blockDim.x + threadIdx.x;//input
+				u32 yid = blockIdx.y * blockDim.y + threadIdx.y;//batch
+				
+				if (xid >= inputSize || yid >= batchSize)
+				{
+					return;
+				}
+
+				f32 result = 0.0f;
+				for (u32 i = 0; i < outputSize; i++)
+				{
+#if _DEBUG
+					if (i * inputSize + xid >= outputSize * inputSize)
+					{
+						assert(0);
+					}
+					if (yid * outputSize + i >= batchSize * outputSize)
+					{
+						assert(0);
+					}
+#endif
+					result += A[i * inputSize + xid] * dIn[yid * outputSize + i];
+				}
+				dOut[yid * inputSize + xid] = result;
+			}
 		}
 
 		void Affine::forwardOnGPU()
@@ -110,6 +163,43 @@ namespace miduho {
 
 		void Affine::backwardOnGPU()
 		{
+			//dout‚Ì‹t“`”À
+			{
+				dim3 block(16, 16);
+				dim3 grid(
+					(mInputSize + block.x - 1) / block.x,
+					(mBatchSize + block.y - 1) / block.y);
+				doutBackward << <grid, block >> > (
+					mBackwardResultOnGPU.dataAddress,
+					pParametersOnGPU[0].paramAddress,
+					mDInputDataOnGPU->dataAddress,
+					mOutputSize,
+					mInputSize,
+					mBatchSize);
+#if _DEBUG
+				CHECK(cudaDeviceSynchronize());
+#endif
+			}
+
+			//A‚Ì‹t“`”À
+			{
+				dim3 block(16,16);
+				dim3 grid(
+					(mOutputSize + block.x - 1) / block.x,
+					(mInputSize + block.y - 1) / block.y);
+				AffineBackward << <grid, block >> > (
+					pDParametersOnGPU[0].paramAddress,
+					mDInputDataOnGPU->dataAddress,
+					mInputDataOnGPU->dataAddress,
+					mOutputSize,
+					mInputSize,
+					mBatchSize);
+#if _DEBUG
+				CHECK(cudaDeviceSynchronize());
+#endif
+			}
+
+			//Bias‚Ì‹t“`”À
 			{
 				dim3 block(16);
 				dim3 grid((mOutputSize + block.x - 1) / block.x);
