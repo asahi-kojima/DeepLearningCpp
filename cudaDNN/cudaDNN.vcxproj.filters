@@ -25,6 +25,9 @@
     <Filter Include="ソース ファイル\Optimizer">
       <UniqueIdentifier>{6b820189-316d-447e-a3f3-9ceb186102c2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\Layer\SMCrossEntropyLoss">
+      <UniqueIdentifier>{f22430d2-9f39-4fcc-acd1-ef88eb7e43a6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Machine.cu">
@@ -35,6 +38,9 @@
     </CudaCompile>
     <CudaCompile Include="Layer\ReLU\ReLU.cu">
       <Filter>ソース ファイル\Layer\ReLU</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cu">
+      <Filter>ソース ファイル\Layer\SMCrossEntropyLoss</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
@@ -62,6 +68,12 @@
     <ClInclude Include="Machine.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.h">
+      <Filter>ソース ファイル\Layer\SMCrossEntropyLoss</Filter>
+    </ClInclude>
+    <ClInclude Include="Optimizer\BaseOptimizer.h">
+      <Filter>ソース ファイル\Optimizer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -72,6 +84,9 @@
     </ClCompile>
     <ClCompile Include="Layer\ReLU\ReLU.cpp">
       <Filter>ソース ファイル\Layer\ReLU</Filter>
+    </ClCompile>
+    <ClCompile Include="Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cpp">
+      <Filter>ソース ファイル\Layer\SMCrossEntropyLoss</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
