@@ -149,6 +149,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="Layer\Affine\Affine.cu" />
+    <CudaCompile Include="Layer\ReLU\ReLU.cu" />
     <CudaCompile Include="Machine.cu">
       <FileType>Document</FileType>
     </CudaCompile>
@@ -164,11 +165,13 @@
     <ClInclude Include="Layer\Affine\Affine.h" />
     <ClInclude Include="Layer\BaseLayer.h" />
     <ClInclude Include="Layer\Layer.h" />
+    <ClInclude Include="Layer\ReLU\ReLU.h" />
     <ClInclude Include="Machine.h" />
     <ClInclude Include="setting.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Layer\Affine\Affine.cpp" />
+    <ClCompile Include="Layer\ReLU\ReLU.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

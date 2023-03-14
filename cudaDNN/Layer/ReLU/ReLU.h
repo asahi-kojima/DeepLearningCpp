@@ -1,4 +1,6 @@
 #pragma once
+
+
 #include "../../setting.h"
 #include "../BaseLayer.h"
 
@@ -8,14 +10,14 @@ namespace miduho
 	namespace layer
 	{
 
-		class Affine : public BaseLayer
+		class ReLU : public BaseLayer
 		{
 		public:
-			Affine(u32);
-			~Affine();
-			
-			void setupLayerInfo(FlowDataFormat*) override;
+			ReLU();
+			~ReLU();
 
+			void setupLayerInfo(FlowDataFormat*) override;
+			
 			void initialize() override;
 			void forward() override;
 			void backward() override;
@@ -40,7 +42,9 @@ namespace miduho
 			u32 mOutputSize;
 			u32 mInputSize;
 			u32 mBatchSize;
-			f32 mAffineParamWeight = 0.01f;
+
+			DataMemory mMask;
+			DataMemory mDefaultMask;
 		};
 
 	}

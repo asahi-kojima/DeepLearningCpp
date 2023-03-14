@@ -19,6 +19,12 @@
     <Filter Include="ソース ファイル\Layer\Affine">
       <UniqueIdentifier>{19a07c14-860d-40f0-bdf5-1927bd6a6e38}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\Layer\ReLU">
+      <UniqueIdentifier>{fa6def5b-1971-4d47-948f-9aeced724c8f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Optimizer">
+      <UniqueIdentifier>{6b820189-316d-447e-a3f3-9ceb186102c2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="Machine.cu">
@@ -27,15 +33,15 @@
     <CudaCompile Include="Layer\Affine\Affine.cu">
       <Filter>ソース ファイル\Layer\Affine</Filter>
     </CudaCompile>
+    <CudaCompile Include="Layer\ReLU\ReLU.cu">
+      <Filter>ソース ファイル\Layer\ReLU</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="commonGPU.cuh">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="setting.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Machine.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="commonCPU.h">
@@ -50,6 +56,12 @@
     <ClInclude Include="Layer\Layer.h">
       <Filter>ソース ファイル\Layer</Filter>
     </ClInclude>
+    <ClInclude Include="Layer\ReLU\ReLU.h">
+      <Filter>ソース ファイル\Layer\ReLU</Filter>
+    </ClInclude>
+    <ClInclude Include="Machine.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -57,6 +69,9 @@
     </ClCompile>
     <ClCompile Include="Layer\Affine\Affine.cpp">
       <Filter>ソース ファイル\Layer\Affine</Filter>
+    </ClCompile>
+    <ClCompile Include="Layer\ReLU\ReLU.cpp">
+      <Filter>ソース ファイル\Layer\ReLU</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

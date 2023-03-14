@@ -1,9 +1,9 @@
 #include <random>
 #include <cuda_runtime.h>
+#include <cassert>
 
 #include "Affine.h"
 #include "../../commonGPU.cuh"
-#include <cassert>
 
 namespace miduho {
 	namespace layer
@@ -140,6 +140,89 @@ namespace miduho {
 				dOut[yid * inputSize + xid] = result;
 			}
 		}
+		void Affine::initializeOnGPU()
+		{
+			pParametersOnGPU.resize(2);
+			pDParametersOnGPU.resize(2);
+
+			//Affineパラメータ
+			paramMemory& affineParam = pParametersOnGPU[0];
+			paramMemory& affineDParam = pDParametersOnGPU[0];
+
+			affineParam.size = affineDParam.size = mOutputSize * mInputSize;
+
+			CHECK(cudaMalloc((void**)(&(affineParam.address)), affineParam.size * sizeof(parameterType))   );
+			CHECK(cudaMalloc((void**)(&(affineDParam.address)), affineDParam.size * sizeof(parameterType)) );
+
+			parameterType* tmpAffineParam = new parameterType[affineParam.size];
+			{
+				std::random_device seed_gen;
+				std::default_random_engine engine(seed_gen());
+				std::normal_distribution<> dist(0.0, std::sqrt(2.0 / mInputSize));
+
+				parameterType* tmp = new parameterType[affineParam.size];
+				for (u32 idx = 0; idx < affineParam.size; idx++)
+				{
+					tmp[idx] = mAffineParamWeight * static_cast<f32>(dist(engine)) / std::sqrt(2.0f / mInputSize);
+				}
+				CHECK(cudaMemcpy(affineParam.address, tmp, affineParam.size * sizeof(parameterType), cudaMemcpyHostToDevice));
+
+				for (u32 idx = 0; idx < affineDParam.size; idx++)
+				{
+					tmp[idx] = 0.0f;
+				}
+				CHECK(cudaMemcpy(affineDParam.address, tmp, affineDParam.size * sizeof(parameterType), cudaMemcpyHostToDevice));
+				delete[] tmp;
+			}
+
+
+			//Biasパラメータ
+			paramMemory& biasParam = pParametersOnGPU[1];
+			paramMemory& biasDParam = pDParametersOnGPU[1];
+
+			biasParam.size = biasDParam.size = mOutputSize;
+
+			cudaMalloc((void**)(&(biasParam.address)), biasParam.size * sizeof(parameterType));
+			cudaMalloc((void**)(&(biasDParam.address)), biasDParam.size * sizeof(parameterType));
+			{
+				parameterType* tmp = new parameterType[biasParam.size];
+				for (u32 idx = 0; idx < biasParam.size; idx++)
+				{
+					tmp[idx] = 0.0f;
+				}
+				CHECK(cudaMemcpy(biasParam.address, tmp, biasParam.size * sizeof(parameterType), cudaMemcpyHostToDevice));
+				CHECK(cudaMemcpy(biasDParam.address, tmp, biasDParam.size * sizeof(parameterType), cudaMemcpyHostToDevice));
+				delete[] tmp;
+			}
+
+			//計算結果を格納するためのメモリ確保
+			mForwardResultOnGPU.size = mBatchSize * mOutputSize;
+			mBackwardResultOnGPU.size = mBatchSize * mInputSize;
+			CHECK(cudaMalloc((void**)(&(mForwardResultOnGPU.address)), 
+				mForwardResultOnGPU.size * sizeof(flowDataType)));
+			CHECK(cudaMalloc((void**)(&(mBackwardResultOnGPU.address)), 
+				mBackwardResultOnGPU.size * sizeof(flowDataType)));
+			{
+				flowDataType* tmp = new flowDataType[mForwardResultOnGPU.size];
+				for (u32 idx = 0; idx < mForwardResultOnGPU.size; idx++)
+				{
+					tmp[idx] = 0.0f;
+				}
+				CHECK(cudaMemcpy(mForwardResultOnGPU.address, tmp, 
+					mForwardResultOnGPU.size * sizeof(flowDataType), cudaMemcpyHostToDevice));
+				delete[] tmp;
+
+
+				tmp = new flowDataType[mBackwardResultOnGPU.size];
+				for (u32 idx = 0; idx < mBackwardResultOnGPU.size; idx++)
+				{
+					tmp[idx] = 0.0f;
+				}
+				CHECK(cudaMemcpy(mBackwardResultOnGPU.address, tmp, 
+					mBackwardResultOnGPU.size * sizeof(flowDataType), cudaMemcpyHostToDevice));
+				delete[] tmp;
+			}
+		}
 
 		void Affine::forwardOnGPU()
 		{
@@ -149,10 +232,10 @@ namespace miduho {
 				(mBatchSize + block.y - 1) / block.y);
 
 			AffineForward << <grid, block >> > (
-				mForwardResultOnGPU.dataAddress,
-				pParametersOnGPU[0].paramAddress,
-				mInputDataOnGPU->dataAddress,
-				pParametersOnGPU[1].paramAddress,
+				mForwardResultOnGPU.address,
+				pParametersOnGPU[0].address,
+				mInputDataOnGPU->address,
+				pParametersOnGPU[1].address,
 				mOutputSize,
 				mInputSize,
 				mBatchSize);
@@ -170,9 +253,9 @@ namespace miduho {
 					(mInputSize + block.x - 1) / block.x,
 					(mBatchSize + block.y - 1) / block.y);
 				doutBackward << <grid, block >> > (
-					mBackwardResultOnGPU.dataAddress,
-					pParametersOnGPU[0].paramAddress,
-					mDInputDataOnGPU->dataAddress,
+					mBackwardResultOnGPU.address,
+					pParametersOnGPU[0].address,
+					mDInputDataOnGPU->address,
 					mOutputSize,
 					mInputSize,
 					mBatchSize);
@@ -188,9 +271,9 @@ namespace miduho {
 					(mOutputSize + block.x - 1) / block.x,
 					(mInputSize + block.y - 1) / block.y);
 				AffineBackward << <grid, block >> > (
-					pDParametersOnGPU[0].paramAddress,
-					mDInputDataOnGPU->dataAddress,
-					mInputDataOnGPU->dataAddress,
+					pDParametersOnGPU[0].address,
+					mDInputDataOnGPU->address,
+					mInputDataOnGPU->address,
 					mOutputSize,
 					mInputSize,
 					mBatchSize);
@@ -204,8 +287,8 @@ namespace miduho {
 				dim3 block(16);
 				dim3 grid((mOutputSize + block.x - 1) / block.x);
 				biasBackward << <grid, block >> > (
-					pDParametersOnGPU[1].paramAddress,
-					mDInputDataOnGPU->dataAddress,
+					pDParametersOnGPU[1].address,
+					mDInputDataOnGPU->address,
 					mOutputSize,
 					mBatchSize);
 #if _DEBUG
@@ -214,88 +297,10 @@ namespace miduho {
 			}
 		}
 
-		void Affine::setupParamOnGPU()
+		void Affine::terminateOnGPU()
 		{
-			pParametersOnGPU.resize(2);
-			pDParametersOnGPU.resize(2);
 
-			//Affineパラメータ
-			paramMemory& affineParam = pParametersOnGPU[0];
-			paramMemory& affineDParam = pDParametersOnGPU[0];
-
-			affineParam.paramNum = affineDParam.paramNum = mOutputSize * mInputSize;
-
-			CHECK(cudaMalloc((void**)(&(affineParam.paramAddress)), affineParam.paramNum * sizeof(parameterType))   );
-			CHECK(cudaMalloc((void**)(&(affineDParam.paramAddress)), affineDParam.paramNum * sizeof(parameterType)) );
-
-			parameterType* tmpAffineParam = new parameterType[affineParam.paramNum];
-			{
-				std::random_device seed_gen;
-				std::default_random_engine engine(seed_gen());
-				std::normal_distribution<> dist(0.0, std::sqrt(2.0 / mInputSize));
-
-				parameterType* tmp = new parameterType[affineParam.paramNum];
-				for (u32 idx = 0; idx < affineParam.paramNum; idx++)
-				{
-					tmp[idx] = mAffineParamWeight * static_cast<f32>(dist(engine)) / std::sqrt(2.0f / mInputSize);
-				}
-				CHECK(cudaMemcpy(affineParam.paramAddress, tmp, affineParam.paramNum * sizeof(parameterType), cudaMemcpyHostToDevice));
-
-				for (u32 idx = 0; idx < affineDParam.paramNum; idx++)
-				{
-					tmp[idx] = 0.0f;
-				}
-				CHECK(cudaMemcpy(affineDParam.paramAddress, tmp, affineDParam.paramNum * sizeof(parameterType), cudaMemcpyHostToDevice));
-				delete[] tmp;
-			}
-
-
-			//Biasパラメータ
-			paramMemory& biasParam = pParametersOnGPU[1];
-			paramMemory& biasDParam = pDParametersOnGPU[1];
-
-			biasParam.paramNum = biasDParam.paramNum = mOutputSize;
-
-			cudaMalloc((void**)(&(biasParam.paramAddress)), biasParam.paramNum * sizeof(parameterType));
-			cudaMalloc((void**)(&(biasDParam.paramAddress)), biasDParam.paramNum * sizeof(parameterType));
-			{
-				parameterType* tmp = new parameterType[biasParam.paramNum];
-				for (u32 idx = 0; idx < biasParam.paramNum; idx++)
-				{
-					tmp[idx] = 0.0f;
-				}
-				CHECK(cudaMemcpy(biasParam.paramAddress, tmp, biasParam.paramNum * sizeof(parameterType), cudaMemcpyHostToDevice));
-				CHECK(cudaMemcpy(biasDParam.paramAddress, tmp, biasDParam.paramNum * sizeof(parameterType), cudaMemcpyHostToDevice));
-				delete[] tmp;
-			}
-
-			//計算結果を格納するためのメモリ確保
-			mForwardResultOnGPU.dataNum = mBatchSize * mOutputSize;
-			mBackwardResultOnGPU.dataNum = mBatchSize * mInputSize;
-			CHECK(cudaMalloc((void**)(&(mForwardResultOnGPU.dataAddress)), 
-				mForwardResultOnGPU.dataNum * sizeof(flowDataType)));
-			CHECK(cudaMalloc((void**)(&(mBackwardResultOnGPU.dataAddress)), 
-				mBackwardResultOnGPU.dataNum * sizeof(flowDataType)));
-			{
-				flowDataType* tmp = new flowDataType[mForwardResultOnGPU.dataNum];
-				for (u32 idx = 0; idx < mForwardResultOnGPU.dataNum; idx++)
-				{
-					tmp[idx] = 0.0f;
-				}
-				CHECK(cudaMemcpy(mForwardResultOnGPU.dataAddress, tmp, 
-					mForwardResultOnGPU.dataNum * sizeof(flowDataType), cudaMemcpyHostToDevice));
-				delete[] tmp;
-
-
-				tmp = new flowDataType[mBackwardResultOnGPU.dataNum];
-				for (u32 idx = 0; idx < mBackwardResultOnGPU.dataNum; idx++)
-				{
-					tmp[idx] = 0.0f;
-				}
-				CHECK(cudaMemcpy(mBackwardResultOnGPU.dataAddress, tmp, 
-					mBackwardResultOnGPU.dataNum * sizeof(flowDataType), cudaMemcpyHostToDevice));
-				delete[] tmp;
-			}
 		}
+
 	}
 }

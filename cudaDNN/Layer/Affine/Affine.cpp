@@ -17,127 +17,59 @@ namespace miduho::layer
 	{
 	}
 
-
 	Affine::~Affine()
 	{
 	}
 
-	void Affine::initialize(flowDataFormat* pInputData)
+	void Affine::setupLayerInfo(FlowDataFormat* pInputData)
 	{
-#if _DEBUG
-		printLine();
-		std::cout << "Affine initialize start" << std::endl;
-#endif
 		mBatchSize = pInputData->batchSize;
 		mInputSize = pInputData->width;
 
 		pInputData->width = mOutputSize;
 
 		isInitialized = true;
-
-#if _DEBUG
-		std::cout << "-----> Success!!" << std::endl;
-		printLine();
-#endif
 	}
 
-	void Affine::setup()
+	void Affine::initialize()
 	{
-#if _DEBUG
-		printLine();
-		std::cout << "Affine setup start" << std::endl;
-#endif
 		assert(isInitialized);
 
-#ifdef GPUA_VAILABLE
-		setupParamOnGPU();
+#ifdef GPU_AVAILABLE
+		initializeOnGPU();
 #else
-		setupParamOnCPU();
+		initializeOnCPU();
 #endif // GPUA_VAILABLE
-
-#if _DEBUG
-		std::cout << "-----> Success!!" << std::endl;
-		printLine();
-#endif
-	}
-
-	void Affine::setupParamOnCPU()
-	{
-		pParametersOnCPU.resize(2);
-
-		//Affine/dAffineパラメータ
-		//(1)参照
-		paramMemory& affineParam = pParametersOnCPU[0];
-		paramMemory& affineDParam = pDParametersOnCPU[0];
-		//(2)パラメータのサイズを設定
-		affineParam.paramNum = mOutputSize * mInputSize;
-		affineDParam.paramNum = mOutputSize * mInputSize;
-		//(3)パラメータ用の領域確保
-		affineParam.paramAddress = new parameterType[affineParam.paramNum];
-		affineDParam.paramAddress = new parameterType[affineDParam.paramNum];
-		//(4)初期化
-		{
-			std::random_device seed_gen;
-			std::default_random_engine engine(seed_gen());
-			std::normal_distribution<> dist(0.0, std::sqrt(2.0 / mInputSize));
-			for (u32 idx = 0; idx < affineParam.paramNum; idx++)
-			{
-				affineParam.paramAddress[idx] = mAffineParamWeight * static_cast<f32>(dist(engine)) / std::sqrt(2.0f / mInputSize);
-			}
-
-			for (u32 idx = 0; idx < affineDParam.paramNum; idx++)
-			{
-				affineDParam.paramAddress[idx] = 0.0f;
-			}
-		}
-		//Biasパラメータ
-		//(1)参照
-		paramMemory& biasParam = pParametersOnCPU[1];
-		paramMemory& biasDParam = pDParametersOnCPU[1];
-		//(2)パラメータのサイズを設定
-		biasParam.paramNum = mOutputSize;
-		biasDParam.paramNum = mOutputSize;
-		//(3)パラメータ用の領域確保
-		biasParam.paramAddress = new parameterType[biasParam.paramNum];
-		biasDParam.paramAddress = new parameterType[biasDParam.paramNum];
-		//(4)初期化
-		{
-			for (u32 idx = 0; idx < biasParam.paramNum; idx++)
-			{
-				biasParam.paramAddress[idx] = 0.0f;
-			}
-
-			for (u32 idx = 0; idx < biasDParam.paramNum; idx++)
-			{
-				biasDParam.paramAddress[idx] = 0.0f;
-			}
-		}
-	}
-
-	void Affine::terminate()
-	{
-
 	}
 
 	void Affine::forward()
 	{
-#ifdef GPUA_VAILABLE
+#ifdef GPU_AVAILABLE
 		forwardOnGPU();
 #else
-		forwardOnCPU(ppFlowDataType);
+		forwardOnCPU();
 #endif	
 
 	}
 
 	void Affine::backward()
 	{
-#ifdef GPUA_VAILABLE
+#ifdef GPU_AVAILABLE
 		backwardOnGPU();
 #else
 		backwardOnCPU();
 #endif	
 	}
 
+	void Affine::terminate()
+	{
+#ifdef GPU_AVAILABLE
+		terminateOnGPU();
+#else
+		terminateOnCPU();
+#endif // GPUA_VAILABLE
+	}
+	
 	void Affine::memcpyHostToDevice()
 	{
 
@@ -154,6 +86,58 @@ namespace miduho::layer
 	//////////////////////////////////////
 	//CPU 関数
 	//////////////////////////////////////
+	void Affine::initializeOnCPU()
+	{
+		pParametersOnCPU.resize(2);
+
+		//Affine/dAffineパラメータ
+		//(1)参照
+		paramMemory& affineParam = pParametersOnCPU[0];
+		paramMemory& affineDParam = pDParametersOnCPU[0];
+		//(2)パラメータのサイズを設定
+		affineParam.size = mOutputSize * mInputSize;
+		affineDParam.size = mOutputSize * mInputSize;
+		//(3)パラメータ用の領域確保
+		affineParam.address = new parameterType[affineParam.size];
+		affineDParam.address = new parameterType[affineDParam.size];
+		//(4)初期化
+		{
+			std::random_device seed_gen;
+			std::default_random_engine engine(seed_gen());
+			std::normal_distribution<> dist(0.0, std::sqrt(2.0 / mInputSize));
+			for (u32 idx = 0; idx < affineParam.size; idx++)
+			{
+				affineParam.address[idx] = mAffineParamWeight * static_cast<f32>(dist(engine)) / std::sqrt(2.0f / mInputSize);
+			}
+
+			for (u32 idx = 0; idx < affineDParam.size; idx++)
+			{
+				affineDParam.address[idx] = 0.0f;
+			}
+		}
+		//Biasパラメータ
+		//(1)参照
+		paramMemory& biasParam = pParametersOnCPU[1];
+		paramMemory& biasDParam = pDParametersOnCPU[1];
+		//(2)パラメータのサイズを設定
+		biasParam.size = mOutputSize;
+		biasDParam.size = mOutputSize;
+		//(3)パラメータ用の領域確保
+		biasParam.address = new parameterType[biasParam.size];
+		biasDParam.address = new parameterType[biasDParam.size];
+		//(4)初期化
+		{
+			for (u32 idx = 0; idx < biasParam.size; idx++)
+			{
+				biasParam.address[idx] = 0.0f;
+			}
+
+			for (u32 idx = 0; idx < biasDParam.size; idx++)
+			{
+				biasDParam.address[idx] = 0.0f;
+			}
+		}
+	}
 
 	void Affine::forwardOnCPU()
 	{
@@ -161,6 +145,11 @@ namespace miduho::layer
 	}
 
 	void Affine::backwardOnCPU()
+	{
+
+	}
+
+	void Affine::terminateOnCPU()
 	{
 
 	}

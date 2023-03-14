@@ -1,6 +1,6 @@
 #pragma once
 
-#define GPUA_VAILABLE
+#define GPU_AVAILABLE
 
 using u32 = unsigned int;
 using s32 = int;
