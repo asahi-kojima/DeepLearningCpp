@@ -13,6 +13,9 @@
 
 namespace miduho
 {
+	Machine::Machine() = default;
+	Machine::~Machine() = default;
+
 	u32 Machine::entry()
 	{
 #ifdef GPU_AVAILABLE
@@ -82,7 +85,7 @@ namespace miduho
 			initializeLayer();
 
 			//オプティマイザー
-			//mOptimizer = std::make_unique<optimizer::Adam>();
+			mOptimizer = std::make_unique<optimizer::Adam>();
 		}
 		std::cout << "Machine initialize finish" << std::endl;
 		printDoubleLine();
@@ -199,7 +202,10 @@ namespace miduho
 				}
 
 				//パラメータの更新
-
+				for (auto& layer : mLayerList)
+				{
+					mOptimizer->optimize(*layer);
+				}
 			}
 		}
 	}
@@ -241,21 +247,21 @@ namespace miduho
 
 	void Machine::makeTestData()
 	{
-		/*mLearningData.dataNum = (mDataShape.batchSize * mDataShape.width);
-		flowDataType* tmp = new flowDataType[mLearningData.dataNum];
-		for (u32 idx = 0; idx < mLearningData.dataNum; idx++)
+		mLearningData.InputData.size = (mLearningData.dataShape.batchSize * mLearningData.dataShape.width);
+		flowDataType* tmp = new flowDataType[mLearningData.InputData.size];
+		for (u32 idx = 0; idx < mLearningData.InputData.size; idx++)
 		{
 			tmp[idx] = 0.1f;
 		}
 
-		CHECK(cudaMalloc((void**)(&(mLearningData.dataAddress)), mLearningData.dataNum * sizeof(f32)));
-		CHECK(cudaMemcpy(mLearningData.dataAddress, tmp, mLearningData.dataNum * sizeof(f32), cudaMemcpyHostToDevice));
+		CHECK(cudaMalloc((void**)(&(mLearningData.InputData.address)), mLearningData.InputData.size * sizeof(f32)));
+		CHECK(cudaMemcpy(mLearningData.InputData.address, tmp, mLearningData.InputData.size * sizeof(f32), cudaMemcpyHostToDevice));
 
-		delete[] tmp;*/
+		delete[] tmp;
 
 
 
-		mLearningData.allInputData.size = 50 * mLearningData.dataShape.batchSize * mLearningData.dataShape.width;
+		/*mLearningData.allInputData.size = 50 * mLearningData.dataShape.batchSize * mLearningData.dataShape.width;
 		CHECK(cudaMalloc((void**)(&(mLearningData.allInputData.address)), mLearningData.allInputData.size * sizeof(f32)));
 		mLearningData.allTrainingData.size = 50 * mLearningData.dataShape.batchSize;
 		CHECK(cudaMalloc((void**)(&(mLearningData.allTrainingData.address)), mLearningData.allTrainingData.size * sizeof(u32)));
@@ -286,7 +292,7 @@ namespace miduho
 		mLearningData.InputData.address = mLearningData.allInputData.address;
 		mLearningData.inputDataOffset = 0;
 		mLearningData.TrainingData.address = mLearningData.allInputData.address;
-		mLearningData.trainingDataOffset = 0;
+		mLearningData.trainingDataOffset = 0;*/
 	}
 
 }

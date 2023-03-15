@@ -1,22 +1,6 @@
 #pragma once
 
 
-
-#define SINGLETON(CLASSNAME) \
-private:\
-	CLASSNAME() = default;\
-	~CLASSNAME() = default;\
-public:\
-	CLASSNAME(const CLASSNAME&) = delete;\
-	CLASSNAME& operator=(const CLASSNAME&) = delete;\
-	CLASSNAME(CLASSNAME&&) = delete;\
-	CLASSNAME& operator=(CLASSNAME&&) = delete;\
-	static CLASSNAME& getInstance()\
-	{\
-		static CLASSNAME instance;\
-		return instance;\
-	}
-
 namespace miduho
 {
 	namespace layer
@@ -30,7 +14,11 @@ namespace miduho
 		public:
 			BaseOptimizer() = default;
 			~BaseOptimizer() = default;
-			virtual void optimize(layer::BaseLayer*) = 0;
+			virtual void optimize(layer::BaseLayer&) = 0;
+		protected:
+			virtual void optimizeOnCPU(layer::BaseLayer&) = 0;
+			virtual void optimizeOnGPU(layer::BaseLayer&) = 0;
+			
 		};
 	}
 }

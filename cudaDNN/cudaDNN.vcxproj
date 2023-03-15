@@ -154,6 +154,7 @@
     <CudaCompile Include="Machine.cu">
       <FileType>Document</FileType>
     </CudaCompile>
+    <CudaCompile Include="Optimizer\Adam\Adam.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="commonCPU.h" />

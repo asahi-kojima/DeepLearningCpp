@@ -36,8 +36,8 @@ namespace miduho
 		};
 
 
-		Machine() = default;
-		~Machine() = default;
+		Machine();
+		~Machine();
 
 
 		//‘å˜g
@@ -63,7 +63,7 @@ namespace miduho
 
 
 		std::vector<std::unique_ptr<layer::BaseLayer> > mLayerList;
-		//std::unique_ptr<optimizer::BaseOptimizer> mOptimizer;
+		std::unique_ptr<optimizer::BaseOptimizer> mOptimizer;
 		learningDataSet mLearningData;
 	};
 }

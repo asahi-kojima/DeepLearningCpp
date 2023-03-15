@@ -45,6 +45,9 @@
     <CudaCompile Include="Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cu">
       <Filter>ソース ファイル\Layer\SMCrossEntropyLoss</Filter>
     </CudaCompile>
+    <CudaCompile Include="Optimizer\Adam\Adam.cu">
+      <Filter>ソース ファイル\Optimizer\Adam</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="commonGPU.cuh">

@@ -8,10 +8,14 @@ namespace miduho
 	{
 		class Adam : public BaseOptimizer
 		{
-			SINGLETON(Adam)
+		public:
+			Adam() = default;
+			~Adam() = default;
 
 		private:
-			void optimize(layer::BaseLayer*) override;
+			void optimize(layer::BaseLayer&) override;
+			void optimizeOnCPU(layer::BaseLayer&) override;
+			void optimizeOnGPU(layer::BaseLayer&) override;
 		};
 	}
 }
