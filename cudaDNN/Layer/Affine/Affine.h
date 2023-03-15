@@ -14,6 +14,7 @@ namespace miduho
 			Affine(u32);
 			~Affine();
 			
+		private:
 			void setupLayerInfo(FlowDataFormat*) override;
 
 			void initialize() override;
@@ -24,7 +25,6 @@ namespace miduho
 			void memcpyHostToDevice() override;
 			void memcpyDeviceToHost() override;
 
-		private:
 			void initializeOnCPU() override;
 			void forwardOnCPU()  override;
 			void backwardOnCPU() override;
