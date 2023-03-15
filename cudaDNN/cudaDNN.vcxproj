@@ -169,7 +169,9 @@
     <ClInclude Include="Layer\ReLU\ReLU.h" />
     <ClInclude Include="Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.h" />
     <ClInclude Include="Machine.h" />
+    <ClInclude Include="Optimizer\Adam\Adam.h" />
     <ClInclude Include="Optimizer\BaseOptimizer.h" />
+    <ClInclude Include="Optimizer\Optimizer.h" />
     <ClInclude Include="setting.h" />
   </ItemGroup>
   <ItemGroup>
@@ -177,6 +179,7 @@
     <ClCompile Include="Layer\ReLU\ReLU.cpp" />
     <ClCompile Include="Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Optimizer\Adam\Adam.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

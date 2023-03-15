@@ -3,6 +3,7 @@
 #include <random>
 
 #include "./Layer/Layer.h"
+#include "./Optimizer/Optimizer.h"
 #include "Machine.h"
 #include "commonGPU.cuh"
 #include "commonCPU.h"
@@ -79,6 +80,9 @@ namespace miduho
 
 			//メモリの確保
 			initializeLayer();
+
+			//オプティマイザー
+			//mOptimizer = std::make_unique<optimizer::Adam>();
 		}
 		std::cout << "Machine initialize finish" << std::endl;
 		printDoubleLine();

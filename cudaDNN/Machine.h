@@ -4,6 +4,7 @@
 
 #include "setting.h"
 #include "./Layer/BaseLayer.h"
+#include "./Optimizer/BaseOptimizer.h"
 
 
 namespace miduho
@@ -16,7 +17,6 @@ namespace miduho
 			static Machine instance;
 			return instance;
 		}
-
 		u32 entry();
 
 	private:
@@ -63,6 +63,7 @@ namespace miduho
 
 
 		std::vector<std::unique_ptr<layer::BaseLayer> > mLayerList;
+		//std::unique_ptr<optimizer::BaseOptimizer> mOptimizer;
 		learningDataSet mLearningData;
 	};
 }
