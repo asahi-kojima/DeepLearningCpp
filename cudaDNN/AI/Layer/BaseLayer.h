@@ -1,27 +1,20 @@
 #pragma once
 #include <vector>
-#include "../setting.h"
+#include "../../setting.h"
+#include "../Optimizer/BaseOptimizer.h"
 
-#define virtualFuncOnCPUGPU(funcName)		\
-{											\
-public:										\
-	virtual funcName() = 0;					\
-private:									\
-	virtual funcName##OnCPU() = 0;			\
-	virtual funcName##OnCPU() = 0;			\
-}
-
-namespace miduho
+namespace Aoba
 {
 	namespace layer
 	{
 		class BaseLayer
 		{
+			friend class Aoba::optimizer::BaseOptimizer;
 		public:
 			using parameterType = f32;
 			using flowDataType = f32;
 
-			struct FlowDataFormat
+			struct DataShape
 			{
 				u32 batchSize;
 				u32 channel;
@@ -34,6 +27,8 @@ namespace miduho
 				flowDataType* address;
 				u32 size;
 			};
+
+			using constDataMemory = const DataMemory;
 
 			struct paramMemory
 			{
@@ -51,7 +46,7 @@ namespace miduho
 			/// 入力・出力サイズ、カーネルサイズなどの決定などを行う。
 			/// </summary>
 			/// <param name=""></param>
-			virtual void setupLayerInfo(FlowDataFormat*) = 0;
+			virtual void setupLayerInfo(DataShape*) = 0;
 
 			/// <summary>
 			/// メモリの確保などを行う。
@@ -62,36 +57,25 @@ namespace miduho
 			virtual void terminate() = 0;
 
 			
-			DataMemory* getDataMemory()
-			{
-#ifdef GPU_AVAILABLE
-				return &mForwardResultOnGPU;
-#else
-				return &mForwardResultOnCPU;
-#endif
-			}
-			DataMemory* getDDataMemory()
-			{
-#ifdef GPU_AVAILABLE
-				return &mBackwardResultOnGPU;
-#else
-				return &mBackwardResultOnCPU;
-#endif
-			}
-			void setInputData(DataMemory* pInputData)
+
+			constDataMemory* setInputData(constDataMemory* pInputData)
 			{
 #ifdef GPU_AVAILABLE
 				mInputDataOnGPU = pInputData;
+				return &mForwardResultOnGPU;
 #else
 				mInputDataOnCPU = pInputData;
+				return &mForwardResultOnCPU;
 #endif
 			}
-			void setDInputData(DataMemory* pDInputData)
+			constDataMemory* setDInputData(constDataMemory* pDInputData)
 			{
 #ifdef GPU_AVAILABLE
 				mDInputDataOnGPU = pDInputData;
+				return &mBackwardResultOnGPU;
 #else
 				mDInputDataOnGPU = pDInputData;
+				return &mBackwardResultOnCPU;
 #endif
 			}
 
@@ -103,14 +87,19 @@ namespace miduho
 			bool isInitialized = false;
 			
 			
-			//CPU周りの変数
+			//CPU関係の変数と関数
 			std::vector<paramMemory> pParametersOnCPU;
 			std::vector<paramMemory> pDParametersOnCPU;
-			void setInputDataOnCPU(DataMemory* pInputDataOnCPU)
+			DataMemory mForwardResultOnCPU;
+			DataMemory mBackwardResultOnCPU;
+			constDataMemory* mInputDataOnCPU;
+			constDataMemory* mDInputDataOnCPU;
+
+			void setInputDataOnCPU(constDataMemory* pInputDataOnCPU)
 			{
 				mInputDataOnCPU = pInputDataOnCPU;
 			}
-			void setDInputDataOnCPU(DataMemory* pDInputDataOnCPU)
+			void setDInputDataOnCPU(constDataMemory* pDInputDataOnCPU)
 			{
 				mDInputDataOnCPU = pDInputDataOnCPU;
 			}
@@ -121,21 +110,22 @@ namespace miduho
 			virtual void terminateOnCPU() = 0;
 
 
-			DataMemory* mInputDataOnCPU;
-			DataMemory mForwardResultOnCPU;
-			DataMemory* mDInputDataOnCPU;
-			DataMemory mBackwardResultOnCPU;
 			
 
 
-			//GPU周りの変数
+			//GPU関係の変数と関数
 			std::vector<paramMemory> pParametersOnGPU;
 			std::vector<paramMemory> pDParametersOnGPU;
-			void setInputDataOnGPU(DataMemory* pInputDataOnGPU)
+			DataMemory mForwardResultOnGPU;
+			DataMemory mBackwardResultOnGPU;
+			constDataMemory* mInputDataOnGPU;
+			constDataMemory* mDInputDataOnGPU;
+
+			void setInputDataOnGPU(constDataMemory* pInputDataOnGPU)
 			{
 				mInputDataOnGPU = pInputDataOnGPU;
 			}
-			void setDInputDataOnGPU(DataMemory* pDInputDataOnGPU)
+			void setDInputDataOnGPU(constDataMemory* pDInputDataOnGPU)
 			{
 				mDInputDataOnGPU = pDInputDataOnGPU;
 			}
@@ -145,10 +135,6 @@ namespace miduho
 			virtual void backwardOnGPU() = 0;
 			virtual void terminateOnGPU() = 0;
 
-			DataMemory* mInputDataOnGPU;
-			DataMemory mForwardResultOnGPU;
-			DataMemory* mDInputDataOnGPU;
-			DataMemory mBackwardResultOnGPU;
 
 
 

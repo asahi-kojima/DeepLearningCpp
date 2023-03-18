@@ -4,9 +4,9 @@
 #include <cassert>
 
 #include "Affine.h"
-#include "../../commonCPU.h"
+#include "../../../commonCPU.h"
 
-namespace miduho::layer
+namespace Aoba::layer
 {
 
 
@@ -21,7 +21,7 @@ namespace miduho::layer
 	{
 	}
 
-	void Affine::setupLayerInfo(FlowDataFormat* pInputData)
+	void Affine::setupLayerInfo(DataShape* pInputData)
 	{
 		mBatchSize = pInputData->batchSize;
 		mInputSize = pInputData->width;

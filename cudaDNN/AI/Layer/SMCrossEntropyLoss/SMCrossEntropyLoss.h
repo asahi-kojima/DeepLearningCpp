@@ -1,24 +1,21 @@
 #pragma once
-
-
 #include "../../setting.h"
 #include "../BaseLayer.h"
 
 
-namespace miduho
+namespace Aoba
 {
 	namespace layer
 	{
 
-		class ReLU : public BaseLayer
+		class SMCrossEntropyLoss : public BaseLayer
 		{
 		public:
-			ReLU();
-			~ReLU();
+			SMCrossEntropyLoss(u32);
+			~SMCrossEntropyLoss();
 
-		private:
-			void setupLayerInfo(FlowDataFormat*) override;
-			
+			void setupLayerInfo(DataShape*) override;
+
 			void initialize() override;
 			void forward() override;
 			void backward() override;
@@ -27,6 +24,7 @@ namespace miduho
 			void memcpyHostToDevice() override;
 			void memcpyDeviceToHost() override;
 
+		private:
 			void initializeOnCPU() override;
 			void forwardOnCPU()  override;
 			void backwardOnCPU() override;
@@ -42,9 +40,6 @@ namespace miduho
 			u32 mOutputSize;
 			u32 mInputSize;
 			u32 mBatchSize;
-
-			DataMemory mMask;
-			DataMemory mDefaultMask;
 		};
 
 	}

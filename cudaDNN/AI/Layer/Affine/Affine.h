@@ -1,20 +1,21 @@
 #pragma once
-#include "../../setting.h"
+#include "../../../setting.h"
 #include "../BaseLayer.h"
 
 
-namespace miduho
+namespace Aoba
 {
 	namespace layer
 	{
 
-		class SMCrossEntropyLoss : public BaseLayer
+		class Affine : public BaseLayer
 		{
 		public:
-			SMCrossEntropyLoss(u32);
-			~SMCrossEntropyLoss();
-
-			void setupLayerInfo(FlowDataFormat*) override;
+			Affine(u32);
+			~Affine();
+			
+		private:
+			void setupLayerInfo(DataShape*) override;
 
 			void initialize() override;
 			void forward() override;
@@ -24,7 +25,6 @@ namespace miduho
 			void memcpyHostToDevice() override;
 			void memcpyDeviceToHost() override;
 
-		private:
 			void initializeOnCPU() override;
 			void forwardOnCPU()  override;
 			void backwardOnCPU() override;
@@ -40,6 +40,7 @@ namespace miduho
 			u32 mOutputSize;
 			u32 mInputSize;
 			u32 mBatchSize;
+			f32 mAffineParamWeight = 0.01f;
 		};
 
 	}

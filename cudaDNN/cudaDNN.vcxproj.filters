@@ -13,40 +13,46 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="ソース ファイル\Layer">
-      <UniqueIdentifier>{63f292cd-b41c-4524-b673-ba0236af74f1}</UniqueIdentifier>
+    <Filter Include="ソース ファイル\AI">
+      <UniqueIdentifier>{b459a106-97b9-40fe-8eb7-c01bcdc372dc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\Layer\Affine">
-      <UniqueIdentifier>{19a07c14-860d-40f0-bdf5-1927bd6a6e38}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ソース ファイル\Layer\ReLU">
-      <UniqueIdentifier>{fa6def5b-1971-4d47-948f-9aeced724c8f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ソース ファイル\Optimizer">
+    <Filter Include="ソース ファイル\AI\Optimizer">
       <UniqueIdentifier>{6b820189-316d-447e-a3f3-9ceb186102c2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ソース ファイル\Layer\SMCrossEntropyLoss">
-      <UniqueIdentifier>{f22430d2-9f39-4fcc-acd1-ef88eb7e43a6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ソース ファイル\Optimizer\Adam">
+    <Filter Include="ソース ファイル\AI\Optimizer\Adam">
       <UniqueIdentifier>{750b72ff-76ca-4ff8-bfc6-077d050556d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\AI\Layer">
+      <UniqueIdentifier>{63f292cd-b41c-4524-b673-ba0236af74f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\AI\Layer\Affine">
+      <UniqueIdentifier>{19a07c14-860d-40f0-bdf5-1927bd6a6e38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\AI\Layer\ReLU">
+      <UniqueIdentifier>{fa6def5b-1971-4d47-948f-9aeced724c8f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\AI\Layer\SMCrossEntropyLoss">
+      <UniqueIdentifier>{f22430d2-9f39-4fcc-acd1-ef88eb7e43a6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="Machine.cu">
+    <CudaCompile Include="main.cpp">
       <Filter>ソース ファイル</Filter>
     </CudaCompile>
-    <CudaCompile Include="Layer\Affine\Affine.cu">
-      <Filter>ソース ファイル\Layer\Affine</Filter>
+    <CudaCompile Include="AI\AI.cu">
+      <Filter>ソース ファイル\AI</Filter>
     </CudaCompile>
-    <CudaCompile Include="Layer\ReLU\ReLU.cu">
-      <Filter>ソース ファイル\Layer\ReLU</Filter>
+    <CudaCompile Include="AI\Optimizer\Adam\Adam.cu">
+      <Filter>ソース ファイル\AI\Optimizer\Adam</Filter>
     </CudaCompile>
-    <CudaCompile Include="Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cu">
-      <Filter>ソース ファイル\Layer\SMCrossEntropyLoss</Filter>
+    <CudaCompile Include="AI\Layer\Affine\Affine.cu">
+      <Filter>ソース ファイル\AI\Layer\Affine</Filter>
     </CudaCompile>
-    <CudaCompile Include="Optimizer\Adam\Adam.cu">
-      <Filter>ソース ファイル\Optimizer\Adam</Filter>
+    <CudaCompile Include="AI\Layer\ReLU\ReLU.cu">
+      <Filter>ソース ファイル\AI\Layer\ReLU</Filter>
+    </CudaCompile>
+    <CudaCompile Include="AI\Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cu">
+      <Filter>ソース ファイル\AI\Layer\SMCrossEntropyLoss</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
@@ -59,49 +65,49 @@
     <ClInclude Include="commonCPU.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Layer\Affine\Affine.h">
-      <Filter>ソース ファイル\Layer\Affine</Filter>
+    <ClInclude Include="AI\AI.h">
+      <Filter>ソース ファイル\AI</Filter>
     </ClInclude>
-    <ClInclude Include="Layer\BaseLayer.h">
-      <Filter>ソース ファイル\Layer</Filter>
+    <ClInclude Include="AI\Optimizer\BaseOptimizer.h">
+      <Filter>ソース ファイル\AI\Optimizer</Filter>
     </ClInclude>
-    <ClInclude Include="Layer\Layer.h">
-      <Filter>ソース ファイル\Layer</Filter>
+    <ClInclude Include="AI\Optimizer\Optimizer.h">
+      <Filter>ソース ファイル\AI\Optimizer</Filter>
     </ClInclude>
-    <ClInclude Include="Layer\ReLU\ReLU.h">
-      <Filter>ソース ファイル\Layer\ReLU</Filter>
+    <ClInclude Include="AI\Optimizer\Adam\Adam.h">
+      <Filter>ソース ファイル\AI\Optimizer\Adam</Filter>
     </ClInclude>
-    <ClInclude Include="Machine.h">
-      <Filter>ソース ファイル</Filter>
+    <ClInclude Include="AI\Layer\BaseLayer.h">
+      <Filter>ソース ファイル\AI\Layer</Filter>
     </ClInclude>
-    <ClInclude Include="Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.h">
-      <Filter>ソース ファイル\Layer\SMCrossEntropyLoss</Filter>
+    <ClInclude Include="AI\Layer\Layer.h">
+      <Filter>ソース ファイル\AI\Layer</Filter>
     </ClInclude>
-    <ClInclude Include="Optimizer\BaseOptimizer.h">
-      <Filter>ソース ファイル\Optimizer</Filter>
+    <ClInclude Include="AI\Layer\Affine\Affine.h">
+      <Filter>ソース ファイル\AI\Layer\Affine</Filter>
     </ClInclude>
-    <ClInclude Include="Optimizer\Adam\Adam.h">
-      <Filter>ソース ファイル\Optimizer\Adam</Filter>
+    <ClInclude Include="AI\Layer\ReLU\ReLU.h">
+      <Filter>ソース ファイル\AI\Layer\ReLU</Filter>
     </ClInclude>
-    <ClInclude Include="Optimizer\Optimizer.h">
-      <Filter>ソース ファイル\Optimizer</Filter>
+    <ClInclude Include="AI\Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.h">
+      <Filter>ソース ファイル\AI\Layer\SMCrossEntropyLoss</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>ソース ファイル</Filter>
+    <ClCompile Include="AI\Optimizer\BaseOptimizer.cpp">
+      <Filter>ソース ファイル\AI\Optimizer</Filter>
     </ClCompile>
-    <ClCompile Include="Layer\Affine\Affine.cpp">
-      <Filter>ソース ファイル\Layer\Affine</Filter>
+    <ClCompile Include="AI\Optimizer\Adam\Adam.cpp">
+      <Filter>ソース ファイル\AI\Optimizer\Adam</Filter>
     </ClCompile>
-    <ClCompile Include="Layer\ReLU\ReLU.cpp">
-      <Filter>ソース ファイル\Layer\ReLU</Filter>
+    <ClCompile Include="AI\Layer\Affine\Affine.cpp">
+      <Filter>ソース ファイル\AI\Layer\Affine</Filter>
     </ClCompile>
-    <ClCompile Include="Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cpp">
-      <Filter>ソース ファイル\Layer\SMCrossEntropyLoss</Filter>
+    <ClCompile Include="AI\Layer\ReLU\ReLU.cpp">
+      <Filter>ソース ファイル\AI\Layer\ReLU</Filter>
     </ClCompile>
-    <ClCompile Include="Optimizer\Adam\Adam.cpp">
-      <Filter>ソース ファイル\Optimizer\Adam</Filter>
+    <ClCompile Include="AI\Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cpp">
+      <Filter>ソース ファイル\AI\Layer\SMCrossEntropyLoss</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

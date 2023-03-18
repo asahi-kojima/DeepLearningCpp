@@ -148,15 +148,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="Layer\Affine\Affine.cu" />
-    <CudaCompile Include="Layer\ReLU\ReLU.cu" />
-    <CudaCompile Include="Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cu" />
-    <CudaCompile Include="Machine.cu">
-      <FileType>Document</FileType>
-    </CudaCompile>
-    <CudaCompile Include="Optimizer\Adam\Adam.cu" />
+    <CudaCompile Include="AI\AI.cu" />
+    <CudaCompile Include="AI\Layer\Affine\Affine.cu" />
+    <CudaCompile Include="AI\Layer\ReLU\ReLU.cu" />
+    <CudaCompile Include="AI\Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cu" />
+    <CudaCompile Include="AI\Optimizer\Adam\Adam.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AI\AI.h" />
+    <ClInclude Include="AI\Layer\Affine\Affine.h" />
+    <ClInclude Include="AI\Layer\BaseLayer.h" />
+    <ClInclude Include="AI\Layer\Layer.h" />
+    <ClInclude Include="AI\Layer\ReLU\ReLU.h" />
+    <ClInclude Include="AI\Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.h" />
+    <ClInclude Include="AI\Optimizer\Adam\Adam.h" />
+    <ClInclude Include="AI\Optimizer\BaseOptimizer.h" />
+    <ClInclude Include="AI\Optimizer\Optimizer.h" />
     <ClInclude Include="commonCPU.h" />
     <ClInclude Include="commonGPU.cuh">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
@@ -164,23 +171,15 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Layer\Affine\Affine.h" />
-    <ClInclude Include="Layer\BaseLayer.h" />
-    <ClInclude Include="Layer\Layer.h" />
-    <ClInclude Include="Layer\ReLU\ReLU.h" />
-    <ClInclude Include="Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.h" />
-    <ClInclude Include="Machine.h" />
-    <ClInclude Include="Optimizer\Adam\Adam.h" />
-    <ClInclude Include="Optimizer\BaseOptimizer.h" />
-    <ClInclude Include="Optimizer\Optimizer.h" />
     <ClInclude Include="setting.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Layer\Affine\Affine.cpp" />
-    <ClCompile Include="Layer\ReLU\ReLU.cpp" />
-    <ClCompile Include="Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Optimizer\Adam\Adam.cpp" />
+    <ClCompile Include="AI\Layer\Affine\Affine.cpp" />
+    <ClCompile Include="AI\Layer\ReLU\ReLU.cpp" />
+    <ClCompile Include="AI\Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cpp" />
+    <ClCompile Include="AI\Optimizer\Adam\Adam.cpp" />
+    <ClCompile Include="AI\Optimizer\BaseOptimizer.cpp" />
+    <CudaCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

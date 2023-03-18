@@ -1,11 +1,11 @@
 #include <iostream>
 #include <cassert>
 
-#include "../../commonCPU.h"
+#include "../../../commonCPU.h"
 #include "ReLU.h"
 
 
-namespace miduho::layer
+namespace Aoba::layer
 {
 	ReLU::ReLU()
 		:mBatchSize(0)
@@ -17,7 +17,7 @@ namespace miduho::layer
 	ReLU::~ReLU(){}
 
 
-	void ReLU::setupLayerInfo(FlowDataFormat* pInputData)
+	void ReLU::setupLayerInfo(DataShape* pInputData)
 	{
 		mBatchSize = pInputData->batchSize;
 		mInputSize = pInputData->width;
