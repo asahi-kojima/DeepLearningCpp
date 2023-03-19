@@ -34,6 +34,9 @@
     <Filter Include="ソース ファイル\AI\Layer\SMCrossEntropyLoss">
       <UniqueIdentifier>{f22430d2-9f39-4fcc-acd1-ef88eb7e43a6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\AI\Optimizer\Sgd">
+      <UniqueIdentifier>{5d58e468-7fd5-4cce-b231-f60852a95f54}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="main.cpp">
@@ -53,6 +56,9 @@
     </CudaCompile>
     <CudaCompile Include="AI\Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cu">
       <Filter>ソース ファイル\AI\Layer\SMCrossEntropyLoss</Filter>
+    </CudaCompile>
+    <CudaCompile Include="AI\Optimizer\Sgd\Sgd.cu">
+      <Filter>ソース ファイル\AI\Optimizer\Sgd</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
@@ -92,6 +98,12 @@
     <ClInclude Include="AI\Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.h">
       <Filter>ソース ファイル\AI\Layer\SMCrossEntropyLoss</Filter>
     </ClInclude>
+    <ClInclude Include="AI\AISetting.h">
+      <Filter>ソース ファイル\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="AI\Optimizer\Sgd\Sgd.h">
+      <Filter>ソース ファイル\AI\Optimizer\Sgd</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AI\Optimizer\BaseOptimizer.cpp">
@@ -108,6 +120,9 @@
     </ClCompile>
     <ClCompile Include="AI\Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cpp">
       <Filter>ソース ファイル\AI\Layer\SMCrossEntropyLoss</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\Optimizer\Sgd\Sgd.cpp">
+      <Filter>ソース ファイル\AI\Optimizer\Sgd</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

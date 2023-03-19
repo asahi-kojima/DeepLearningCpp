@@ -38,7 +38,7 @@ namespace Aoba
 		mOptimizer = std::move(optimizer);
 	}
 
-	AI::constDataMemory AI::forward(f32* inputDataAddress)
+	constDataMemory AI::forward(f32* inputDataAddress)
 	{
 		mInputData.address = reinterpret_cast<flowDataType*>(inputDataAddress);
 
@@ -47,11 +47,10 @@ namespace Aoba
 			layer->forward();
 		}
 
-		auto& lastLayer = mLayerList[mLayerList.size() - 1];
 		return *mForwardResult;
 	}
 
-	AI::constDataMemory AI::backward(f32*)
+	constDataMemory AI::backward(f32*)
 	{
 		return constDataMemory();
 	}

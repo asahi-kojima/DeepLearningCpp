@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
-//#include "../Layer/BaseLayer.h"
-
+#include <vector>
+#include "../AISetting.h"
 
 namespace Aoba
 {
@@ -14,13 +14,19 @@ namespace Aoba
 		class BaseOptimizer
 		{
 		public:
-			BaseOptimizer() = default;
+			BaseOptimizer(f32 learningRate = 0.001f) : mLearningRate(learningRate) {};
 			~BaseOptimizer() = default;
 			virtual void optimize(std::unique_ptr<layer::BaseLayer>&) = 0;
+			f32 mLearningRate;
 		protected:
 			virtual void optimizeOnCPU(std::unique_ptr<layer::BaseLayer>&) = 0;
 			virtual void optimizeOnGPU(std::unique_ptr<layer::BaseLayer>&) = 0;
-		/*	std::vector<layer::BaseLayer::paramMemory> fff(std::unique_ptr<layer::BaseLayer>& pLayer);*/
+
+			std::vector<paramMemory>& getLayerParamOnCPU(std::unique_ptr<layer::BaseLayer>&);
+			std::vector<paramMemory>& getLayerDParamOnCPU(std::unique_ptr<layer::BaseLayer>&);
+
+			std::vector<paramMemory>& getLayerParamOnGPU(std::unique_ptr<layer::BaseLayer>&);
+			std::vector<paramMemory>& getLayerDParamOnGPU(std::unique_ptr<layer::BaseLayer>&);
 		};
 	}
 }

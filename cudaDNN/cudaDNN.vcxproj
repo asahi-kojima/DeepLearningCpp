@@ -156,6 +156,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AI\AI.h" />
+    <ClInclude Include="AI\AISetting.h" />
     <ClInclude Include="AI\Layer\Affine\Affine.h" />
     <ClInclude Include="AI\Layer\BaseLayer.h" />
     <ClInclude Include="AI\Layer\Layer.h" />
@@ -164,6 +165,7 @@
     <ClInclude Include="AI\Optimizer\Adam\Adam.h" />
     <ClInclude Include="AI\Optimizer\BaseOptimizer.h" />
     <ClInclude Include="AI\Optimizer\Optimizer.h" />
+    <ClInclude Include="AI\Optimizer\Sgd\Sgd.h" />
     <ClInclude Include="commonCPU.h" />
     <ClInclude Include="commonGPU.cuh">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
@@ -179,6 +181,8 @@
     <ClCompile Include="AI\Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cpp" />
     <ClCompile Include="AI\Optimizer\Adam\Adam.cpp" />
     <ClCompile Include="AI\Optimizer\BaseOptimizer.cpp" />
+    <ClCompile Include="AI\Optimizer\Sgd\Sgd.cpp" />
+    <CudaCompile Include="AI\Optimizer\Sgd\Sgd.cu" />
     <CudaCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

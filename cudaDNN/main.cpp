@@ -58,10 +58,10 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 	printMNIST(trainingData.data() + 784 * 59999);
 }
 
-void setupMnistGpuData(Aoba::AI::dataMemory& dataGPU, std::vector<f32>& data)
+void setupMnistGpuData(Aoba::DataMemory& dataGPU, std::vector<f32>& data)
 {
-	CHECK(cudaMalloc((void**)(&(dataGPU.address)), data.size() * sizeof(Aoba::layer::BaseLayer::flowDataType)));
-	CHECK(cudaMemcpy(dataGPU.address, data.data(), data.size() * sizeof(Aoba::layer::BaseLayer::flowDataType), cudaMemcpyHostToDevice));
+	CHECK(cudaMalloc((void**)(&(dataGPU.address)), data.size() * sizeof(Aoba::flowDataType)));
+	CHECK(cudaMemcpy(dataGPU.address, data.data(), data.size() * sizeof(Aoba::flowDataType), cudaMemcpyHostToDevice));
 }
 
 int main()
@@ -76,7 +76,7 @@ int main()
 	std::vector<f32> trainingData, trainingLabel, testData, testLabel;
 	setupMnistData(trainingData, trainingLabel, testData, testLabel);
 
-	AI::dataMemory trainingDataGPU, trainingLabelGPU, testDataGPU, testLabelGPU;
+	DataMemory trainingDataGPU, trainingLabelGPU, testDataGPU, testLabelGPU;
 	setupMnistGpuData(trainingDataGPU, trainingData);
 	setupMnistGpuData(trainingLabelGPU, trainingLabel);
 	setupMnistGpuData(testDataGPU,testData);
@@ -102,7 +102,7 @@ int main()
 	Aira.addLayer(CREATELAYER(layer::Affine, 40));
 	Aira.addLayer(CREATELAYER(layer::ReLU));
 	Aira.addLayer(CREATELAYER(layer::Affine, 50));
-	Aira.build(inputDataShape, std::make_unique<optimizer::Adam>());
+	Aira.build(inputDataShape, std::make_unique<optimizer::Sgd>(0.01f));
 
 	//////////////////////////////////////////
 	//äwèKÉãÅ[Év

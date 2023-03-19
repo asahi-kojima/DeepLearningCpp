@@ -2,7 +2,7 @@
 #include <vector>
 #include <memory>
 
-#include "../setting.h"
+#include "AISetting.h"
 #include "./Layer/BaseLayer.h"
 #include "./Optimizer/BaseOptimizer.h"
 
@@ -12,8 +12,6 @@ namespace Aoba
 	class AI
 	{
 	public:
-		using dataMemory = layer::BaseLayer::DataMemory;
-		using constDataMemory = layer::BaseLayer::constDataMemory;
 		using InputDataShape = layer::BaseLayer::DataShape;
 		
 		AI();
@@ -26,11 +24,6 @@ namespace Aoba
 		void optimize();
 
 	private:
-		using flowDataType = layer::BaseLayer::flowDataType;
-
-		
-
-
 		void setupLayerInfo(InputDataShape&);
 		void allocLayerMemory();
 
@@ -38,7 +31,7 @@ namespace Aoba
 
 		std::vector<std::unique_ptr<layer::BaseLayer> > mLayerList;
 		std::unique_ptr<optimizer::BaseOptimizer> mOptimizer;
-		dataMemory mInputData;
+		DataMemory mInputData;
 		constDataMemory* mForwardResult;
 	};
 }

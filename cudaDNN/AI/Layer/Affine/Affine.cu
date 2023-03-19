@@ -10,7 +10,6 @@ namespace Aoba {
 	{
 		namespace
 		{
-			using flowDataType = BaseLayer::flowDataType;
 
 
 			__global__ void AffineForward(

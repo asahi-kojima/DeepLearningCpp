@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include "../../setting.h"
+#include "../AISetting.h"
 #include "../Optimizer/BaseOptimizer.h"
 
 namespace Aoba
@@ -10,10 +10,8 @@ namespace Aoba
 		class BaseLayer
 		{
 			friend class Aoba::optimizer::BaseOptimizer;
-		public:
-			using parameterType = f32;
-			using flowDataType = f32;
 
+		public:
 			struct DataShape
 			{
 				u32 batchSize;
@@ -22,22 +20,7 @@ namespace Aoba
 				u32 width;
 			};
 
-			struct DataMemory
-			{
-				flowDataType* address;
-				u32 size;
-			};
 
-			using constDataMemory = const DataMemory;
-
-			struct paramMemory
-			{
-				parameterType* address;
-				u32 size;
-			};
-
-
-		public:
 			BaseLayer() = default;
 			virtual ~BaseLayer() = default;
 

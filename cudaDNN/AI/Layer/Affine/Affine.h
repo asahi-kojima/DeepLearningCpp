@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../setting.h"
+#include "../../AISetting.h"
 #include "../BaseLayer.h"
 
 

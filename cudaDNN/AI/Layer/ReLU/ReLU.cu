@@ -10,9 +10,6 @@ namespace Aoba {
 	{
 		namespace
 		{
-			using flowDataType = BaseLayer::flowDataType;
-
-
 			__global__ void ReLUForward(
 				flowDataType* y, flowDataType* x,
 				flowDataType* mask, u32 outputSize, u32 inputSize, u32 batchSize)
