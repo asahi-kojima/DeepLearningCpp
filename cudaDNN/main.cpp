@@ -8,6 +8,7 @@
 #include "AI/AI.h"
 #include "AI/Layer/Layer.h"
 #include "AI/Optimizer/Optimizer.h"
+#include "AI/LossFunction/LossFunction.h"
 #include "commonGPU.cuh"
 
 
@@ -93,16 +94,12 @@ int main()
 
 
 	AI Aira{};
+	Aira.addLayer(CREATELAYER(layer::Affine, 300));
+	Aira.addLayer(CREATELAYER(layer::ReLU));
+	Aira.addLayer(CREATELAYER(layer::Affine, 100));
+	Aira.addLayer(CREATELAYER(layer::ReLU));
 	Aira.addLayer(CREATELAYER(layer::Affine, 10));
-	Aira.addLayer(CREATELAYER(layer::ReLU));
-	Aira.addLayer(CREATELAYER(layer::Affine, 20));
-	Aira.addLayer(CREATELAYER(layer::ReLU));
-	Aira.addLayer(CREATELAYER(layer::Affine, 30));
-	Aira.addLayer(CREATELAYER(layer::ReLU));
-	Aira.addLayer(CREATELAYER(layer::Affine, 40));
-	Aira.addLayer(CREATELAYER(layer::ReLU));
-	Aira.addLayer(CREATELAYER(layer::Affine, 50));
-	Aira.build(inputDataShape, std::make_unique<optimizer::Sgd>(0.01f));
+	Aira.build(inputDataShape, std::make_unique<optimizer::Sgd>(0.01f), std::make_unique<lossFunction::CrossEntropyWithSM>());
 
 	//////////////////////////////////////////
 	//学習ループ
@@ -111,13 +108,22 @@ int main()
 	for (u32 epoch = 0; epoch < 100; epoch++)
 	{
 		std::cout << "Epoch " << epoch << "start\n";
+		f32 loss = 0.0f;
+		f32 count = 0;
 		for (u32 batchLoop = 0, end = trainingDataNum / inputDataShape.batchSize; batchLoop < end; batchLoop++)
 		{
 			f32* dataAddress = trainingDataGPU.address + batchLoop * (dataSize * inputDataShape.batchSize);
-			Aira.forward(dataAddress);
-			//Aira.backward();
-			//Aira.optimize();
+			f32* labelAddress = trainingLabel.data() + batchLoop * (inputDataShape.batchSize);
+			//f32* labelAddress = trainingLabelGPU.address + batchLoop * (inputDataShape.batchSize);
+			constDataMemory output =  Aira.forward(dataAddress, labelAddress);//今回は出力は使わない。
+			loss += Aira.getLoss(); count++;
+			Aira.backward();
+			Aira.optimize();
+
+			f32 loss = Aira.getLoss();
 		}
+
+		std::cout << "average loss = " << loss / count << std::endl;
 	}
 	
 	return 0;

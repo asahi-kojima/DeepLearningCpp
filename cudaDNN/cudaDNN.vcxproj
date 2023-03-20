@@ -151,7 +151,7 @@
     <CudaCompile Include="AI\AI.cu" />
     <CudaCompile Include="AI\Layer\Affine\Affine.cu" />
     <CudaCompile Include="AI\Layer\ReLU\ReLU.cu" />
-    <CudaCompile Include="AI\Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cu" />
+    <CudaCompile Include="AI\LossFunction\CrossEntropyWithSM\CrossEntropyWithSM.cu" />
     <CudaCompile Include="AI\Optimizer\Adam\Adam.cu" />
   </ItemGroup>
   <ItemGroup>
@@ -161,7 +161,9 @@
     <ClInclude Include="AI\Layer\BaseLayer.h" />
     <ClInclude Include="AI\Layer\Layer.h" />
     <ClInclude Include="AI\Layer\ReLU\ReLU.h" />
-    <ClInclude Include="AI\Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.h" />
+    <ClInclude Include="AI\LossFunction\BaseLossFunction.h" />
+    <ClInclude Include="AI\LossFunction\CrossEntropyWithSM\CrossEntropyWithSM.h" />
+    <ClInclude Include="AI\LossFunction\LossFunction.h" />
     <ClInclude Include="AI\Optimizer\Adam\Adam.h" />
     <ClInclude Include="AI\Optimizer\BaseOptimizer.h" />
     <ClInclude Include="AI\Optimizer\Optimizer.h" />
@@ -178,7 +180,7 @@
   <ItemGroup>
     <ClCompile Include="AI\Layer\Affine\Affine.cpp" />
     <ClCompile Include="AI\Layer\ReLU\ReLU.cpp" />
-    <ClCompile Include="AI\Layer\SMCrossEntropyLoss\SMCrossEntropyLoss.cpp" />
+    <ClCompile Include="AI\LossFunction\CrossEntropyWithSM\CrossEntropyWithSM.cpp" />
     <ClCompile Include="AI\Optimizer\Adam\Adam.cpp" />
     <ClCompile Include="AI\Optimizer\BaseOptimizer.cpp" />
     <ClCompile Include="AI\Optimizer\Sgd\Sgd.cpp" />

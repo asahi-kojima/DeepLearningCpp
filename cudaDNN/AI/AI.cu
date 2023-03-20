@@ -23,36 +23,49 @@ namespace Aoba
 		mLayerList.push_back(std::forward<std::unique_ptr<layer::BaseLayer>>(pLayer));
 	}
 
-	void AI::build(InputDataShape& shape, std::unique_ptr<optimizer::BaseOptimizer>&& optimizer)
+	void AI::build(InputDataShape& shape, std::unique_ptr<optimizer::BaseOptimizer>&& optimizer, std::unique_ptr<lossFunction::BaseLossFunction>&& lossFunction)
 	{
 		//層が最低でも一つあるかのチェック
 		assert(mLayerList.size() > 0);
 
+		//オプティマイザーの登録
+		mOptimizer = std::move(optimizer);
+
+		//損失関数の登録
+		mLossFunction = std::move(lossFunction);
+		
 		//層のメモリを構成する上で必要になるパラメータの設定を行う。
 		setupLayerInfo(shape);
 
 		//各層内におけるメモリの確保
 		allocLayerMemory();
 
-		//オプティマイザーの登録
-		mOptimizer = std::move(optimizer);
 	}
 
-	constDataMemory AI::forward(f32* inputDataAddress)
+	constDataMemory AI::forward(f32* inputDataAddress, void* labelDataAddress)
 	{
+		//入力データのセット
 		mInputData.address = reinterpret_cast<flowDataType*>(inputDataAddress);
 
+		//順伝搬
 		for (auto& layer : mLayerList)
 		{
 			layer->forward();
 		}
 
+		//損失の計算
+		mLoss = mLossFunction->calcLossAndDInput(*mForwardResult, labelDataAddress);
+
+		//最終層の出力を返す。
 		return *mForwardResult;
 	}
 
-	constDataMemory AI::backward(f32*)
+	void AI::backward()
 	{
-		return constDataMemory();
+		for (auto riter = mLayerList.rbegin(), end = mLayerList.rend(); riter != end; riter++)
+		{
+			(*riter)->backward();
+		}
 	}
 
 
@@ -87,6 +100,8 @@ namespace Aoba
 		{
 			layer->setupLayerInfo(&dataShape);
 		}
+
+		mLossFunction->setupDataShape(dataShape);
 	}
 
 	/// <summary>
@@ -101,6 +116,8 @@ namespace Aoba
 			layer->initialize();
 		}
 
+		mLossFunction->initialize();
+
 		//学習時の各層が参照する前層のデータのアドレスを登録
 		constDataMemory* pInputData = &mInputData;
 
@@ -110,6 +127,8 @@ namespace Aoba
 		}
 		mForwardResult = pInputData;
 
+
+		constDataMemory* pDInputData = &(mLossFunction->mDInputData);
 		for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)
 		{
 			pInputData = (*rit)->setDInputData(pInputData);
