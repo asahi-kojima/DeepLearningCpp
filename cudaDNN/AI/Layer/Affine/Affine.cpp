@@ -10,10 +10,11 @@ namespace Aoba::layer
 {
 
 
-	Affine::Affine(u32 outputSize)
+	Affine::Affine(u32 outputSize, f32 weight)
 		:mBatchSize(0)
 		,mInputSize(0)
 		,mOutputSize(outputSize)
+		,mAffineParamWeight(weight)
 	{
 	}
 

@@ -44,7 +44,6 @@ namespace Aoba
 			u32 mBatchSize;
 
 			DataMemory mMask;
-			DataMemory mDefaultMask;
 		};
 
 	}

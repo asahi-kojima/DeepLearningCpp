@@ -7,11 +7,10 @@ namespace Aoba
 {
 	namespace layer
 	{
-
 		class Affine : public BaseLayer
 		{
 		public:
-			Affine(u32);
+			Affine(u32, f32 weight = 0.01f);
 			~Affine();
 			
 		private:

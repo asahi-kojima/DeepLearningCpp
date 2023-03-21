@@ -69,15 +69,15 @@ namespace Aoba {
 
 		void ReLU::initializeOnGPU()
 		{
-			mMask.size = mDefaultMask.size = mInputSize;
+			mMask.size =  mBatchSize * mInputSize;
 			CHECK(cudaMalloc((void**)(&mMask.address), mMask.size * sizeof(f32)));
 			{
-				mDefaultMask.address = new flowDataType[mMask.size];
+				f32 * mask = new flowDataType[mMask.size];
 				for (u32 i = 0; i < mMask.size; i++)
 				{
-					mDefaultMask.address[i] = 1.0f;
+					mask[i] = 1.0f;
 				}
-				CHECK(cudaMemcpy(mMask.address, mDefaultMask.address, mMask.size * sizeof(flowDataType), cudaMemcpyHostToDevice));
+				CHECK(cudaMemcpy(mMask.address, mask, mMask.size * sizeof(flowDataType), cudaMemcpyHostToDevice));
 
 			}
 
@@ -126,6 +126,14 @@ namespace Aoba {
 				mBatchSize);
 #if _DEBUG
 			CHECK(cudaDeviceSynchronize());
+
+			std::vector<f32> forwardResultOnGPU(mForwardResultOnGPU.size);
+			std::vector<f32> inputDataOnGPU(mInputDataOnGPU->size);
+			std::vector<f32> mask(mMask.size);
+			CHECK(cudaMemcpy(forwardResultOnGPU.data(), mForwardResultOnGPU.address, forwardResultOnGPU.size(), cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(inputDataOnGPU.data(), (*mInputDataOnGPU).address, inputDataOnGPU.size(), cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(mask.data(), mMask.address, mask.size(), cudaMemcpyDeviceToHost));
+			CHECK(cudaDeviceSynchronize());
 #endif
 		}
 
@@ -136,7 +144,7 @@ namespace Aoba {
 				(mInputSize + block.x - 1) / block.x,
 				(mBatchSize + block.y - 1) / block.y);
 
-			ReLUForward << <grid, block >> > (
+			ReLUBackward << <grid, block >> > (
 				mBackwardResultOnGPU.address,
 				mDInputDataOnGPU->address,
 				mMask.address,
@@ -144,6 +152,14 @@ namespace Aoba {
 				mInputSize,
 				mBatchSize);
 #if _DEBUG
+			CHECK(cudaDeviceSynchronize());
+
+			std::vector<f32> backwardResultOnGPU(mForwardResultOnGPU.size);
+			std::vector<f32> dInputDataOnGPU(mInputDataOnGPU->size);
+			std::vector<f32> mask(mMask.size);
+			CHECK(cudaMemcpy(backwardResultOnGPU.data(), mBackwardResultOnGPU.address, backwardResultOnGPU.size(), cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(dInputDataOnGPU.data(), (*mDInputDataOnGPU).address, dInputDataOnGPU.size(), cudaMemcpyDeviceToHost));
+			CHECK(cudaMemcpy(mask.data(), mMask.address, mask.size(), cudaMemcpyDeviceToHost));
 			CHECK(cudaDeviceSynchronize());
 #endif
 		}

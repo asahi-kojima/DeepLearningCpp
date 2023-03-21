@@ -43,16 +43,19 @@ namespace Aoba
 				
 				for (u32 i = 0; i < mDataShape.width; i++)
 				{
-					tmp[offset + i] = std::expf(pDataOnCPU[offset + i] - max)/ sum;
+					tmp[offset + i] = ((std::expf(pDataOnCPU[offset + i] - max) / sum) - (label == i ? 1 : 0)) / mDataShape.batchSize;
 				}
 
 				loss += -std::logf(std::expf(pDataOnCPU[offset + label] - max) / sum + 1e-7);
 			}
 
 			//‹t“`”À‚ÌŒvŽZ
+#if _DEBUG
+			std::vector<f32> t(mDInputData.size);
+			for (int i = 0; i < t.size(); i++)t[i] = tmp[i];
+#endif
 
-
-			CHECK(cudaMemcpy(mDInputData.address, tmp, data.size * sizeof(f32), cudaMemcpyHostToDevice));
+			CHECK(cudaMemcpy(mDInputData.address, tmp, mDInputData.size * sizeof(flowDataType), cudaMemcpyHostToDevice));
 
 
 

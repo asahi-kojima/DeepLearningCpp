@@ -48,5 +48,7 @@ namespace Aoba
 		DataMemory mDInputData;
 
 		f32 mLoss;
+
+		bool mIsGpuAvailable = true;
 	};
 }

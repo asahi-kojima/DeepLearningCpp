@@ -94,7 +94,7 @@ namespace Aoba
 			dataShape.width = shape.width;
 		}
 
-		mInputData.size = shape.batchSize * shape.channel * shape.height * shape.width * sizeof(flowDataType);
+		mInputData.size = shape.batchSize * shape.channel * shape.height * shape.width;;
 
 		for (auto& layer : mLayerList)
 		{
