@@ -28,48 +28,9 @@ namespace Aoba::layer
 		mInputSize = pInputData->width;
 
 		pInputData->width = mOutputSize;
-
-		isInitialized = true;
 	}
 
-	void Affine::initialize()
-	{
-		assert(isInitialized);
 
-#ifdef GPU_AVAILABLE
-		initializeOnGPU();
-#else
-		initializeOnCPU();
-#endif // GPUA_VAILABLE
-	}
-
-	void Affine::forward()
-	{
-#ifdef GPU_AVAILABLE
-		forwardOnGPU();
-#else
-		forwardOnCPU();
-#endif	
-
-	}
-
-	void Affine::backward()
-	{
-#ifdef GPU_AVAILABLE
-		backwardOnGPU();
-#else
-		backwardOnCPU();
-#endif	
-	}
-
-	void Affine::terminate()
-	{
-#ifdef GPU_AVAILABLE
-		terminateOnGPU();
-#else
-		terminateOnCPU();
-#endif // GPUA_VAILABLE
-	}
 	
 	void Affine::memcpyHostToDevice()
 	{

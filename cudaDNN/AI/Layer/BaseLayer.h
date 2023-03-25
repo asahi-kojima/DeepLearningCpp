@@ -34,12 +34,40 @@ namespace Aoba
 			/// <summary>
 			/// ƒƒ‚ƒŠ‚ÌŠm•Û‚È‚Ç‚ğs‚¤B
 			/// </summary>
-			virtual void initialize() = 0;
-			virtual void forward() = 0;
-			virtual void backward() = 0;
-			virtual void terminate() = 0;
+			virtual void initialize() final
+			{
+#ifdef GPU_AVAILABLE
+				initializeOnGPU();
+#else
+				initializeOnCPU();
+#endif
+			}
+			virtual void forward() final
+			{
+#ifdef GPU_AVAILABLE
+				forwardOnGPU();
+#else
+				forwardOnCPU();
+#endif
+			}
+			virtual void backward() final
+			{
+#ifdef GPU_AVAILABLE
+				backwardOnGPU();
+#else
+				backwardOnCPU();
+#endif
+			}
+			virtual void terminate() final
+			{
+#ifdef GPU_AVAILABLE
+				terminateOnGPU();
+#else
+				terminateOnCPU();
+#endif
+			}
 
-			
+
 
 			constDataMemory* setInputData(constDataMemory* pInputData)
 			{
@@ -67,9 +95,8 @@ namespace Aoba
 
 		protected:
 
-			bool isInitialized = false;
-			
-			
+
+
 			//CPUŠÖŒW‚Ì•Ï”‚ÆŠÖ”
 			std::vector<paramMemory> pParametersOnCPU;
 			std::vector<paramMemory> pDParametersOnCPU;
@@ -93,7 +120,7 @@ namespace Aoba
 			virtual void terminateOnCPU() = 0;
 
 
-			
+
 
 
 			//GPUŠÖŒW‚Ì•Ï”‚ÆŠÖ”
@@ -124,6 +151,6 @@ namespace Aoba
 
 		};
 
-		
+
 	}
 }

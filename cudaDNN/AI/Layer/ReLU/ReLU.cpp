@@ -22,47 +22,8 @@ namespace Aoba::layer
 		mBatchSize = pInputData->batchSize;
 		mInputSize = pInputData->width;
 		mOutputSize = mInputSize;
-
-		isInitialized = true;
 	}
 
-	void ReLU::initialize()
-	{
-		assert(isInitialized);
-
-#ifdef GPU_AVAILABLE
-		initializeOnGPU();
-#else
-		initializeOnCPU();
-#endif // GPUA_VAILABLE
-	}
-
-	void ReLU::forward()
-	{
-#ifdef GPU_AVAILABLE
-		forwardOnGPU();
-#else
-		forwardOnCPU();
-#endif	
-	}
-
-	void ReLU::backward()
-	{
-#ifdef GPU_AVAILABLE
-		backwardOnGPU();
-#else
-		backwardOnCPU();
-#endif	
-	}
-
-	void ReLU::terminate()
-	{
-#ifdef GPU_AVAILABLE
-		terminateOnGPU();
-#else
-		terminateOnCPU();
-#endif // GPUA_VAILABLE
-	}
 
 	void ReLU::memcpyHostToDevice()
 	{

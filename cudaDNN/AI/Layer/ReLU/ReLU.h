@@ -19,10 +19,6 @@ namespace Aoba
 		private:
 			void setupLayerInfo(DataShape*) override;
 			
-			void initialize() override;
-			void forward() override;
-			void backward() override;
-			void terminate() override;
 
 			void memcpyHostToDevice() override;
 			void memcpyDeviceToHost() override;
