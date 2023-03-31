@@ -28,6 +28,8 @@ namespace Aoba::layer
 		mInputSize = pInputData->width;
 
 		pInputData->width = mOutputSize;
+
+		mAlreadySetup = true;
 	}
 
 

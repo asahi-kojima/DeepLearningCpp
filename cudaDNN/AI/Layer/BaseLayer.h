@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <cassert>
+
 #include "../AISetting.h"
 #include "../Optimizer/BaseOptimizer.h"
 
@@ -36,80 +38,125 @@ namespace Aoba
 			/// </summary>
 			virtual void initialize() final
 			{
-#ifdef GPU_AVAILABLE
-				initializeOnGPU();
-#else
-				initializeOnCPU();
-#endif
+				if (mIsGpuAvailable)
+				{
+					initializeOnGPU();
+					if (_DEBUG)
+						initializeOnCPU();
+				}
+				else
+				{
+					initializeOnCPU();
+				}
 			}
 			virtual void forward() final
 			{
-#ifdef GPU_AVAILABLE
-				forwardOnGPU();
-#else
-				forwardOnCPU();
-#endif
+				if (mIsGpuAvailable)
+				{
+					forwardOnGPU();
+					if (_DEBUG)
+						forwardOnCPU();
+				}
+				else
+				{
+					forwardOnCPU();
+				}
 			}
 			virtual void backward() final
 			{
-#ifdef GPU_AVAILABLE
-				backwardOnGPU();
-#else
-				backwardOnCPU();
-#endif
+				if (mIsGpuAvailable)
+				{
+					backwardOnGPU();
+					if (_DEBUG)
+					{
+						backwardOnCPU();
+					}
+				}
+				else
+				{
+					backwardOnCPU();
+				}
 			}
 			virtual void terminate() final
 			{
-#ifdef GPU_AVAILABLE
-				terminateOnGPU();
-#else
-				terminateOnCPU();
-#endif
+				if (mIsGpuAvailable)
+				{
+					terminateOnGPU();
+					if (_DEBUG)
+					{
+						terminateOnCPU();
+					}
+				}
+				else
+				{
+					terminateOnCPU();
+				}
 			}
 
 
-
-			constDataMemory* setInputData(constDataMemory* pInputData)
+			virtual void setInputData(DataMemory*& pInputData) final
 			{
-#ifdef GPU_AVAILABLE
-				mInputDataOnGPU = pInputData;
-				return &mForwardResultOnGPU;
-#else
+				if (mIsGpuAvailable)
+				{
+					mInputDataOnGPU = pInputData;
+					pInputData = &mForwardResultOnGPU;
+				}
+				else
+				{
+					mInputDataOnCPU = pInputData;
+					pInputData = &mForwardResultOnCPU;
+				}
+			}
+			virtual void setDInputData(DataMemory*& pDInputData) final
+			{
+				if (mIsGpuAvailable)
+				{
+					mDInputDataOnGPU = pDInputData;
+					pDInputData = &mBackwardResultOnGPU;
+				}
+				else
+				{
+					mDInputDataOnGPU = pDInputData;
+					pDInputData = &mBackwardResultOnCPU;
+				}
+			}
+#if _DEBUG
+			virtual void setInputDataForGpuDebug(DataMemory*& pInputData) final
+			{
 				mInputDataOnCPU = pInputData;
-				return &mForwardResultOnCPU;
-#endif
+				pInputData = &mForwardResultOnCPU;
 			}
-			constDataMemory* setDInputData(constDataMemory* pDInputData)
+			virtual void setDInputDataForGpuDebug(DataMemory*& pDInputData) final
 			{
-#ifdef GPU_AVAILABLE
 				mDInputDataOnGPU = pDInputData;
-				return &mBackwardResultOnGPU;
-#else
-				mDInputDataOnGPU = pDInputData;
-				return &mBackwardResultOnCPU;
+				pDInputData = &mBackwardResultOnCPU;
+			}
 #endif
+
+			virtual void setIsGpuAvailable(bool which) final
+			{
+				mIsGpuAvailable = which;
 			}
 
 			virtual void memcpyHostToDevice() = 0;
 			virtual void memcpyDeviceToHost() = 0;
 
 		protected:
-
-
+			bool mIsGpuAvailable = false;
 
 			//CPUä÷åWÇÃïœêîÇ∆ä÷êî
 			std::vector<paramMemory> pParametersOnCPU;
 			std::vector<paramMemory> pDParametersOnCPU;
 			DataMemory mForwardResultOnCPU;
 			DataMemory mBackwardResultOnCPU;
-			constDataMemory* mInputDataOnCPU;
-			constDataMemory* mDInputDataOnCPU;
+			DataMemory* mInputDataOnCPU;
+			DataMemory* mDInputDataOnCPU;
 
-			void setInputDataOnCPU(constDataMemory* pInputDataOnCPU)
+			void setInputDataOnCPU(DataMemory* pInputDataOnCPU)
 			{
 				mInputDataOnCPU = pInputDataOnCPU;
 			}
-			void setDInputDataOnCPU(constDataMemory* pDInputDataOnCPU)
+			void setDInputDataOnCPU(DataMemory* pDInputDataOnCPU)
 			{
 				mDInputDataOnCPU = pDInputDataOnCPU;
 			}
@@ -128,14 +175,14 @@ namespace Aoba
 			std::vector<paramMemory> pDParametersOnGPU;
 			DataMemory mForwardResultOnGPU;
 			DataMemory mBackwardResultOnGPU;
-			constDataMemory* mInputDataOnGPU;
-			constDataMemory* mDInputDataOnGPU;
+			DataMemory* mInputDataOnGPU;
+			DataMemory* mDInputDataOnGPU;
 
-			void setInputDataOnGPU(constDataMemory* pInputDataOnGPU)
+			void setInputDataOnGPU(DataMemory* pInputDataOnGPU)
 			{
 				mInputDataOnGPU = pInputDataOnGPU;
 			}
-			void setDInputDataOnGPU(constDataMemory* pDInputDataOnGPU)
+			void setDInputDataOnGPU(DataMemory* pDInputDataOnGPU)
 			{
 				mDInputDataOnGPU = pDInputDataOnGPU;
 			}

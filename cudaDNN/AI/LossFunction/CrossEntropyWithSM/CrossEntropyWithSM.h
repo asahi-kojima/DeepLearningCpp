@@ -16,8 +16,8 @@ namespace Aoba
 			void initializeOnGPU() override;
 			void initializeOnCPU() override;
 
-			f32 calcLossAndDInputOnGPU(constDataMemory&, void*) override;
-			f32 calcLossAndDInputOnCPU(constDataMemory&, void*) override;
+			f32 calcLossAndDInputOnGPU(DataMemory&, void*) override;
+			f32 calcLossAndDInputOnCPU(DataMemory&, void*) override;
 		};
 	}
 }

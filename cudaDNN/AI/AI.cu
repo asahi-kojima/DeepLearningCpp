@@ -29,11 +29,16 @@ namespace Aoba
 		assert(mLayerList.size() > 0);
 
 		//オプティマイザーの登録
+		assert(optimizer != nullptr);
 		mOptimizer = std::move(optimizer);
 
 		//損失関数の登録
+		assert(lossFunction != nullptr);
 		mLossFunction = std::move(lossFunction);
-		
+
+		//GPUの利用が可能かチェックし、情報を出力。また全ての層にその情報を送る。
+		checkGpuIsAvailable();
+
 		//層のメモリを構成する上で必要になるパラメータの設定を行う。
 		setupLayerInfo(shape);
 
@@ -42,42 +47,42 @@ namespace Aoba
 
 	}
 
-	constDataMemory AI::forward(f32* inputDataAddress, void* labelDataAddress)
+	void AI::setLearningData(DataMemory*, DataMemory*)
 	{
-		//入力データのセット
-		mInputData.address = reinterpret_cast<flowDataType*>(inputDataAddress);
-
-		//順伝搬
-		for (auto& layer : mLayerList)
-		{
-			layer->forward();
-		}
-
-		//損失の計算
-		mLoss = mLossFunction->calcLossAndDInput(*mForwardResult, labelDataAddress);
-
-		//最終層の出力を返す。
-		return *mForwardResult;
 	}
 
-	void AI::backward()
+	void AI::deepLearning()
 	{
-		for (auto riter = mLayerList.rbegin(), end = mLayerList.rend(); riter != end; riter++)
-		{
-			(*riter)->backward();
-		}
+		//
+		//順伝搬用のデータをここで準備する。
+		//
+
+
+		forward();
+		backward();
+		optimize();
 	}
 
 
-	void AI::optimize()
+	DataMemory AI::operator()(f32* inputData)
 	{
-		for (auto& layer : mLayerList)
-		{
-			mOptimizer->optimize(layer);
-		}
+		return DataMemory();
 	}
 
 #pragma endregion
+
+#pragma region private
+	void AI::checkGpuIsAvailable()
+	{
+		//GPU利用可能かの処理が入る。
+		mIsGpuAvailable = true;
+
+
+		for (auto& layer : mLayerList)
+		{
+			layer->setIsGpuAvailable(mIsGpuAvailable);
+		}
+	}
 
 	/// <summary>
 	/// 各層の内部パラメータを計算する。
@@ -94,7 +99,13 @@ namespace Aoba
 			dataShape.width = shape.width;
 		}
 
-		mInputData.size = shape.batchSize * shape.channel * shape.height * shape.width;;
+		mInputTrainingData.size = shape.batchSize * shape.channel * shape.height * shape.width;
+#if _DEBUG
+		if (mIsGpuAvailable)
+		{
+			mInputTrainingDataForGpuDebug.size = shape.batchSize * shape.channel * shape.height * shape.width;
+		}
+#endif
 
 		for (auto& layer : mLayerList)
 		{
@@ -119,23 +130,69 @@ namespace Aoba
 		mLossFunction->initialize();
 
 		//学習時の各層が参照する前層のデータのアドレスを登録
-		constDataMemory* pInputData = &mInputData;
+		//まず基点となるデータをセット
+		DataMemory* pInputData = &mInputTrainingData;
+#if _DEBUG
+		DataMemory* pInputDataForGpuDebug = &mInputTrainingDataForGpuDebug;
+#endif
 
+		//ここで各層に参照するべきデータを順に渡していく。
 		for (auto& layer : mLayerList)
 		{
-			pInputData = layer->setInputData(pInputData);
+			layer->setInputData(pInputData);
+#if _DEBUG
+			layer->setInputDataForGpuDebug(pInputDataForGpuDebug);
+#endif
 		}
+
+		//損失関数に渡したり、その他用途のために順伝搬の出力をここにセットする。
 		mForwardResult = pInputData;
+#if _DEBUG
+		mForwardResultForGpuDebug = pInputDataForGpuDebug;
+#endif
 
 
-		constDataMemory* pDInputData = &(mLossFunction->mDInputData);
+		DataMemory* pDInputData = &(mLossFunction->mDInputData);
+#if _DEBUG
+		DataMemory* pDInputDataForGpuDebug = &(mLossFunction->mDInputDataForGpuDebug);
+#endif
 		for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)
 		{
-			pInputData = (*rit)->setDInputData(pInputData);
+			(*rit)->setDInputData(pDInputData);
+#if _DEBUG
+			(*rit)->setDInputDataForGpuDebug(pDInputDataForGpuDebug);
+#endif
 		}
 	}
-	
+
+	void AI::forward()
+	{
+		//順伝搬
+		for (auto& layer : mLayerList)
+		{
+			layer->forward();
+		}
+
+		//損失の計算
+		mLoss = mLossFunction->calcLossAndDInput(*mForwardResult, mInputLabelData.address);
+	}
+
+	void AI::backward()
+	{
+		for (auto riter = mLayerList.rbegin(), end = mLayerList.rend(); riter != end; riter++)
+		{
+			(*riter)->backward();
+		}
+	}
 
 
+	void AI::optimize()
+	{
+		for (auto& layer : mLayerList)
+		{
+			mOptimizer->optimize(layer);
+		}
+	}
 
+#pragma endregion
 }

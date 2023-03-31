@@ -22,7 +22,7 @@ namespace Aoba
 #endif //  GPU_AVAILABLE
 			}
 
-			f32 calcLossAndDInput(constDataMemory& data, void* label)
+			f32 calcLossAndDInput(DataMemory& data, void* label)
 			{
 #ifdef  GPU_AVAILABLE
 				return calcLossAndDInputOnGPU(data, label);
@@ -30,15 +30,18 @@ namespace Aoba
 				return calcLossAndDInputOnCPU(data, label);
 #endif //  GPU_AVAILABLE
 			}
-			DataMemory mDInputData;
 
+			DataMemory mDInputData;
+#if _DEBUG
+			DataMemory mDInputDataForGpuDebug;
+#endif
 		protected:
 			layer::BaseLayer::DataShape mDataShape;
 			virtual void initializeOnGPU()=0;
 			virtual void initializeOnCPU()=0;
 
-			virtual f32 calcLossAndDInputOnGPU(constDataMemory&, void*) = 0;
-			virtual f32 calcLossAndDInputOnCPU(constDataMemory&, void*) = 0;
+			virtual f32 calcLossAndDInputOnGPU(DataMemory&, void*) = 0;
+			virtual f32 calcLossAndDInputOnCPU(DataMemory&, void*) = 0;
 		};
 	}
 }

@@ -22,6 +22,8 @@ namespace Aoba::layer
 		mBatchSize = pInputData->batchSize;
 		mInputSize = pInputData->width;
 		mOutputSize = mInputSize;
+
+		mAlreadySetup = true;
 	}
 
 

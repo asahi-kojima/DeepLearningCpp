@@ -11,7 +11,7 @@ namespace Aoba
 			CHECK(cudaMalloc((void**)(&(mDInputData.address)), mDInputData.size * sizeof(parameterType)));
 		}
 
-		f32 CrossEntropyWithSM::calcLossAndDInputOnGPU(constDataMemory& data, void* label)
+		f32 CrossEntropyWithSM::calcLossAndDInputOnGPU(DataMemory& data, void* label)
 		{
 			f32 loss = 0;
 			f32* pDataOnCPU = new f32[data.size];

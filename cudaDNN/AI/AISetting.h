@@ -4,16 +4,28 @@
 
 namespace Aoba
 {
-	using parameterType = f32;
-	using flowDataType = f32;
+	using cf32 = const f32;
 
 	struct DataMemory
 	{
 		f32* address;
 		u32 size;
+		u32 byteSize;
 	};
 
-	using constDataMemory = const DataMemory;
+
+	//struct DataMemory
+	//{
+	//	cf32* address;
+	//	u32 size;
+	//	u32 byteSize;
+	//	DataMemory(DataMemory data)
+	//		:address(data.address)
+	//		,size(data.size)
+	//		,byteSize(data.byteSize)
+	//	{
+	//	}
+	//};
 
 	struct paramMemory
 	{

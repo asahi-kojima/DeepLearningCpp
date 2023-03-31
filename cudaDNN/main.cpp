@@ -134,6 +134,9 @@ int main()
 	Aira.addLayer(CREATELAYER(layer::Affine, 60, 0.001f));
 	Aira.addLayer(CREATELAYER(layer::ReLU));
 	Aira.addLayer(CREATELAYER(layer::Affine, 10,0.001f));
+
+	AI::InputData inputData(trainingData.data(), 28 * 28, trainingDataNum);
+
 	Aira.build(inputDataShape, std::make_unique<optimizer::Sgd>(0.001f), std::make_unique<lossFunction::CrossEntropyWithSM>());
 
 	//////////////////////////////////////////
@@ -149,18 +152,9 @@ int main()
 		{
 			f32* dataAddress = trainingDataGPU.address + batchLoop * (dataSize * inputDataShape.batchSize);
 			f32* labelAddress = trainingLabel.data() + batchLoop * (inputDataShape.batchSize);
-#ifdef _DEBUG
-			{
-				std::vector<f32> tester(dataSize * inputDataShape.batchSize);
-				CHECK(cudaMemcpy(tester.data(), dataAddress, tester.size() * sizeof(Aoba::flowDataType), cudaMemcpyDeviceToHost));
-			}
-#endif // _DEBUG
 
-			constDataMemory output =  Aira.forward(dataAddress, labelAddress);//ç°âÒÇÕèoóÕÇÕégÇÌÇ»Ç¢ÅB
-			loss += Aira.getLoss(); count++;
-			Aira.backward();
-			Aira.optimize();
 
+			Aira.learning(dataAddress, labelAddress);
 			f32 loss = Aira.getLoss();
 		}
 

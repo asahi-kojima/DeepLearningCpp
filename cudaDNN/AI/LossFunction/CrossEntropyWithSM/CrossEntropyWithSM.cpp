@@ -10,7 +10,7 @@ namespace Aoba
 
 		}
 
-		f32 CrossEntropyWithSM::calcLossAndDInputOnCPU(constDataMemory& data, void* label)
+		f32 CrossEntropyWithSM::calcLossAndDInputOnCPU(DataMemory& data, void* label)
 		{
 			return 0;
 		}
