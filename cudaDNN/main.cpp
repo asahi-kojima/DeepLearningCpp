@@ -90,12 +90,12 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 void setupMnistGpuData(Aoba::DataMemory& dataGPU, std::vector<f32>& data)
 {
 	dataGPU.size = data.size();
-	CHECK(cudaMalloc((void**)(&(dataGPU.address)), data.size() * sizeof(Aoba::flowDataType)));
-	CHECK(cudaMemcpy(dataGPU.address, data.data(), data.size() * sizeof(Aoba::flowDataType), cudaMemcpyHostToDevice));
+	CHECK(cudaMalloc((void**)(&(dataGPU.address)), data.size() * sizeof(f32)));
+	CHECK(cudaMemcpy(dataGPU.address, data.data(), data.size() * sizeof(f32), cudaMemcpyHostToDevice));
 #ifdef _DEBUG
 	{
 		std::vector<f32> tester(data.size());
-		CHECK(cudaMemcpy(tester.data(), dataGPU.address, tester.size() * sizeof(Aoba::flowDataType), cudaMemcpyDeviceToHost));
+		CHECK(cudaMemcpy(tester.data(), dataGPU.address, tester.size() * sizeof(f32), cudaMemcpyDeviceToHost));
 	}
 #endif // _DEBUG
 }
@@ -122,6 +122,7 @@ int main()
 
 	//データ形状は自分の手で決める。
 	AI::InputDataShape inputDataShape = { 100, 1, 1, 28 * 28 };
+	AI::InputDataInterpretation interpretation(trainingDataNum, inputDataShape);
 
 	//////////////////////////////////////////
 	//AIの準備
@@ -135,9 +136,8 @@ int main()
 	Aira.addLayer(CREATELAYER(layer::ReLU));
 	Aira.addLayer(CREATELAYER(layer::Affine, 10,0.001f));
 
-	AI::InputData inputData(trainingData.data(), 28 * 28, trainingDataNum);
 
-	Aira.build(inputDataShape, std::make_unique<optimizer::Sgd>(0.001f), std::make_unique<lossFunction::CrossEntropyWithSM>());
+	Aira.build(interpretation, std::make_unique<optimizer::Sgd>(0.001f), std::make_unique<lossFunction::CrossEntropyWithSM>());
 
 	//////////////////////////////////////////
 	//学習ループ
@@ -153,8 +153,7 @@ int main()
 			f32* dataAddress = trainingDataGPU.address + batchLoop * (dataSize * inputDataShape.batchSize);
 			f32* labelAddress = trainingLabel.data() + batchLoop * (inputDataShape.batchSize);
 
-
-			Aira.learning(dataAddress, labelAddress);
+			Aira.deepLearning(trainingData.data(), trainingLabel.data());
 			f32 loss = Aira.getLoss();
 		}
 

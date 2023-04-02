@@ -11,8 +11,8 @@ namespace Aoba {
 		namespace
 		{
 			__global__ void ReLUForward(
-				flowDataType* y, flowDataType* x,
-				flowDataType* mask, u32 outputSize, u32 inputSize, u32 batchSize)
+				f32* y, f32* x,
+				f32* mask, u32 outputSize, u32 inputSize, u32 batchSize)
 			{
 				u32 xid = blockIdx.x * blockDim.x + threadIdx.x;
 				u32 yid = blockIdx.y * blockDim.y + threadIdx.y;
@@ -44,8 +44,8 @@ namespace Aoba {
 
 
 
-			__global__ void ReLUBackward(flowDataType* y, flowDataType* x,
-				flowDataType* mask, u32 outputSize, u32 inputSize, u32 batchSize)
+			__global__ void ReLUBackward(f32* y, f32* x,
+				f32* mask, u32 outputSize, u32 inputSize, u32 batchSize)
 			{
 				u32 xid = blockIdx.x * blockDim.x + threadIdx.x;
 				u32 yid = blockIdx.y * blockDim.y + threadIdx.y;
@@ -69,15 +69,15 @@ namespace Aoba {
 
 		void ReLU::initializeOnGPU()
 		{
-			mMask.size =  mBatchSize * mInputSize;
-			CHECK(cudaMalloc((void**)(&mMask.address), mMask.size * sizeof(f32)));
+			mMaskOnGPU.size =  mBatchSize * mInputSize;
+			CHECK(cudaMalloc((void**)(&mMaskOnGPU.address), mMaskOnGPU.size * sizeof(f32)));
 			{
-				f32 * mask = new flowDataType[mMask.size];
-				for (u32 i = 0; i < mMask.size; i++)
+				f32 * mask = new f32[mMaskOnGPU.size];
+				for (u32 i = 0; i < mMaskOnGPU.size; i++)
 				{
 					mask[i] = 1.0f;
 				}
-				CHECK(cudaMemcpy(mMask.address, mask, mMask.size * sizeof(flowDataType), cudaMemcpyHostToDevice));
+				CHECK(cudaMemcpy(mMaskOnGPU.address, mask, mMaskOnGPU.size * sizeof(f32), cudaMemcpyHostToDevice));
 
 			}
 
@@ -85,27 +85,27 @@ namespace Aoba {
 			mForwardResultOnGPU.size = mBatchSize * mOutputSize;
 			mBackwardResultOnGPU.size = mBatchSize * mInputSize;
 			CHECK(cudaMalloc((void**)(&(mForwardResultOnGPU.address)),
-				mForwardResultOnGPU.size * sizeof(flowDataType)));
+				mForwardResultOnGPU.size * sizeof(f32)));
 			CHECK(cudaMalloc((void**)(&(mBackwardResultOnGPU.address)),
-				mBackwardResultOnGPU.size * sizeof(flowDataType)));
+				mBackwardResultOnGPU.size * sizeof(f32)));
 			{
-				flowDataType* tmp = new flowDataType[mForwardResultOnGPU.size];
+				f32* tmp = new f32[mForwardResultOnGPU.size];
 				for (u32 idx = 0; idx < mForwardResultOnGPU.size; idx++)
 				{
 					tmp[idx] = 0.0f;
 				}
 				CHECK(cudaMemcpy(mForwardResultOnGPU.address, tmp,
-					mForwardResultOnGPU.size * sizeof(flowDataType), cudaMemcpyHostToDevice));
+					mForwardResultOnGPU.size * sizeof(f32), cudaMemcpyHostToDevice));
 				delete[] tmp;
 
 
-				tmp = new flowDataType[mBackwardResultOnGPU.size];
+				tmp = new f32[mBackwardResultOnGPU.size];
 				for (u32 idx = 0; idx < mBackwardResultOnGPU.size; idx++)
 				{
 					tmp[idx] = 0.0f;
 				}
 				CHECK(cudaMemcpy(mBackwardResultOnGPU.address, tmp,
-					mBackwardResultOnGPU.size * sizeof(flowDataType), cudaMemcpyHostToDevice));
+					mBackwardResultOnGPU.size * sizeof(f32), cudaMemcpyHostToDevice));
 				delete[] tmp;
 			}
 		}
@@ -120,21 +120,10 @@ namespace Aoba {
 			ReLUForward << <grid, block >> > (
 				mForwardResultOnGPU.address,
 				mInputDataOnGPU->address,
-				mMask.address,
+				mMaskOnGPU.address,
 				mOutputSize,
 				mInputSize,
 				mBatchSize);
-#if _DEBUG
-			CHECK(cudaDeviceSynchronize());
-
-			std::vector<f32> forwardResultOnGPU(mForwardResultOnGPU.size);
-			std::vector<f32> inputDataOnGPU(mInputDataOnGPU->size);
-			std::vector<f32> mask(mMask.size);
-			CHECK(cudaMemcpy(forwardResultOnGPU.data(), mForwardResultOnGPU.address, forwardResultOnGPU.size(), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(inputDataOnGPU.data(), (*mInputDataOnGPU).address, inputDataOnGPU.size(), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(mask.data(), mMask.address, mask.size(), cudaMemcpyDeviceToHost));
-			CHECK(cudaDeviceSynchronize());
-#endif
 		}
 
 		void ReLU::backwardOnGPU()
@@ -147,21 +136,10 @@ namespace Aoba {
 			ReLUBackward << <grid, block >> > (
 				mBackwardResultOnGPU.address,
 				mDInputDataOnGPU->address,
-				mMask.address,
+				mMaskOnGPU.address,
 				mOutputSize,
 				mInputSize,
 				mBatchSize);
-#if _DEBUG
-			CHECK(cudaDeviceSynchronize());
-
-			std::vector<f32> backwardResultOnGPU(mForwardResultOnGPU.size);
-			std::vector<f32> dInputDataOnGPU(mInputDataOnGPU->size);
-			std::vector<f32> mask(mMask.size);
-			CHECK(cudaMemcpy(backwardResultOnGPU.data(), mBackwardResultOnGPU.address, backwardResultOnGPU.size(), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(dInputDataOnGPU.data(), (*mDInputDataOnGPU).address, dInputDataOnGPU.size(), cudaMemcpyDeviceToHost));
-			CHECK(cudaMemcpy(mask.data(), mMask.address, mask.size(), cudaMemcpyDeviceToHost));
-			CHECK(cudaDeviceSynchronize());
-#endif
 		}
 
 		void ReLU::terminateOnGPU()

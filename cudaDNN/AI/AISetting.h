@@ -13,23 +13,10 @@ namespace Aoba
 		u32 byteSize;
 	};
 
-
-	//struct DataMemory
-	//{
-	//	cf32* address;
-	//	u32 size;
-	//	u32 byteSize;
-	//	DataMemory(DataMemory data)
-	//		:address(data.address)
-	//		,size(data.size)
-	//		,byteSize(data.byteSize)
-	//	{
-	//	}
-	//};
-
 	struct paramMemory
 	{
 		f32* address;
 		u32 size;
+		u32 byteSize;
 	};
 }

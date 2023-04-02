@@ -28,21 +28,8 @@ namespace Aoba::layer
 		mInputSize = pInputData->width;
 
 		pInputData->width = mOutputSize;
-
-		mAlreadySetup = true;
 	}
 
-
-	
-	void Affine::memcpyHostToDevice()
-	{
-
-	}
-
-	void Affine::memcpyDeviceToHost()
-	{
-
-	}
 
 
 
@@ -53,6 +40,7 @@ namespace Aoba::layer
 	void Affine::initializeOnCPU()
 	{
 		pParametersOnCPU.resize(2);
+		pDParametersOnCPU.resize(2);
 
 		//Affine/dAffineパラメータ
 		//(1)参照
@@ -62,8 +50,8 @@ namespace Aoba::layer
 		affineParam.size = mOutputSize * mInputSize;
 		affineDParam.size = mOutputSize * mInputSize;
 		//(3)パラメータ用の領域確保
-		affineParam.address = new parameterType[affineParam.size];
-		affineDParam.address = new parameterType[affineDParam.size];
+		affineParam.address = new f32[affineParam.size];
+		affineDParam.address = new f32[affineDParam.size];
 		//(4)初期化
 		{
 			std::random_device seed_gen;
@@ -87,8 +75,8 @@ namespace Aoba::layer
 		biasParam.size = mOutputSize;
 		biasDParam.size = mOutputSize;
 		//(3)パラメータ用の領域確保
-		biasParam.address = new parameterType[biasParam.size];
-		biasDParam.address = new parameterType[biasDParam.size];
+		biasParam.address = new f32[biasParam.size];
+		biasDParam.address = new f32[biasDParam.size];
 		//(4)初期化
 		{
 			for (u32 idx = 0; idx < biasParam.size; idx++)
@@ -101,20 +89,104 @@ namespace Aoba::layer
 				biasDParam.address[idx] = 0.0f;
 			}
 		}
+
+		mForwardResultOnCPU.size = mBatchSize * mOutputSize;
+		mBackwardResultOnCPU.size = mBatchSize * mInputSize;
+
+		mForwardResultOnCPU.address = new f32[mForwardResultOnCPU.size];
+		mBackwardResultOnCPU.address = new f32[mBackwardResultOnCPU.size];
 	}
 
 	void Affine::forwardOnCPU()
 	{
-
+		for (u32 N = 0; N < mBatchSize; N++)
+		{
+			for (u32 o = 0; o < mOutputSize; o++)
+			{
+				u32 index = N * mOutputSize + o;
+				f32 result = 0.0f;
+				for (u32 i = 0; i < mInputSize; i++)
+				{
+#if _DEBUG
+					assert(pParametersOnCPU[0].size > o * mInputSize + i);
+					assert(mInputDataOnCPU->size > N * mInputSize + i);
+#endif
+					result += pParametersOnCPU[0].address[o * mInputSize + i] * mInputDataOnCPU->address[N * mInputSize + i];
+				}
+#if _DEBUG
+				assert(mForwardResultOnCPU.size > index);
+				assert(pParametersOnCPU[1].size > o);
+#endif
+				mForwardResultOnCPU.address[index] = result + pParametersOnCPU[1].address[o];
+			}
+		}
 	}
 
 	void Affine::backwardOnCPU()
 	{
+		for (u32 o = 0; o < mOutputSize; o++)
+		{
+			for (u32 i = 0; i < mInputSize; i++)
+			{
+				f32 result = 0.0f;
+				for (u32 N = 0; N < mBatchSize; N++)
+				{
+#if _DEBUG
+					assert(mInputDataOnCPU->size > N * mInputSize + i);
+					assert(mDInputDataOnCPU->size > N * mOutputSize + o);
+#endif
+					result += mInputDataOnCPU->address[N * mInputSize + i] * mDInputDataOnCPU->address[N * mOutputSize + o];
+				}
+#if _DEBUG
+				assert(pDParametersOnCPU[0].size > o * mInputSize + i);
+#endif
+				pDParametersOnCPU[0].address[o * mInputSize + i] = result;
+			}
 
+			f32 result = 0.0f;
+			for (u32 N = 0; N < mBatchSize; N++)
+			{
+#if _DEBUG
+				assert(mDInputDataOnCPU->size > N * mOutputSize + o);
+#endif
+				result += mDInputDataOnCPU->address[N * mOutputSize + o];
+			}
+#if _DEBUG
+			assert(pDParametersOnCPU[1].size > o);
+#endif
+			pDParametersOnCPU[1].address[o] = result;
+		}
+
+		for (u32 N = 0; N < mBatchSize; N++)
+		{
+			for (u32 i = 0; i < mInputSize; i++)
+			{
+				f32 result = 0.0f;
+				for (u32 o = 0; o < mOutputSize; o++)
+				{
+#if _DEBUG
+					assert(pParametersOnCPU[0].size > o * mInputSize + i);
+					assert(mDInputDataOnCPU->size > N * mOutputSize + o);
+#endif
+					result += pParametersOnCPU[0].address[o * mInputSize + i] * mDInputDataOnCPU->address[N * mOutputSize + o];
+				}
+#if _DEBUG
+				assert(mBackwardResultOnCPU.size > N * mInputSize + i);
+#endif
+				mBackwardResultOnCPU.address[N * mInputSize + i] = result;
+			}
+		}
 	}
 
 	void Affine::terminateOnCPU()
 	{
+		delete[] pParametersOnCPU[0].address;
+		delete[] pParametersOnCPU[1].address;
 
+		delete[] pDParametersOnCPU[0].address;
+		delete[] pDParametersOnCPU[1].address;
 	}
 } 
+
+#if _DEBUG
+#endif

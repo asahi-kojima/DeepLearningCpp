@@ -20,9 +20,6 @@ namespace Aoba
 			void setupLayerInfo(DataShape*) override;
 			
 
-			void memcpyHostToDevice() override;
-			void memcpyDeviceToHost() override;
-
 			void initializeOnCPU() override;
 			void forwardOnCPU()  override;
 			void backwardOnCPU() override;
@@ -39,7 +36,8 @@ namespace Aoba
 			u32 mInputSize;
 			u32 mBatchSize;
 
-			DataMemory mMask;
+			DataMemory mMaskOnCPU;
+			DataMemory mMaskOnGPU;
 		};
 
 	}

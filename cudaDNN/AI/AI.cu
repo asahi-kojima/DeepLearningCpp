@@ -23,7 +23,7 @@ namespace Aoba
 		mLayerList.push_back(std::forward<std::unique_ptr<layer::BaseLayer>>(pLayer));
 	}
 
-	void AI::build(InputDataShape& shape, std::unique_ptr<optimizer::BaseOptimizer>&& optimizer, std::unique_ptr<lossFunction::BaseLossFunction>&& lossFunction)
+	void AI::build(InputDataInterpretation& interpretation, std::unique_ptr<optimizer::BaseOptimizer>&& optimizer, std::unique_ptr<lossFunction::BaseLossFunction>&& lossFunction)
 	{
 		//層が最低でも一つあるかのチェック
 		assert(mLayerList.size() > 0);
@@ -40,27 +40,88 @@ namespace Aoba
 		checkGpuIsAvailable();
 
 		//層のメモリを構成する上で必要になるパラメータの設定を行う。
-		setupLayerInfo(shape);
+		mInterpretation = interpretation;
+		setupLayerInfo(mInterpretation.shape);
 
 		//各層内におけるメモリの確保
 		allocLayerMemory();
 
 	}
 
-	void AI::setLearningData(DataMemory*, DataMemory*)
-	{
-	}
 
-	void AI::deepLearning()
+	void AI::deepLearning(f32* pTrainingData, f32* pTrainingLabel)
 	{
+		mInputTrainingDataStartAddressOnCpu = pTrainingData;
+		mInputTrainingLableStartAddressOnCpu = pTrainingLabel;
+
+		mInputTrainingData.size = mInterpretation.shape.batchSize * mInterpretation.elementNum;
+		mInputTrainingData.byteSize = mInterpretation.shape.batchSize * mInterpretation.byteSize;
+		mInputLabelData.size = mInterpretation.shape.batchSize * 1;
+		mInputLabelData.byteSize = mInterpretation.shape.batchSize * sizeof(f32);
+
+#if _DEBUG
+		mInputTrainingDataForGpuDebug.size = mInterpretation.shape.batchSize * mInterpretation.elementNum;
+		mInputTrainingDataForGpuDebug.byteSize = mInterpretation.shape.batchSize * mInterpretation.byteSize;
+		mInputLabelDataForGpuDebug.size = mInterpretation.shape.batchSize * 1;
+		mInputLabelDataForGpuDebug.byteSize = mInterpretation.shape.batchSize * sizeof(f32);
+#endif
+
 		//
 		//順伝搬用のデータをここで準備する。
 		//
+		auto printer = [](std::string name, u32 value, u32 stringLen = 15)
+		{
+			u32 res = stringLen - name.length();
+			std::cout << name + std::string(' ', res) << " = " << value << "\n";
+		};
+		std::cout << "TrainingData setup now" << std::endl;
+		printer("TotalData num", mInterpretation.totalDataNum);
+		printer("channel", mInterpretation.shape.channel);
+		printer("height", mInterpretation.shape.height);
+		printer("width", mInterpretation.shape.width);
+
+		u32 loopTime = mInterpretation.totalDataNum / mInterpretation.shape.batchSize;
+		for (u32 loop = 0; loop < loopTime; loop++)
+		{
+			u32 offset = (mInterpretation.shape.batchSize * mInterpretation.elementNum) * loop;
+			if (mIsGpuAvailable)
+			{
+				mInputTrainingData.address = mInputTrainingDataStartAddressOnGpu + offset;
+				mInputLabelData.address = mInputTrainingLableStartAddressOnGpu + offset;
+#if _DEBUG
+				mInputTrainingDataForGpuDebug.address = mInputTrainingDataStartAddressOnCpu + offset;
+				mInputLabelDataForGpuDebug.address = mInputTrainingLableStartAddressOnCpu + offset;
+#endif
+			}
+			else
+			{
+				mInputTrainingData.address = mInputTrainingDataStartAddressOnCpu + offset;
+				mInputLabelData.address = mInputTrainingLableStartAddressOnCpu + offset;
+			}
+			forward();
+#if _DEBUG
+			//
+			//ここで整合性チェック
+			//
+#endif
 
 
-		forward();
-		backward();
-		optimize();
+
+			backward();
+#if _DEBUG
+			//
+			//ここで整合性チェック
+			//
+#endif
+
+
+			optimize();
+#if _DEBUG
+			//
+			//ここで整合性チェック
+			//
+#endif
+		}
 	}
 
 
@@ -82,6 +143,10 @@ namespace Aoba
 		{
 			layer->setIsGpuAvailable(mIsGpuAvailable);
 		}
+
+		mLossFunction->setIsGpuAvailable(mIsGpuAvailable);
+
+		mOptimizer->setIsGpuAvailable(mIsGpuAvailable);
 	}
 
 	/// <summary>
@@ -141,26 +206,48 @@ namespace Aoba
 		{
 			layer->setInputData(pInputData);
 #if _DEBUG
-			layer->setInputDataForGpuDebug(pInputDataForGpuDebug);
+			if (mIsGpuAvailable)
+			{
+				layer->setInputDataForGpuDebug(pInputDataForGpuDebug);
+			}
 #endif
 		}
 
 		//損失関数に渡したり、その他用途のために順伝搬の出力をここにセットする。
 		mForwardResult = pInputData;
 #if _DEBUG
-		mForwardResultForGpuDebug = pInputDataForGpuDebug;
+		if (mIsGpuAvailable)
+		{
+			mForwardResultForGpuDebug = pInputDataForGpuDebug;
+		}
+#endif
+
+		//損失関数に順伝搬の結果を渡す。
+		mLossFunction->setInput(mForwardResult, &mInputLabelData);
+#if _DEBUG
+		if (mIsGpuAvailable)
+		{
+			mLossFunction->setInputForGpuDebug(mForwardResultForGpuDebug, &mInputLabelDataForGpuDebug);
+		}
 #endif
 
 
 		DataMemory* pDInputData = &(mLossFunction->mDInputData);
 #if _DEBUG
-		DataMemory* pDInputDataForGpuDebug = &(mLossFunction->mDInputDataForGpuDebug);
+		DataMemory* pDInputDataForGpuDebug = nullptr;
+		if (mIsGpuAvailable)
+		{
+			pDInputDataForGpuDebug = &(mLossFunction->mDInputDataForGpuDebug);
+		}
 #endif
 		for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)
 		{
 			(*rit)->setDInputData(pDInputData);
 #if _DEBUG
-			(*rit)->setDInputDataForGpuDebug(pDInputDataForGpuDebug);
+			if (mIsGpuAvailable)
+			{
+				(*rit)->setDInputDataForGpuDebug(pDInputDataForGpuDebug);
+			}
 #endif
 		}
 	}
@@ -174,7 +261,7 @@ namespace Aoba
 		}
 
 		//損失の計算
-		mLoss = mLossFunction->calcLossAndDInput(*mForwardResult, mInputLabelData.address);
+		mLoss = mLossFunction->calcLossAndDInput();
 	}
 
 	void AI::backward()

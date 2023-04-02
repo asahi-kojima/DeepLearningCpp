@@ -116,7 +116,7 @@ namespace Aoba
 				}
 				else
 				{
-					mDInputDataOnGPU = pDInputData;
+					mDInputDataOnCPU = pDInputData;
 					pDInputData = &mBackwardResultOnCPU;
 				}
 			}
@@ -128,7 +128,7 @@ namespace Aoba
 			}
 			virtual void setDInputDataForGpuDebug(DataMemory*& pDInputData) final
 			{
-				mDInputDataOnGPU = pDInputData;
+				mDInputDataOnCPU = pDInputData;
 				pDInputData = &mBackwardResultOnCPU;
 			}
 #endif
@@ -138,13 +138,13 @@ namespace Aoba
 				mIsGpuAvailable = which;
 			}
 
-			virtual void memcpyHostToDevice() = 0;
-			virtual void memcpyDeviceToHost() = 0;
+
 
 		protected:
 			bool mIsGpuAvailable = false;
 
-			//CPUä÷åWÇÃïœêîÇ∆ä÷êî
+	
+			//CPU
 			std::vector<paramMemory> pParametersOnCPU;
 			std::vector<paramMemory> pDParametersOnCPU;
 			DataMemory mForwardResultOnCPU;
@@ -152,25 +152,13 @@ namespace Aoba
 			DataMemory* mInputDataOnCPU;
 			DataMemory* mDInputDataOnCPU;
 
-			void setInputDataOnCPU(DataMemory* pInputDataOnCPU)
-			{
-				mInputDataOnCPU = pInputDataOnCPU;
-			}
-			void setDInputDataOnCPU(DataMemory* pDInputDataOnCPU)
-			{
-				mDInputDataOnCPU = pDInputDataOnCPU;
-			}
-
-			virtual void initializeOnGPU() = 0;
+			virtual void initializeOnCPU() = 0;
 			virtual void forwardOnCPU() = 0;
 			virtual void backwardOnCPU() = 0;
 			virtual void terminateOnCPU() = 0;
 
 
-
-
-
-			//GPUä÷åWÇÃïœêîÇ∆ä÷êî
+			//GPU
 			std::vector<paramMemory> pParametersOnGPU;
 			std::vector<paramMemory> pDParametersOnGPU;
 			DataMemory mForwardResultOnGPU;
@@ -178,23 +166,10 @@ namespace Aoba
 			DataMemory* mInputDataOnGPU;
 			DataMemory* mDInputDataOnGPU;
 
-			void setInputDataOnGPU(DataMemory* pInputDataOnGPU)
-			{
-				mInputDataOnGPU = pInputDataOnGPU;
-			}
-			void setDInputDataOnGPU(DataMemory* pDInputDataOnGPU)
-			{
-				mDInputDataOnGPU = pDInputDataOnGPU;
-			}
-
-			virtual void initializeOnCPU() = 0;
+			virtual void initializeOnGPU() = 0;
 			virtual void forwardOnGPU() = 0;
 			virtual void backwardOnGPU() = 0;
 			virtual void terminateOnGPU() = 0;
-
-
-
-
 
 		};
 

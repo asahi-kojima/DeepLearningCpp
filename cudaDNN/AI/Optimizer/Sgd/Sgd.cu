@@ -10,7 +10,7 @@ namespace Aoba
 {
 	namespace
 	{
-		__global__ void OptimizeOnGPU(flowDataType* param, flowDataType* dParam, f32 learningRate, u32 size)
+		__global__ void OptimizeOnGPU(f32* param, f32* dParam, f32 learningRate, u32 size)
 		{
 			u32 id = blockIdx.x * blockDim.x + threadIdx.x;
 			if (id >= size)
