@@ -12,7 +12,6 @@ namespace Aoba
 			Adam() = default;
 			~Adam() = default;
 
-			void optimize(std::unique_ptr<layer::BaseLayer>&) override;
 		
 		private:
 			void optimizeOnCPU(std::unique_ptr<layer::BaseLayer>&) override;

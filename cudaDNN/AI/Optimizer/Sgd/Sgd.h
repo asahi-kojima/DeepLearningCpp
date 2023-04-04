@@ -12,7 +12,6 @@ namespace Aoba
 			Sgd(f32 learningRate = 0.001f) : BaseOptimizer(learningRate) {}
 			~Sgd() = default;
 
-			void optimize(std::unique_ptr<layer::BaseLayer>&) override;
 
 		private:
 			void optimizeOnCPU(std::unique_ptr<layer::BaseLayer>&) override;

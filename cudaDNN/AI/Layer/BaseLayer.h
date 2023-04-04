@@ -14,15 +14,6 @@ namespace Aoba
 			friend class Aoba::optimizer::BaseOptimizer;
 
 		public:
-			struct DataShape
-			{
-				u32 batchSize;
-				u32 channel;
-				u32 height;
-				u32 width;
-			};
-
-
 			BaseLayer() = default;
 			virtual ~BaseLayer() = default;
 
@@ -33,117 +24,33 @@ namespace Aoba
 			/// <param name=""></param>
 			virtual void setupLayerInfo(DataShape*) = 0;
 
-			/// <summary>
-			/// ÉÅÉÇÉäÇÃämï€Ç»Ç«ÇçsÇ§ÅB
-			/// </summary>
-			virtual void initialize() final
-			{
-				if (mIsGpuAvailable)
-				{
-					initializeOnGPU();
-					if (_DEBUG)
-						initializeOnCPU();
-				}
-				else
-				{
-					initializeOnCPU();
-				}
-			}
-			virtual void forward() final
-			{
-				if (mIsGpuAvailable)
-				{
-					forwardOnGPU();
-					if (_DEBUG)
-						forwardOnCPU();
-				}
-				else
-				{
-					forwardOnCPU();
-				}
-			}
-			virtual void backward() final
-			{
-				if (mIsGpuAvailable)
-				{
-					backwardOnGPU();
-					if (_DEBUG)
-					{
-						backwardOnCPU();
-					}
-				}
-				else
-				{
-					backwardOnCPU();
-				}
-			}
-			virtual void terminate() final
-			{
-				if (mIsGpuAvailable)
-				{
-					terminateOnGPU();
-					if (_DEBUG)
-					{
-						terminateOnCPU();
-					}
-				}
-				else
-				{
-					terminateOnCPU();
-				}
-			}
 
 
-			virtual void setInputData(DataMemory*& pInputData) final
-			{
-				if (mIsGpuAvailable)
-				{
-					mInputDataOnGPU = pInputData;
-					pInputData = &mForwardResultOnGPU;
-				}
-				else
-				{
-					mInputDataOnCPU = pInputData;
-					pInputData = &mForwardResultOnCPU;
-				}
-			}
-			virtual void setDInputData(DataMemory*& pDInputData) final
-			{
-				if (mIsGpuAvailable)
-				{
-					mDInputDataOnGPU = pDInputData;
-					pDInputData = &mBackwardResultOnGPU;
-				}
-				else
-				{
-					mDInputDataOnCPU = pDInputData;
-					pDInputData = &mBackwardResultOnCPU;
-				}
-			}
-#if _DEBUG
-			virtual void setInputDataForGpuDebug(DataMemory*& pInputData) final
+
+
+			virtual void setInputDataOnCPU(DataMemory*& pInputData) final
 			{
 				mInputDataOnCPU = pInputData;
 				pInputData = &mForwardResultOnCPU;
 			}
-			virtual void setDInputDataForGpuDebug(DataMemory*& pDInputData) final
+			virtual void setDInputDataOnCPU(DataMemory*& pDInputData) final
 			{
 				mDInputDataOnCPU = pDInputData;
 				pDInputData = &mBackwardResultOnCPU;
 			}
-#endif
 
-			virtual void setIsGpuAvailable(bool which) final
+			virtual void setInputDataOnGPU(DataMemory*& pInputData) final
 			{
-				mIsGpuAvailable = which;
+				mInputDataOnGPU = pInputData;
+				pInputData = &mForwardResultOnGPU;
+			}
+			virtual void setDInputDataOnGPU(DataMemory*& pDInputData) final
+			{
+				mDInputDataOnGPU = pDInputData;
+				pDInputData = &mBackwardResultOnGPU;
 			}
 
 
-
-		protected:
-			bool mIsGpuAvailable = false;
-
-	
 			//CPU
 			std::vector<paramMemory> pParametersOnCPU;
 			std::vector<paramMemory> pDParametersOnCPU;
@@ -170,7 +77,6 @@ namespace Aoba
 			virtual void forwardOnGPU() = 0;
 			virtual void backwardOnGPU() = 0;
 			virtual void terminateOnGPU() = 0;
-
 		};
 
 

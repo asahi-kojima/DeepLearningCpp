@@ -12,80 +12,52 @@ namespace Aoba
 			BaseLossFunction() = default;
 			~BaseLossFunction() = default;
 
-			void setupDataShape(layer::BaseLayer::DataShape& dataShape) { mDataShape = dataShape; }
-			void initialize()
+			void setupDataShape(DataShape& dataShape) { mDataShape = dataShape; }
+
+
+
+			virtual f32 calcLossAndDInputOnCPU() = 0;
+			virtual void initializeOnCPU() = 0;
+
+			void setInputOnCPU(DataMemory* pData, DataMemory* pLabel)
 			{
-				if (mIsGpuAvailable)
-				{
-					initializeOnGPU();
-#if _DEBUG
-					initializeOnCPU();
-#endif
-				}
-				else
-				{
-					initializeOnCPU();
-				}
+				mForwardResultOnCPU = pData;
+				mLabelDataOnCPU = pLabel;
 			}
 
-			f32 calcLossAndDInput()
+			DataMemory* getDInputDataOnCPU()
 			{
-				if (mIsGpuAvailable)
-				{
-#if _DEBUG
-					calcLossAndDInputOnCPU();
-#endif
-					return calcLossAndDInputOnGPU();
-				}
-				else
-				{
-					return calcLossAndDInputOnCPU();
-				}
+				return &mDInputDataOnCPU;
 			}
 
 
-			void setInput(DataMemory* pData, DataMemory* pLabel)
+
+			virtual void initializeOnGPU() = 0;
+			virtual f32 calcLossAndDInputOnGPU() = 0;
+
+			void setInputOnGPU(DataMemory* pData, DataMemory* pLabel)
 			{
-				mForwardResult = pData;
-				mLabelData = pLabel;
+				mForwardResultOnGPU = pData;
+				mLabelDataOnGPU = pLabel;
 			}
 
-
-			void setInputForGpuDebug(DataMemory* pData, DataMemory* pLabel)
+			DataMemory* getDInputDataOnGPU()
 			{
-				mForwardResultForGpuDebug = pData;
-				mLabelDataForGpuDebug = pLabel;
+				return &mDInputDataOnGPU;
 			}
-
-
-			DataMemory mDInputData;
-#if _DEBUG
-			DataMemory mDInputDataForGpuDebug;
-#endif
-
-			virtual void setIsGpuAvailable(bool which) final
-			{
-				mIsGpuAvailable = which;
-			}
-
 
 		protected:
-			bool mIsGpuAvailable = false;
+			DataShape mDataShape;
 
-			layer::BaseLayer::DataShape mDataShape;
-			virtual void initializeOnGPU()=0;
-			virtual void initializeOnCPU()=0;
+			DataMemory mLossTblOnCPU;
+			DataMemory mDInputDataOnCPU;
+			DataMemory* mForwardResultOnCPU;
+			DataMemory* mLabelDataOnCPU;
 
-			virtual f32 calcLossAndDInputOnGPU() = 0;
-			virtual f32 calcLossAndDInputOnCPU() = 0;
-
-
-			DataMemory* mForwardResult;
-			DataMemory* mLabelData;
-#if _DEBUG
-			DataMemory* mForwardResultForGpuDebug;
-			DataMemory* mLabelDataForGpuDebug;
-#endif
+			DataMemory mLossTblOnGPU;
+			DataMemory mDInputDataOnGPU;
+			DataMemory* mForwardResultOnGPU;
+			DataMemory* mLabelDataOnGPU;
 		};
 	}
 }

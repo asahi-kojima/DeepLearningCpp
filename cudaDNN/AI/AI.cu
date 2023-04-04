@@ -49,22 +49,11 @@ namespace Aoba
 	}
 
 
-	void AI::deepLearning(f32* pTrainingData, f32* pTrainingLabel)
+	void AI::deepLearning(f32* pTrainingData, f32* pTrainingLabel, f32 learningRate)
 	{
-		mInputTrainingDataStartAddressOnCpu = pTrainingData;
-		mInputTrainingLableStartAddressOnCpu = pTrainingLabel;
+		mOptimizer->setLearningRate(learningRate);
 
-		mInputTrainingData.size = mInterpretation.shape.batchSize * mInterpretation.elementNum;
-		mInputTrainingData.byteSize = mInterpretation.shape.batchSize * mInterpretation.byteSize;
-		mInputLabelData.size = mInterpretation.shape.batchSize * 1;
-		mInputLabelData.byteSize = mInterpretation.shape.batchSize * sizeof(f32);
-
-#if _DEBUG
-		mInputTrainingDataForGpuDebug.size = mInterpretation.shape.batchSize * mInterpretation.elementNum;
-		mInputTrainingDataForGpuDebug.byteSize = mInterpretation.shape.batchSize * mInterpretation.byteSize;
-		mInputLabelDataForGpuDebug.size = mInterpretation.shape.batchSize * 1;
-		mInputLabelDataForGpuDebug.byteSize = mInterpretation.shape.batchSize * sizeof(f32);
-#endif
+		dataSetup(pTrainingData, pTrainingLabel);
 
 		//
 		//順伝搬用のデータをここで準備する。
@@ -72,7 +61,8 @@ namespace Aoba
 		auto printer = [](std::string name, u32 value, u32 stringLen = 15)
 		{
 			u32 res = stringLen - name.length();
-			std::cout << name + std::string(' ', res) << " = " << value << "\n";
+			std::string space = std::string(res, ' ');
+			std::cout << name << space << " = " << value << "\n";
 		};
 		std::cout << "TrainingData setup now" << std::endl;
 		printer("TotalData num", mInterpretation.totalDataNum);
@@ -81,46 +71,54 @@ namespace Aoba
 		printer("width", mInterpretation.shape.width);
 
 		u32 loopTime = mInterpretation.totalDataNum / mInterpretation.shape.batchSize;
-		for (u32 loop = 0; loop < loopTime; loop++)
+
+		for (u32 epoch = 0; epoch < 10; epoch++)
 		{
-			u32 offset = (mInterpretation.shape.batchSize * mInterpretation.elementNum) * loop;
-			if (mIsGpuAvailable)
+			std::cout << "epoch = " << epoch << std::endl;
+			f32 loss = 0.0f;
+			for (u32 loop = 0; loop < loopTime; loop++)
 			{
-				mInputTrainingData.address = mInputTrainingDataStartAddressOnGpu + offset;
-				mInputLabelData.address = mInputTrainingLableStartAddressOnGpu + offset;
+				u32 offsetForData = (mInterpretation.shape.batchSize * mInterpretation.elementNum) * loop;
+				u32 offsetForLabel = (mInterpretation.shape.batchSize * 1) * loop;
+				if (mIsGpuAvailable)
+				{
+					mInputTrainingDataOnGPU.address = mInputTrainingDataStartAddressOnGPU + offsetForData;
+					mInputLabelDataOnGPU.address = mInputTrainingLableStartAddressOnGPU + offsetForLabel;
+				}
+				else
+				{
+					mInputTrainingDataOnCPU.address = mInputTrainingDataStartAddressOnCPU + offsetForData;
+					mInputLabelDataOnCPU.address = mInputTrainingLableStartAddressOnCPU + offsetForLabel;
+				}
+				forward();
 #if _DEBUG
-				mInputTrainingDataForGpuDebug.address = mInputTrainingDataStartAddressOnCpu + offset;
-				mInputLabelDataForGpuDebug.address = mInputTrainingLableStartAddressOnCpu + offset;
+				//
+				//ここで整合性チェック
+				//
 #endif
+
+
+
+				backward();
+#if _DEBUG
+				//
+				//ここで整合性チェック
+				//
+#endif
+
+
+				optimize();
+#if _DEBUG
+				//
+				//ここで整合性チェック
+				//
+#endif
+				if (mIsGpuAvailable)
+					loss += mLossOnGPU;
+				else
+					loss += mLossOnCPU;
 			}
-			else
-			{
-				mInputTrainingData.address = mInputTrainingDataStartAddressOnCpu + offset;
-				mInputLabelData.address = mInputTrainingLableStartAddressOnCpu + offset;
-			}
-			forward();
-#if _DEBUG
-			//
-			//ここで整合性チェック
-			//
-#endif
-
-
-
-			backward();
-#if _DEBUG
-			//
-			//ここで整合性チェック
-			//
-#endif
-
-
-			optimize();
-#if _DEBUG
-			//
-			//ここで整合性チェック
-			//
-#endif
+			std::cout << "current loss = " << loss / loopTime << std::endl;
 		}
 	}
 
@@ -135,18 +133,86 @@ namespace Aoba
 #pragma region private
 	void AI::checkGpuIsAvailable()
 	{
-		//GPU利用可能かの処理が入る。
-		mIsGpuAvailable = true;
+		std::cout << std::string(100, '=') << std::endl;
+		std::cout << "GPU Resource Check..." << std::endl;
+		std::cout << std::string(100, '=') << std::endl;
+		int deviceCount = 0;
+		cudaGetDeviceCount(&deviceCount);
 
-
-		for (auto& layer : mLayerList)
+		if (deviceCount == 0)
 		{
-			layer->setIsGpuAvailable(mIsGpuAvailable);
+			mIsGpuAvailable = false;
+			printf("There are no available device(s) that support CUDA\n");
+		}
+		else
+		{
+			mIsGpuAvailable = true;
+			printf("Detected %d CUDA Capable device(s)\n", deviceCount);
 		}
 
-		mLossFunction->setIsGpuAvailable(mIsGpuAvailable);
+		int dev = 0, driverVersion = 0, runtimeVersion = 0;
+		CHECK(cudaSetDevice(dev));
+		cudaDeviceProp deviceProp;
+		CHECK(cudaGetDeviceProperties(&deviceProp, dev));
+		printf("Device %d: \"%s\"\n", dev, deviceProp.name);
 
-		mOptimizer->setIsGpuAvailable(mIsGpuAvailable);
+		cudaDriverGetVersion(&driverVersion);
+		cudaRuntimeGetVersion(&runtimeVersion);
+		printf("  CUDA Driver Version / Runtime Version          %d.%d / %d.%d\n",
+			driverVersion / 1000, (driverVersion % 100) / 10,
+			runtimeVersion / 1000, (runtimeVersion % 100) / 10);
+		printf("  CUDA Capability Major/Minor version number:    %d.%d\n",
+			deviceProp.major, deviceProp.minor);
+		printf("  Total amount of global memory:                 %.2f GBytes (%llu "
+			"bytes)\n", (float)deviceProp.totalGlobalMem / pow(1024.0, 3),
+			(unsigned long long)deviceProp.totalGlobalMem);
+		printf("  GPU Clock rate:                                %.0f MHz (%0.2f "
+			"GHz)\n", deviceProp.clockRate * 1e-3f,
+			deviceProp.clockRate * 1e-6f);
+		printf("  Memory Clock rate:                             %.0f Mhz\n",
+			deviceProp.memoryClockRate * 1e-3f);
+		printf("  Memory Bus Width:                              %d-bit\n",
+			deviceProp.memoryBusWidth);
+
+		if (deviceProp.l2CacheSize)
+		{
+			printf("  L2 Cache Size:                                 %d bytes\n",
+				deviceProp.l2CacheSize);
+		}
+
+		printf("  Max Texture Dimension Size (x,y,z)             1D=(%d), "
+			"2D=(%d,%d), 3D=(%d,%d,%d)\n", deviceProp.maxTexture1D,
+			deviceProp.maxTexture2D[0], deviceProp.maxTexture2D[1],
+			deviceProp.maxTexture3D[0], deviceProp.maxTexture3D[1],
+			deviceProp.maxTexture3D[2]);
+		printf("  Max Layered Texture Size (dim) x layers        1D=(%d) x %d, "
+			"2D=(%d,%d) x %d\n", deviceProp.maxTexture1DLayered[0],
+			deviceProp.maxTexture1DLayered[1], deviceProp.maxTexture2DLayered[0],
+			deviceProp.maxTexture2DLayered[1],
+			deviceProp.maxTexture2DLayered[2]);
+		printf("  Total amount of constant memory:               %lu bytes\n",
+			deviceProp.totalConstMem);
+		printf("  Total amount of shared memory per block:       %lu bytes\n",
+			deviceProp.sharedMemPerBlock);
+		printf("  Total number of registers available per block: %d\n",
+			deviceProp.regsPerBlock);
+		printf("  Warp size:                                     %d\n",
+			deviceProp.warpSize);
+		printf("  Maximum number of threads per multiprocessor:  %d\n",
+			deviceProp.maxThreadsPerMultiProcessor);
+		printf("  Maximum number of threads per block:           %d\n",
+			deviceProp.maxThreadsPerBlock);
+		printf("  Maximum sizes of each dimension of a block:    %d x %d x %d\n",
+			deviceProp.maxThreadsDim[0],
+			deviceProp.maxThreadsDim[1],
+			deviceProp.maxThreadsDim[2]);
+		printf("  Maximum sizes of each dimension of a grid:     %d x %d x %d\n",
+			deviceProp.maxGridSize[0],
+			deviceProp.maxGridSize[1],
+			deviceProp.maxGridSize[2]);
+		printf("  Maximum memory pitch:                          %lu bytes\n",
+			deviceProp.memPitch);
+		std::cout << std::string(100, '=') << "\n\n" << std::endl;
 	}
 
 	/// <summary>
@@ -164,13 +230,6 @@ namespace Aoba
 			dataShape.width = shape.width;
 		}
 
-		mInputTrainingData.size = shape.batchSize * shape.channel * shape.height * shape.width;
-#if _DEBUG
-		if (mIsGpuAvailable)
-		{
-			mInputTrainingDataForGpuDebug.size = shape.batchSize * shape.channel * shape.height * shape.width;
-		}
-#endif
 
 		for (auto& layer : mLayerList)
 		{
@@ -178,6 +237,15 @@ namespace Aoba
 		}
 
 		mLossFunction->setupDataShape(dataShape);
+
+		if (mIsGpuAvailable)
+		{
+			mInputTrainingDataOnGPU.size = shape.batchSize * shape.channel * shape.height * shape.width;
+		}
+		else
+		{
+			mInputTrainingDataOnCPU.size = shape.batchSize * shape.channel * shape.height * shape.width;
+		}
 	}
 
 	/// <summary>
@@ -186,99 +254,165 @@ namespace Aoba
 	/// </summary>
 	void AI::allocLayerMemory()
 	{
-		//GPU状のメモリの確保やそれの初期化
-		for (auto& layer : mLayerList)
+		if (mIsGpuAvailable)
 		{
-			layer->initialize();
-		}
-
-		mLossFunction->initialize();
-
-		//学習時の各層が参照する前層のデータのアドレスを登録
-		//まず基点となるデータをセット
-		DataMemory* pInputData = &mInputTrainingData;
-#if _DEBUG
-		DataMemory* pInputDataForGpuDebug = &mInputTrainingDataForGpuDebug;
-#endif
-
-		//ここで各層に参照するべきデータを順に渡していく。
-		for (auto& layer : mLayerList)
-		{
-			layer->setInputData(pInputData);
-#if _DEBUG
-			if (mIsGpuAvailable)
+			//GPU状のメモリの確保やそれの初期化
+			for (auto& layer : mLayerList)
 			{
-				layer->setInputDataForGpuDebug(pInputDataForGpuDebug);
+				layer->initializeOnGPU();
 			}
-#endif
-		}
 
-		//損失関数に渡したり、その他用途のために順伝搬の出力をここにセットする。
-		mForwardResult = pInputData;
-#if _DEBUG
-		if (mIsGpuAvailable)
-		{
-			mForwardResultForGpuDebug = pInputDataForGpuDebug;
-		}
-#endif
+			mLossFunction->initializeOnGPU();
 
-		//損失関数に順伝搬の結果を渡す。
-		mLossFunction->setInput(mForwardResult, &mInputLabelData);
-#if _DEBUG
-		if (mIsGpuAvailable)
-		{
-			mLossFunction->setInputForGpuDebug(mForwardResultForGpuDebug, &mInputLabelDataForGpuDebug);
-		}
-#endif
+			//学習時の各層が参照する前層のデータのアドレスを登録
+			//まず基点となるデータをセット
+			DataMemory* pInputDataOnGPU = &mInputTrainingDataOnGPU;
 
-
-		DataMemory* pDInputData = &(mLossFunction->mDInputData);
-#if _DEBUG
-		DataMemory* pDInputDataForGpuDebug = nullptr;
-		if (mIsGpuAvailable)
-		{
-			pDInputDataForGpuDebug = &(mLossFunction->mDInputDataForGpuDebug);
-		}
-#endif
-		for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)
-		{
-			(*rit)->setDInputData(pDInputData);
-#if _DEBUG
-			if (mIsGpuAvailable)
+			//ここで各層に参照するべきデータを順に渡していく。
+			for (auto& layer : mLayerList)
 			{
-				(*rit)->setDInputDataForGpuDebug(pDInputDataForGpuDebug);
+				layer->setInputDataOnGPU(pInputDataOnGPU);
 			}
-#endif
+
+			//損失関数に渡したり、その他用途のために順伝搬の出力をここにセットする。
+			mForwardResultOnGPU = pInputDataOnGPU;
+
+			//損失関数に順伝搬の結果を渡す。
+			mLossFunction->setInputOnGPU(mForwardResultOnGPU, &mInputLabelDataOnGPU);
+
+
+			DataMemory* pDInputDataOnGPU = mLossFunction->getDInputDataOnGPU();
+
+			for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)
+			{
+				(*rit)->setDInputDataOnGPU(pDInputDataOnGPU);
+			}
+		}
+		else
+		{
+			//GPU状のメモリの確保やそれの初期化
+			for (auto& layer : mLayerList)
+			{
+				layer->initializeOnCPU();
+			}
+
+			mLossFunction->initializeOnCPU();
+
+			//学習時の各層が参照する前層のデータのアドレスを登録
+			//まず基点となるデータをセット
+			DataMemory* pInputDataOnCPU = &mInputTrainingDataOnCPU;
+
+			//ここで各層に参照するべきデータを順に渡していく。
+			for (auto& layer : mLayerList)
+			{
+				layer->setInputDataOnCPU(pInputDataOnCPU);
+			}
+
+			//損失関数に渡したり、その他用途のために順伝搬の出力をここにセットする。
+			mForwardResultOnCPU = pInputDataOnCPU;
+
+			//損失関数に順伝搬の結果を渡す。
+			mLossFunction->setInputOnCPU(mForwardResultOnCPU, &mInputLabelDataOnCPU);
+
+
+			DataMemory* pDInputDataOnCPU = mLossFunction->getDInputDataOnCPU();
+
+			for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)
+			{
+				(*rit)->setDInputDataOnCPU(pDInputDataOnCPU);
+			}
+		}
+	}
+
+	void AI::dataSetup(f32* pTrainingData, f32* pTrainingLabel)
+	{
+		mInputTrainingDataStartAddressOnCPU = pTrainingData;
+		mInputTrainingLableStartAddressOnCPU = pTrainingLabel;
+
+		if (mIsGpuAvailable)
+		{
+			mInputTrainingDataOnGPU.size = mInterpretation.shape.batchSize * mInterpretation.elementNum;
+			mInputTrainingDataOnGPU.byteSize = mInterpretation.shape.batchSize * mInterpretation.byteSize;
+			mInputLabelDataOnGPU.size = mInterpretation.shape.batchSize * 1;
+			mInputLabelDataOnGPU.byteSize = mInterpretation.shape.batchSize * sizeof(f32);
+
+			CHECK(cudaMalloc((void**)(&mInputTrainingDataStartAddressOnGPU), 60000 * 1 * 28 * 28 * sizeof(f32)));
+			CHECK(cudaMalloc((void**)(&mInputTrainingLableStartAddressOnGPU), 60000 * 1 * 1 * 1 * sizeof(f32)));
+
+			CHECK(cudaMemcpy(mInputTrainingDataStartAddressOnGPU, mInputTrainingDataStartAddressOnCPU, 60000 * 1 * 28 * 28 * sizeof(f32), cudaMemcpyHostToDevice));
+			CHECK(cudaMemcpy(mInputTrainingLableStartAddressOnGPU, mInputTrainingLableStartAddressOnCPU, 60000 * 1 * 1 * 1 * sizeof(f32), cudaMemcpyHostToDevice));
+		}
+		else
+		{
+			mInputTrainingDataOnCPU.size = mInterpretation.shape.batchSize * mInterpretation.elementNum;
+			mInputTrainingDataOnCPU.byteSize = mInterpretation.shape.batchSize * mInterpretation.byteSize;
+			mInputLabelDataOnCPU.size = mInterpretation.shape.batchSize * 1;
+			mInputLabelDataOnCPU.byteSize = mInterpretation.shape.batchSize * sizeof(f32);
 		}
 	}
 
 	void AI::forward()
 	{
-		//順伝搬
-		for (auto& layer : mLayerList)
+		if (mIsGpuAvailable)
 		{
-			layer->forward();
-		}
+			//順伝搬
+			for (auto& layer : mLayerList)
+			{
+				layer->forwardOnGPU();
+			}
 
-		//損失の計算
-		mLoss = mLossFunction->calcLossAndDInput();
+			//損失の計算
+			mLossOnGPU = mLossFunction->calcLossAndDInputOnGPU();
+		}
+		else
+		{
+			//順伝搬
+			for (auto& layer : mLayerList)
+			{
+				layer->forwardOnCPU();
+			}
+
+			//損失の計算
+			mLossOnCPU = mLossFunction->calcLossAndDInputOnCPU();
+		}
 	}
 
 	void AI::backward()
 	{
-		for (auto riter = mLayerList.rbegin(), end = mLayerList.rend(); riter != end; riter++)
+		if (mIsGpuAvailable)
 		{
-			(*riter)->backward();
+			for (auto riter = mLayerList.rbegin(), end = mLayerList.rend(); riter != end; riter++)
+			{
+				(*riter)->backwardOnGPU();
+			}
+		}
+		else
+		{
+			for (auto riter = mLayerList.rbegin(), end = mLayerList.rend(); riter != end; riter++)
+			{
+				(*riter)->backwardOnCPU();
+			}
 		}
 	}
 
 
 	void AI::optimize()
 	{
-		for (auto& layer : mLayerList)
+		if (mIsGpuAvailable)
 		{
-			mOptimizer->optimize(layer);
+			for (auto& layer : mLayerList)
+			{
+				mOptimizer->optimizeOnGPU(layer);
+			}
 		}
+		else
+		{
+			for (auto& layer : mLayerList)
+			{
+				mOptimizer->optimizeOnCPU(layer);
+			}
+		}
+
 	}
 
 #pragma endregion

@@ -36,26 +36,9 @@ namespace Aoba
 
 				dim3 block(32);
 				dim3 grid((param.size + block.x - 1) / block.x);
-#if _DEBUG
-				{
-					std::vector<f32> tester0(param.size);
-					std::vector<f32> tester1(dParam.size);
-					CHECK(cudaMemcpy(tester0.data(), param.address, tester0.size() * sizeof(f32), cudaMemcpyDeviceToHost));
-					CHECK(cudaMemcpy(tester1.data(), dParam.address, tester1.size() * sizeof(f32), cudaMemcpyDeviceToHost));
-					CHECK(cudaDeviceSynchronize());
-				}
-#endif
+
 				OptimizeOnGPU << <grid, block >> > (param.address, dParam.address, mLearningRate, param.size);
-#if _DEBUG
-				CHECK(cudaDeviceSynchronize());
-				{
-					std::vector<f32> tester0(param.size);
-					std::vector<f32> tester1(dParam.size);
-					CHECK(cudaMemcpy(tester0.data(), param.address, tester0.size() * sizeof(f32), cudaMemcpyDeviceToHost));
-					CHECK(cudaMemcpy(tester1.data(), dParam.address, tester1.size() * sizeof(f32), cudaMemcpyDeviceToHost));
-					CHECK(cudaDeviceSynchronize());
-				}
-#endif
+
 			}
 		}
 	}

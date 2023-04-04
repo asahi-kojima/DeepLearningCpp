@@ -143,12 +143,12 @@ int main()
 	//ŠwKƒ‹[ƒv
 	//////////////////////////////////////////
 
-	for (u32 epoch = 0; epoch < 100; epoch++)
+	for (u32 epoch = 0; epoch < 1; epoch++)
 	{
 		std::cout << "Epoch " << epoch << "start\n";
 		f32 loss = 0.0f;
 		f32 count = 0;
-		for (u32 batchLoop = 0, end = trainingDataNum / inputDataShape.batchSize; batchLoop < end; batchLoop++)
+		for (u32 batchLoop = 0, end =1; batchLoop < end; batchLoop++)
 		{
 			f32* dataAddress = trainingDataGPU.address + batchLoop * (dataSize * inputDataShape.batchSize);
 			f32* labelAddress = trainingLabel.data() + batchLoop * (inputDataShape.batchSize);

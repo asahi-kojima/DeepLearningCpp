@@ -19,4 +19,12 @@ namespace Aoba
 		u32 size;
 		u32 byteSize;
 	};
+
+	struct DataShape
+	{
+		u32 batchSize;
+		u32 channel;
+		u32 height;
+		u32 width;
+	};
 }

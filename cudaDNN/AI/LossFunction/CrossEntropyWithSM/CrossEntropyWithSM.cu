@@ -48,8 +48,11 @@ namespace Aoba
 	{
 		void CrossEntropyWithSM::initializeOnGPU()
 		{
-			mDInputData.size = mDataShape.batchSize * mDataShape.channel * mDataShape.height * mDataShape.width;
-			CHECK(cudaMalloc((void**)(&(mDInputData.address)), mDInputData.size * sizeof(f32)));
+			mDInputDataOnGPU.size = mDataShape.batchSize * mDataShape.channel * mDataShape.height * mDataShape.width;
+			CHECK(cudaMalloc((void**)(&(mDInputDataOnGPU.address)), mDInputDataOnGPU.size * sizeof(f32)));
+
+			mLossTblOnGPU.size = mDataShape.batchSize;
+			CHECK(cudaMalloc((void**)(&mLossTblOnGPU.address), mLossTblOnGPU.size * sizeof(f32)));
 		}
 
 		f32 CrossEntropyWithSM::calcLossAndDInputOnGPU()
@@ -59,53 +62,18 @@ namespace Aoba
 				(mDataShape.batchSize + block.x - 1) / block.x);
 
 			std::vector<f32> lossTbl(mDataShape.batchSize);
-			f32* lossTblOnGPU = nullptr;
-			CHECK(cudaMalloc((void**)(&(lossTblOnGPU)), mDataShape.batchSize * sizeof(f32)));
-			calc<<<grid, block>>>(mForwardResult->address, mLabelData->address, mDInputData.address, lossTblOnGPU, mDataShape.batchSize, mDataShape.width, mDataShape.channel * mDataShape.height * mDataShape.width);
-			CHECK(cudaMemcpy(lossTbl.data(), lossTblOnGPU, mDataShape.batchSize * sizeof(f32), cudaMemcpyDeviceToHost));
-			f32 loss = 0;
-			f32* pDataOnCPU = new f32[mForwardResult->size];
-			f32* tmp = new f32[mForwardResult->size];
-			CHECK(cudaMemcpy(pDataOnCPU, mForwardResult->address, mForwardResult->size * sizeof(f32), cudaMemcpyDeviceToHost));
-
-			//‘¹Ž¸ŒvŽZ
-			f32* labels = mLabelData->address;
-			for (u32 id = 0; id < mDataShape.batchSize; id++)
-			{
-				u32 offset = id * (mDataShape.channel * mDataShape.height * mDataShape.width);
-				u32 label = static_cast<u32>(labels[id]);
-
-				f32 max = -1000.0f;
-				f32 sum = 0.0f;
-				for (u32 i = 0; i < mDataShape.width; i++)
-				{
-					f32 cand = pDataOnCPU[offset + i];
-					if (max < cand)
-					{
-						max = cand;
-					}
-				}
-
-				for (u32 i = 0; i < mDataShape.width; i++)
-				{
-					sum += std::expf(pDataOnCPU[offset + i] - max);
-				}
-
-				for (u32 i = 0; i < mDataShape.width; i++)
-				{
-					tmp[offset + i] = ((std::expf(pDataOnCPU[offset + i] - max) / sum) - (label == i ? 1 : 0)) / mDataShape.batchSize;
-				}
-
-				loss += -std::logf(std::expf(pDataOnCPU[offset + label] - max) / sum + 1e-7);
-			}
-
-			//‹t“`”À‚ÌŒvŽZ
+			//ƒGƒ‰[‚ªo‚éi¡Œã‚Ì‚½‚ß‚ÉŽc‚µ‚Ä‚¨‚­j
+			/*f32* lossTblOnGPU = nullptr;
+			CHECK(cudaMalloc((void**)(&lossTblOnGPU), mDataShape.batchSize * sizeof(f32)));*/
+			calc<<<grid, block>>>(mForwardResultOnGPU->address, mLabelDataOnGPU->address, mDInputDataOnGPU.address, mLossTblOnGPU.address, mDataShape.batchSize, mDataShape.width, mDataShape.channel * mDataShape.height * mDataShape.width);
 #if _DEBUG
-			std::vector<f32> t(mDInputData.size);
-			for (int i = 0; i < t.size(); i++)t[i] = tmp[i];
+			CHECK(cudaDeviceSynchronize());
 #endif
+			f32 loss = 0;
+			f32* pDataOnCPU = new f32[mForwardResultOnGPU->size];
+			f32* tmp = new f32[mForwardResultOnGPU->size];
+			//CHECK(cudaMemcpy(pDataOnCPU, mForwardResultOnGPU->address, mForwardResultOnGPU->size * sizeof(f32), cudaMemcpyDeviceToHost));
 
-			CHECK(cudaMemcpy(mDInputData.address, tmp, mDInputData.size * sizeof(f32), cudaMemcpyHostToDevice));
 
 
 

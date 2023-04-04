@@ -13,7 +13,7 @@ namespace Aoba
 	class AI
 	{
 	public:
-		using InputDataShape = layer::BaseLayer::DataShape;
+		using InputDataShape = DataShape;
 		struct InputDataInterpretation
 		{
 			u32 totalDataNum;
@@ -42,9 +42,15 @@ namespace Aoba
 		void addLayer(std::unique_ptr<layer::BaseLayer>&&);
 		void build(InputDataInterpretation&, std::unique_ptr<optimizer::BaseOptimizer>&&, std::unique_ptr<lossFunction::BaseLossFunction>&&);
 		
-		void deepLearning(f32*, f32*);
+		void deepLearning(f32*, f32*, f32 lr = 0.001f);
 		DataMemory operator()(f32*);//未実装
-		f32 getLoss() { return mLoss; }
+		f32 getLoss() 
+		{
+			if (mIsGpuAvailable)
+				return mLossOnGPU;
+			else
+				return mLossOnCPU;
+		}
 
 
 	private:
@@ -52,6 +58,7 @@ namespace Aoba
 		void setupLayerInfo(InputDataShape&);
 		void allocLayerMemory();
 
+		void dataSetup(f32*, f32*);
 		void forward();
 		void backward();
 		void optimize();
@@ -65,26 +72,30 @@ namespace Aoba
 
 
 		//入力データの基点
-		f32* mInputTrainingDataStartAddressOnCpu;
-		f32* mInputTrainingLableStartAddressOnCpu;
-
-		f32* mInputTrainingDataStartAddressOnGpu;
-		f32* mInputTrainingLableStartAddressOnGpu;
-
+		f32* mInputTrainingDataStartAddressOnCPU;
+		f32* mInputTrainingLableStartAddressOnCPU;
 		//入力データを置く場所
-		DataMemory mInputTrainingData;
-		DataMemory mInputLabelData;
+		DataMemory mInputTrainingDataOnCPU;
+		DataMemory mInputLabelDataOnCPU;
 		//順伝搬の結果がある場所
-		DataMemory* mForwardResult;
+		DataMemory* mForwardResultOnCPU;
 
-		
-#if _DEBUG //GPUデバッグのための変数
-		DataMemory mInputTrainingDataForGpuDebug;
-		DataMemory mInputLabelDataForGpuDebug;
-		DataMemory* mForwardResultForGpuDebug;
-#endif
+		f32 mLossOnCPU;
 
-		f32 mLoss;
+
+
+		//入力データの基点
+		f32* mInputTrainingDataStartAddressOnGPU;
+		f32* mInputTrainingLableStartAddressOnGPU;
+		//入力データを置く場所
+		DataMemory mInputTrainingDataOnGPU;
+		DataMemory mInputLabelDataOnGPU;
+		//順伝搬の結果がある場所
+		DataMemory* mForwardResultOnGPU;
+
+		f32 mLossOnGPU;
+
+
 
 		bool mIsGpuAvailable = true;
 		InputDataInterpretation mInterpretation;

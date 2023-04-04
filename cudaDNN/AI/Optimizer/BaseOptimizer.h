@@ -16,16 +16,13 @@ namespace Aoba
 		public:
 			BaseOptimizer(f32 learningRate = 0.001f) : mLearningRate(learningRate) {};
 			~BaseOptimizer() = default;
-			virtual void optimize(std::unique_ptr<layer::BaseLayer>&) = 0;
-			virtual void setIsGpuAvailable(bool which) final
-			{
-				mIsGpuAvailable = which;
-			}
-			f32 mLearningRate;
-		protected:
-			bool mIsGpuAvailable = false;
+			
 			virtual void optimizeOnCPU(std::unique_ptr<layer::BaseLayer>&) = 0;
 			virtual void optimizeOnGPU(std::unique_ptr<layer::BaseLayer>&) = 0;
+			virtual void setLearningRate(f32 lr) final {mLearningRate = lr;}
+
+		protected:
+			f32 mLearningRate;
 
 			std::vector<paramMemory>& getLayerParamOnCPU(std::unique_ptr<layer::BaseLayer>&);
 			std::vector<paramMemory>& getLayerDParamOnCPU(std::unique_ptr<layer::BaseLayer>&);
