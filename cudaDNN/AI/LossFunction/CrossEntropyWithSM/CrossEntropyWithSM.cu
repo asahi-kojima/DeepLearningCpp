@@ -15,7 +15,7 @@ namespace Aoba
 			}
 
 			u32 offset = batchID * dataSize;
-			f32 correct = label[batchID];
+			u32 correct = static_cast<u32>(label[batchID]);
 
 			f32 max = forwardResult[offset + 0];
 			u32 maxIndex = 0;
@@ -40,7 +40,7 @@ namespace Aoba
 				dInput[offset + i] = ((exp(forwardResult[offset + i] - max) / sum) - (correct == i ? 1 : 0)) / batchSize;
 			}
 
-			loss[batchID] = log(exp(forwardResult[offset + maxIndex]) / sum + 1e-7);
+			loss[batchID] = -log(exp(forwardResult[offset + correct] - max) / sum + 1e-7);
 		}
 	}
 
@@ -61,7 +61,6 @@ namespace Aoba
 			dim3 grid(
 				(mDataShape.batchSize + block.x - 1) / block.x);
 
-			std::vector<f32> lossTbl(mDataShape.batchSize);
 			//エラーが出る（今後のために残しておく）
 			/*f32* lossTblOnGPU = nullptr;
 			CHECK(cudaMalloc((void**)(&lossTblOnGPU), mDataShape.batchSize * sizeof(f32)));*/
@@ -70,15 +69,16 @@ namespace Aoba
 			CHECK(cudaDeviceSynchronize());
 #endif
 			f32 loss = 0;
-			f32* pDataOnCPU = new f32[mForwardResultOnGPU->size];
-			f32* tmp = new f32[mForwardResultOnGPU->size];
-			//CHECK(cudaMemcpy(pDataOnCPU, mForwardResultOnGPU->address, mForwardResultOnGPU->size * sizeof(f32), cudaMemcpyDeviceToHost));
+			std::vector<f32> lossOnCPU(mLossTblOnGPU.size);
+			CHECK(cudaMemcpy(lossOnCPU.data(), mLossTblOnGPU.address, mLossTblOnGPU.size * sizeof(f32), cudaMemcpyDeviceToHost));
+
+			for (u32 i = 0; i < mLossTblOnGPU.size; i++)
+			{
+				loss += lossOnCPU[i];
+			}
 
 
 
-
-			delete[] tmp;
-			delete[] pDataOnCPU;
 			return loss / mDataShape.batchSize;
 		}
 	}

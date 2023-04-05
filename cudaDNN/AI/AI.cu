@@ -18,10 +18,6 @@ namespace Aoba
 	AI::AI() = default;
 	AI::~AI() = default;
 
-	void AI::addLayer(std::unique_ptr<layer::BaseLayer>&& pLayer)
-	{
-		mLayerList.push_back(std::forward<std::unique_ptr<layer::BaseLayer>>(pLayer));
-	}
 
 	void AI::build(InputDataInterpretation& interpretation, std::unique_ptr<optimizer::BaseOptimizer>&& optimizer, std::unique_ptr<lossFunction::BaseLossFunction>&& lossFunction)
 	{
@@ -49,7 +45,7 @@ namespace Aoba
 	}
 
 
-	void AI::deepLearning(f32* pTrainingData, f32* pTrainingLabel, f32 learningRate)
+	void AI::deepLearning(f32* pTrainingData, f32* pTrainingLabel, u32 epochs, f32 learningRate)
 	{
 		mOptimizer->setLearningRate(learningRate);
 
@@ -72,9 +68,9 @@ namespace Aoba
 
 		u32 loopTime = mInterpretation.totalDataNum / mInterpretation.shape.batchSize;
 
-		for (u32 epoch = 0; epoch < 10; epoch++)
+		for (u32 epoch = 0; epoch < epochs; epoch++)
 		{
-			std::cout << "epoch = " << epoch << std::endl;
+			std::cout << "epoch = " << epoch + 1 << std::endl;
 			f32 loss = 0.0f;
 			for (u32 loop = 0; loop < loopTime; loop++)
 			{

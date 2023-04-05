@@ -45,7 +45,7 @@ void mnistNormalizer(std::vector<f32>& v, u32 size)
 	for (u32 i = 0; i < size; i++)
 	{
 		u32 offset = i * 784;
-		
+
 		f32 mu = 0;
 		for (u32 j = 0; j < 784; j++)
 		{
@@ -76,10 +76,10 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 	testData.resize(testDataNum * dataSize);
 	testLabel.resize(testDataNum);
 
-	loadMnistFromBin("C:\\Users\\asahi\\Downloads\\mnist_data_train.bin",  trainingData, sizeof(f32) * trainingData.size());
+	loadMnistFromBin("C:\\Users\\asahi\\Downloads\\mnist_data_train.bin", trainingData, sizeof(f32) * trainingData.size());
 	loadMnistFromBin("C:\\Users\\asahi\\Downloads\\mnist_label_train.bin", trainingLabel, sizeof(f32) * trainingLabel.size());
-	loadMnistFromBin("C:\\Users\\asahi\\Downloads\\mnist_data_test.bin",   testData, sizeof(f32) * testData.size());
-	loadMnistFromBin("C:\\Users\\asahi\\Downloads\\mnist_label_test.bin",  testLabel, sizeof(f32) * testLabel.size());
+	loadMnistFromBin("C:\\Users\\asahi\\Downloads\\mnist_data_test.bin", testData, sizeof(f32) * testData.size());
+	loadMnistFromBin("C:\\Users\\asahi\\Downloads\\mnist_label_test.bin", testLabel, sizeof(f32) * testLabel.size());
 
 	printMNIST(testData.data() + 784 * 1000);
 	printMNIST(trainingData.data() + 784 * 59999);
@@ -115,8 +115,8 @@ int main()
 	DataMemory trainingDataGPU, trainingLabelGPU, testDataGPU, testLabelGPU;
 	setupMnistGpuData(trainingDataGPU, trainingData);
 	setupMnistGpuData(trainingLabelGPU, trainingLabel);
-	setupMnistGpuData(testDataGPU,testData);
-	setupMnistGpuData(testLabelGPU,testLabel);
+	setupMnistGpuData(testDataGPU, testData);
+	setupMnistGpuData(testLabelGPU, testLabel);
 
 
 
@@ -130,11 +130,9 @@ int main()
 
 
 	AI Aira{};
-	Aira.addLayer(CREATELAYER(layer::Affine, 300, 0.001f));
-	Aira.addLayer(CREATELAYER(layer::ReLU));
-	Aira.addLayer(CREATELAYER(layer::Affine, 60, 0.001f));
-	Aira.addLayer(CREATELAYER(layer::ReLU));
-	Aira.addLayer(CREATELAYER(layer::Affine, 10,0.001f));
+	Aira.addLayer<layer::Affine>(100, 0.001f);
+	Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Affine>(10, 0.001f);
 
 
 	Aira.build(interpretation, std::make_unique<optimizer::Sgd>(0.001f), std::make_unique<lossFunction::CrossEntropyWithSM>());
@@ -143,22 +141,8 @@ int main()
 	//äwèKÉãÅ[Év
 	//////////////////////////////////////////
 
-	for (u32 epoch = 0; epoch < 1; epoch++)
-	{
-		std::cout << "Epoch " << epoch << "start\n";
-		f32 loss = 0.0f;
-		f32 count = 0;
-		for (u32 batchLoop = 0, end =1; batchLoop < end; batchLoop++)
-		{
-			f32* dataAddress = trainingDataGPU.address + batchLoop * (dataSize * inputDataShape.batchSize);
-			f32* labelAddress = trainingLabel.data() + batchLoop * (inputDataShape.batchSize);
+	Aira.deepLearning(trainingData.data(), trainingLabel.data());
+	f32 loss = Aira.getLoss();
 
-			Aira.deepLearning(trainingData.data(), trainingLabel.data());
-			f32 loss = Aira.getLoss();
-		}
-
-		std::cout << "average loss = " << loss / count << std::endl;
-	}
-	
 	return 0;
 }

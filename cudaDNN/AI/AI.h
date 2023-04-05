@@ -39,10 +39,14 @@ namespace Aoba
 		AI();
 		~AI();
 
-		void addLayer(std::unique_ptr<layer::BaseLayer>&&);
+		template <typename T, typename ... Args>
+		void addLayer(Args ... args)
+		{
+			mLayerList.push_back(std::make_unique<T>(args...));
+		}
 		void build(InputDataInterpretation&, std::unique_ptr<optimizer::BaseOptimizer>&&, std::unique_ptr<lossFunction::BaseLossFunction>&&);
 		
-		void deepLearning(f32*, f32*, f32 lr = 0.001f);
+		void deepLearning(f32*, f32*, u32 epochs = 50, f32 = 0.001f);
 		DataMemory operator()(f32*);//–¢ŽÀ‘•
 		f32 getLoss() 
 		{

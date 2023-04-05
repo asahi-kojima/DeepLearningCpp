@@ -18,13 +18,11 @@ namespace Aoba
 
 			virtual f32 calcLossAndDInputOnCPU() = 0;
 			virtual void initializeOnCPU() = 0;
-
 			void setInputOnCPU(DataMemory* pData, DataMemory* pLabel)
 			{
 				mForwardResultOnCPU = pData;
 				mLabelDataOnCPU = pLabel;
 			}
-
 			DataMemory* getDInputDataOnCPU()
 			{
 				return &mDInputDataOnCPU;
@@ -34,7 +32,6 @@ namespace Aoba
 
 			virtual void initializeOnGPU() = 0;
 			virtual f32 calcLossAndDInputOnGPU() = 0;
-
 			void setInputOnGPU(DataMemory* pData, DataMemory* pLabel)
 			{
 				mForwardResultOnGPU = pData;
