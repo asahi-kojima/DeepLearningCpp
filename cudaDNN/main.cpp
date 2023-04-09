@@ -121,8 +121,9 @@ int main()
 
 
 	//データ形状は自分の手で決める。
-	AI::InputDataShape inputDataShape = { 100, 1, 1, 28 * 28 };
-	AI::InputDataInterpretation interpretation(trainingDataNum, inputDataShape);
+	AI::InputDataShape inputTrainingDataShape = { 100, 1, 1, 28 * 28 };
+	AI::InputDataShape inputCorrectDataShape = { 100, 1, 1, 1 };
+	AI::DataFormat4DeepLearning format(trainingDataNum, inputTrainingDataShape, inputCorrectDataShape);
 
 	//////////////////////////////////////////
 	//AIの準備
@@ -135,14 +136,13 @@ int main()
 	Aira.addLayer<layer::Affine>(10, 0.001f);
 
 
-	Aira.build(interpretation, std::make_unique<optimizer::Sgd>(0.001f), std::make_unique<lossFunction::CrossEntropyWithSM>());
+	Aira.build(format, std::make_unique<optimizer::Sgd>(0.001f), std::make_unique<lossFunction::CrossEntropyWithSM>());
 
 	//////////////////////////////////////////
 	//学習ループ
 	//////////////////////////////////////////
 
 	Aira.deepLearning(trainingData.data(), trainingLabel.data());
-	f32 loss = Aira.getLoss();
 
 	return 0;
 }

@@ -19,10 +19,12 @@ namespace Aoba
 			DataMemory& input = *mForwardResultOnCPU;
 			DataMemory& label = *mLabelDataOnCPU;
 
-			u32 dataSize = input.size;
-			u32 batchID = mDataShape.batchSize;
+			u32 batchSize = mDataShape.batchSize;
+			u32 dataSize = input.size / batchSize;
 
-			for (u32 N = 0; N < batchID; N++)
+			f32 loss = 0.0f;
+
+			for (u32 batchID = 0; batchID < batchSize; batchID++)
 			{
 				u32 offset = batchID * dataSize;
 				u32 correct = static_cast<u32>(label.address[batchID]);
@@ -47,11 +49,14 @@ namespace Aoba
 
 				for (u32 i = 0; i < dataSize; i++)
 				{
-					mDInputDataOnCPU.address[offset + i] = ((exp(input.address[offset + i] - max) / sum) - (correct == i ? 1 : 0)) / mDataShape.batchSize;
+					mDInputDataOnCPU.address[offset + i] = ((exp(input.address[offset + i] - max) / sum) - (correct == i ? 1 : 0)) / batchSize;
 				}
+
+				loss += mLossTblOnCPU.address[batchID] = -log(exp(input.address[offset + correct] - max) / sum + 1e-7);;
 			}
 
-			return 0;
+			
+			return loss / mDataShape.batchSize;
 		}
 	}
 }

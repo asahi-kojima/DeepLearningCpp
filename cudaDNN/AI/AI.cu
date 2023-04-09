@@ -19,7 +19,7 @@ namespace Aoba
 	AI::~AI() = default;
 
 
-	void AI::build(InputDataInterpretation& interpretation, std::unique_ptr<optimizer::BaseOptimizer>&& optimizer, std::unique_ptr<lossFunction::BaseLossFunction>&& lossFunction)
+	void AI::build(DataFormat4DeepLearning& format, std::unique_ptr<optimizer::BaseOptimizer>&& optimizer, std::unique_ptr<lossFunction::BaseLossFunction>&& lossFunction)
 	{
 		//層が最低でも一つあるかのチェック
 		assert(mLayerList.size() > 0);
@@ -36,8 +36,8 @@ namespace Aoba
 		checkGpuIsAvailable();
 
 		//層のメモリを構成する上で必要になるパラメータの設定を行う。
-		mInterpretation = interpretation;
-		setupLayerInfo(mInterpretation.shape);
+		mDataFormat4DeepLearning = format;
+		setupLayerInfo(mDataFormat4DeepLearning.trainingDataShape);
 
 		//各層内におけるメモリの確保
 		allocLayerMemory();
@@ -61,30 +61,50 @@ namespace Aoba
 			std::cout << name << space << " = " << value << "\n";
 		};
 		std::cout << "TrainingData setup now" << std::endl;
-		printer("TotalData num", mInterpretation.totalDataNum);
-		printer("channel", mInterpretation.shape.channel);
-		printer("height", mInterpretation.shape.height);
-		printer("width", mInterpretation.shape.width);
+		printer("TotalData num", mDataFormat4DeepLearning.dataNum);
+		printer("channel", mDataFormat4DeepLearning.trainingDataShape.channel);
+		printer("height", mDataFormat4DeepLearning.trainingDataShape.height);
+		printer("width", mDataFormat4DeepLearning.trainingDataShape.width);
 
-		u32 loopTime = mInterpretation.totalDataNum / mInterpretation.shape.batchSize;
+		u32 loopTime = mDataFormat4DeepLearning.dataNum / mDataFormat4DeepLearning.trainingDataShape.batchSize;
+		u32 batch = mDataFormat4DeepLearning.trainingDataShape.batchSize;
+		auto progressBar = [](u32 currentLoop, u32 totalLoop, u32 length = 20)
+		{
+			u32 grid = totalLoop / length;
+			std::string s = "\r";
+			for (u32 i = 0; i < static_cast<u32>((static_cast<f32>(length) * currentLoop) / totalLoop); i++)
+			{
+				s += "=";
+			}
+			s += ">";
+			int spaceLength = static_cast<s32>(length - s.length() + 1);
+			for (s32 i = 0; i < spaceLength; i++)
+			{
+				s += " ";
+			}
+			s += " " + std::to_string(static_cast<u32>(static_cast<f32>(currentLoop * 100) / totalLoop)) + "/100";
+			printf(s.c_str());
+		};
 
 		for (u32 epoch = 0; epoch < epochs; epoch++)
 		{
 			std::cout << "epoch = " << epoch + 1 << std::endl;
 			f32 loss = 0.0f;
+			std::cout << "deep learning now" << std::endl;
 			for (u32 loop = 0; loop < loopTime; loop++)
 			{
-				u32 offsetForData = (mInterpretation.shape.batchSize * mInterpretation.elementNum) * loop;
-				u32 offsetForLabel = (mInterpretation.shape.batchSize * 1) * loop;
+				progressBar(loop+1, loopTime);
+				u32 offsetForTrainingData = (batch * mDataFormat4DeepLearning.eachTrainingDataSize) * loop;
+				u32 offsetForCorrectLabel = (batch * mDataFormat4DeepLearning.eachCorrectDataSize) * loop;
 				if (mIsGpuAvailable)
 				{
-					mInputTrainingDataOnGPU.address = mInputTrainingDataStartAddressOnGPU + offsetForData;
-					mInputLabelDataOnGPU.address = mInputTrainingLableStartAddressOnGPU + offsetForLabel;
+					mInputTrainingDataOnGPU.address = mInputTrainingDataStartAddressOnGPU + offsetForTrainingData;
+					mInputLabelDataOnGPU.address = mInputTrainingLableStartAddressOnGPU + offsetForCorrectLabel;
 				}
 				else
 				{
-					mInputTrainingDataOnCPU.address = mInputTrainingDataStartAddressOnCPU + offsetForData;
-					mInputLabelDataOnCPU.address = mInputTrainingLableStartAddressOnCPU + offsetForLabel;
+					mInputTrainingDataOnCPU.address = mInputTrainingDataStartAddressOnCPU + offsetForTrainingData;
+					mInputLabelDataOnCPU.address = mInputTrainingLableStartAddressOnCPU + offsetForCorrectLabel;
 				}
 				forward();
 #if _DEBUG
@@ -114,7 +134,8 @@ namespace Aoba
 				else
 					loss += mLossOnCPU;
 			}
-			std::cout << "current loss = " << loss / loopTime << std::endl;
+			std::cout << "\n";
+			std::cout << "current loss = " << loss / loopTime << "\n" << std::endl;
 		}
 	}
 
@@ -129,86 +150,7 @@ namespace Aoba
 #pragma region private
 	void AI::checkGpuIsAvailable()
 	{
-		std::cout << std::string(100, '=') << std::endl;
-		std::cout << "GPU Resource Check..." << std::endl;
-		std::cout << std::string(100, '=') << std::endl;
-		int deviceCount = 0;
-		cudaGetDeviceCount(&deviceCount);
-
-		if (deviceCount == 0)
-		{
-			mIsGpuAvailable = false;
-			printf("There are no available device(s) that support CUDA\n");
-		}
-		else
-		{
-			mIsGpuAvailable = true;
-			printf("Detected %d CUDA Capable device(s)\n", deviceCount);
-		}
-
-		int dev = 0, driverVersion = 0, runtimeVersion = 0;
-		CHECK(cudaSetDevice(dev));
-		cudaDeviceProp deviceProp;
-		CHECK(cudaGetDeviceProperties(&deviceProp, dev));
-		printf("Device %d: \"%s\"\n", dev, deviceProp.name);
-
-		cudaDriverGetVersion(&driverVersion);
-		cudaRuntimeGetVersion(&runtimeVersion);
-		printf("  CUDA Driver Version / Runtime Version          %d.%d / %d.%d\n",
-			driverVersion / 1000, (driverVersion % 100) / 10,
-			runtimeVersion / 1000, (runtimeVersion % 100) / 10);
-		printf("  CUDA Capability Major/Minor version number:    %d.%d\n",
-			deviceProp.major, deviceProp.minor);
-		printf("  Total amount of global memory:                 %.2f GBytes (%llu "
-			"bytes)\n", (float)deviceProp.totalGlobalMem / pow(1024.0, 3),
-			(unsigned long long)deviceProp.totalGlobalMem);
-		printf("  GPU Clock rate:                                %.0f MHz (%0.2f "
-			"GHz)\n", deviceProp.clockRate * 1e-3f,
-			deviceProp.clockRate * 1e-6f);
-		printf("  Memory Clock rate:                             %.0f Mhz\n",
-			deviceProp.memoryClockRate * 1e-3f);
-		printf("  Memory Bus Width:                              %d-bit\n",
-			deviceProp.memoryBusWidth);
-
-		if (deviceProp.l2CacheSize)
-		{
-			printf("  L2 Cache Size:                                 %d bytes\n",
-				deviceProp.l2CacheSize);
-		}
-
-		printf("  Max Texture Dimension Size (x,y,z)             1D=(%d), "
-			"2D=(%d,%d), 3D=(%d,%d,%d)\n", deviceProp.maxTexture1D,
-			deviceProp.maxTexture2D[0], deviceProp.maxTexture2D[1],
-			deviceProp.maxTexture3D[0], deviceProp.maxTexture3D[1],
-			deviceProp.maxTexture3D[2]);
-		printf("  Max Layered Texture Size (dim) x layers        1D=(%d) x %d, "
-			"2D=(%d,%d) x %d\n", deviceProp.maxTexture1DLayered[0],
-			deviceProp.maxTexture1DLayered[1], deviceProp.maxTexture2DLayered[0],
-			deviceProp.maxTexture2DLayered[1],
-			deviceProp.maxTexture2DLayered[2]);
-		printf("  Total amount of constant memory:               %lu bytes\n",
-			deviceProp.totalConstMem);
-		printf("  Total amount of shared memory per block:       %lu bytes\n",
-			deviceProp.sharedMemPerBlock);
-		printf("  Total number of registers available per block: %d\n",
-			deviceProp.regsPerBlock);
-		printf("  Warp size:                                     %d\n",
-			deviceProp.warpSize);
-		printf("  Maximum number of threads per multiprocessor:  %d\n",
-			deviceProp.maxThreadsPerMultiProcessor);
-		printf("  Maximum number of threads per block:           %d\n",
-			deviceProp.maxThreadsPerBlock);
-		printf("  Maximum sizes of each dimension of a block:    %d x %d x %d\n",
-			deviceProp.maxThreadsDim[0],
-			deviceProp.maxThreadsDim[1],
-			deviceProp.maxThreadsDim[2]);
-		printf("  Maximum sizes of each dimension of a grid:     %d x %d x %d\n",
-			deviceProp.maxGridSize[0],
-			deviceProp.maxGridSize[1],
-			deviceProp.maxGridSize[2]);
-		printf("  Maximum memory pitch:                          %lu bytes\n",
-			deviceProp.memPitch);
-		std::cout << std::string(100, '=') << "\n\n" << std::endl;
+		mIsGpuAvailable = true;
 	}
 
 	/// <summary>
@@ -325,25 +267,26 @@ namespace Aoba
 		mInputTrainingDataStartAddressOnCPU = pTrainingData;
 		mInputTrainingLableStartAddressOnCPU = pTrainingLabel;
 
+		u32 batch = mDataFormat4DeepLearning.trainingDataShape.batchSize;
 		if (mIsGpuAvailable)
 		{
-			mInputTrainingDataOnGPU.size = mInterpretation.shape.batchSize * mInterpretation.elementNum;
-			mInputTrainingDataOnGPU.byteSize = mInterpretation.shape.batchSize * mInterpretation.byteSize;
-			mInputLabelDataOnGPU.size = mInterpretation.shape.batchSize * 1;
-			mInputLabelDataOnGPU.byteSize = mInterpretation.shape.batchSize * sizeof(f32);
+			mInputTrainingDataOnGPU.size = batch * mDataFormat4DeepLearning.eachTrainingDataSize;
+			mInputTrainingDataOnGPU.byteSize = mInputTrainingDataOnGPU.size * sizeof(f32);
+			mInputLabelDataOnGPU.size = batch * mDataFormat4DeepLearning.eachCorrectDataSize;
+			mInputLabelDataOnGPU.byteSize = mInputLabelDataOnGPU.size * sizeof(f32);
 
-			CHECK(cudaMalloc((void**)(&mInputTrainingDataStartAddressOnGPU), 60000 * 1 * 28 * 28 * sizeof(f32)));
-			CHECK(cudaMalloc((void**)(&mInputTrainingLableStartAddressOnGPU), 60000 * 1 * 1 * 1 * sizeof(f32)));
+			CHECK(cudaMalloc((void**)(&mInputTrainingDataStartAddressOnGPU), mDataFormat4DeepLearning.dataNum * mDataFormat4DeepLearning.eachTrainingDataSize * sizeof(f32)));
+			CHECK(cudaMalloc((void**)(&mInputTrainingLableStartAddressOnGPU), mDataFormat4DeepLearning.dataNum * mDataFormat4DeepLearning.eachCorrectDataSize * sizeof(f32)));
 
-			CHECK(cudaMemcpy(mInputTrainingDataStartAddressOnGPU, mInputTrainingDataStartAddressOnCPU, 60000 * 1 * 28 * 28 * sizeof(f32), cudaMemcpyHostToDevice));
-			CHECK(cudaMemcpy(mInputTrainingLableStartAddressOnGPU, mInputTrainingLableStartAddressOnCPU, 60000 * 1 * 1 * 1 * sizeof(f32), cudaMemcpyHostToDevice));
+			CHECK(cudaMemcpy(mInputTrainingDataStartAddressOnGPU, mInputTrainingDataStartAddressOnCPU, mDataFormat4DeepLearning.dataNum * mDataFormat4DeepLearning.eachTrainingDataSize * sizeof(f32), cudaMemcpyHostToDevice));
+			CHECK(cudaMemcpy(mInputTrainingLableStartAddressOnGPU, mInputTrainingLableStartAddressOnCPU, mDataFormat4DeepLearning.dataNum * mDataFormat4DeepLearning.eachCorrectDataSize * sizeof(f32), cudaMemcpyHostToDevice));
 		}
 		else
 		{
-			mInputTrainingDataOnCPU.size = mInterpretation.shape.batchSize * mInterpretation.elementNum;
-			mInputTrainingDataOnCPU.byteSize = mInterpretation.shape.batchSize * mInterpretation.byteSize;
-			mInputLabelDataOnCPU.size = mInterpretation.shape.batchSize * 1;
-			mInputLabelDataOnCPU.byteSize = mInterpretation.shape.batchSize * sizeof(f32);
+			mInputTrainingDataOnCPU.size = batch * mDataFormat4DeepLearning.eachTrainingDataSize;
+			mInputTrainingDataOnCPU.byteSize = mInputTrainingDataOnCPU.size * sizeof(f32);
+			mInputLabelDataOnCPU.size = batch * mDataFormat4DeepLearning.eachCorrectDataSize;
+			mInputLabelDataOnCPU.byteSize = mInputLabelDataOnCPU.size * sizeof(f32);
 		}
 	}
 

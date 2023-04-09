@@ -10,30 +10,38 @@
 #define CREATELAYER(classname, ...) std::make_unique<classname>(__VA_ARGS__)
 namespace Aoba
 {
+
+
 	class AI
 	{
 	public:
 		using InputDataShape = DataShape;
-		struct InputDataInterpretation
+		struct DataFormat4DeepLearning
 		{
-			u32 totalDataNum;
-			u32 elementNum;
-			u32 toalElementNum;
+			u32 dataNum;
+			u32 batchSize = 100;
 
-			u32 byteSize;
-			u32 totalByteSize;
+			DataShape trainingDataShape;
+			u32 eachTrainingDataSize;
 
-			InputDataShape shape;
+			DataShape correctDataShape;
+			u32 eachCorrectDataSize;
 
-			InputDataInterpretation() = default;
-			InputDataInterpretation(u32 totalDataNum, InputDataShape shape)
-				: totalDataNum(totalDataNum)
-				, shape{ shape }
-				, elementNum(shape.channel* shape.height* shape.width)
-				, toalElementNum(elementNum * totalDataNum)
-				, byteSize(elementNum * sizeof(f32))
-				, totalByteSize(totalDataNum* byteSize)
-			{}
+			DataFormat4DeepLearning(u32 dataNum,DataShape trainingDataShape, DataShape correctDataShape)
+				: dataNum(dataNum)
+				, trainingDataShape(trainingDataShape)
+				, correctDataShape(correctDataShape)
+			{
+				if (trainingDataShape.batchSize != correctDataShape.batchSize)
+				{
+					correctDataShape.batchSize = trainingDataShape.batchSize;
+				}
+
+				eachTrainingDataSize = trainingDataShape.channel * trainingDataShape.height * trainingDataShape.width;
+				eachCorrectDataSize = correctDataShape.channel * correctDataShape.height * correctDataShape.width;
+			}
+
+			DataFormat4DeepLearning() = default;
 		};
 
 		AI();
@@ -44,11 +52,11 @@ namespace Aoba
 		{
 			mLayerList.push_back(std::make_unique<T>(args...));
 		}
-		void build(InputDataInterpretation&, std::unique_ptr<optimizer::BaseOptimizer>&&, std::unique_ptr<lossFunction::BaseLossFunction>&&);
-		
+		void build(DataFormat4DeepLearning&, std::unique_ptr<optimizer::BaseOptimizer>&&, std::unique_ptr<lossFunction::BaseLossFunction>&&);
+
 		void deepLearning(f32*, f32*, u32 epochs = 50, f32 = 0.001f);
 		DataMemory operator()(f32*);//–¢ŽÀ‘•
-		f32 getLoss() 
+		f32 getLoss()
 		{
 			if (mIsGpuAvailable)
 				return mLossOnGPU;
@@ -102,6 +110,6 @@ namespace Aoba
 
 
 		bool mIsGpuAvailable = true;
-		InputDataInterpretation mInterpretation;
+		DataFormat4DeepLearning mDataFormat4DeepLearning;
 	};
 }

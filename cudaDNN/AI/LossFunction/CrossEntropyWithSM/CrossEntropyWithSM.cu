@@ -14,7 +14,7 @@ namespace Aoba
 				return;
 			}
 
-			u32 offset = batchID * dataSize;
+			u32 offset = batchID * dataSize; 
 			u32 correct = static_cast<u32>(label[batchID]);
 
 			f32 max = forwardResult[offset + 0];
