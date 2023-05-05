@@ -13,8 +13,8 @@ namespace Aoba
 			~CrossEntropyWithSM() = default;
 
 		private:
-			void initializeOnGPU() override;
-			void initializeOnCPU() override;
+			void mallocOnGPU() override;
+			void mallocOnCPU() override;
 
 			f32 calcLossAndDInputOnGPU() override;
 			f32 calcLossAndDInputOnCPU() override;

@@ -5,7 +5,7 @@ namespace Aoba
 {
 	namespace
 	{
-		__global__ void calc(f32* forwardResult, f32* label, f32* dInput, f32* loss, u32 batchSize, u32 width, u32 dataSize)
+		__global__ void calcLoss(f32* forwardResult, f32* correctData, f32* dInput, f32* loss, u32 batchSize, u32 width, u32 dataSize)
 		{
 			u32 batchID = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -14,8 +14,8 @@ namespace Aoba
 				return;
 			}
 
-			u32 offset = batchID * dataSize; 
-			u32 correct = static_cast<u32>(label[batchID]);
+			u32 offset = batchID * dataSize;
+			u32 correct = static_cast<u32>(correctData[batchID]);
 
 			f32 max = forwardResult[offset + 0];
 			u32 maxIndex = 0;
@@ -39,19 +39,19 @@ namespace Aoba
 			{
 				dInput[offset + i] = ((exp(forwardResult[offset + i] - max) / sum) - (correct == i ? 1 : 0)) / batchSize;
 			}
-
+			
 			loss[batchID] = -log(exp(forwardResult[offset + correct] - max) / sum + 1e-7);
 		}
 	}
 
 	namespace lossFunction
 	{
-		void CrossEntropyWithSM::initializeOnGPU()
+		void CrossEntropyWithSM::mallocOnGPU()
 		{
-			mDInputDataOnGPU.size = mDataShape.batchSize * mDataShape.channel * mDataShape.height * mDataShape.width;
+			mDInputDataOnGPU.size =mBatchSize * mTrainingDataShape.width;
 			CHECK(cudaMalloc((void**)(&(mDInputDataOnGPU.address)), mDInputDataOnGPU.size * sizeof(f32)));
 
-			mLossTblOnGPU.size = mDataShape.batchSize;
+			mLossTblOnGPU.size = mBatchSize;
 			CHECK(cudaMalloc((void**)(&mLossTblOnGPU.address), mLossTblOnGPU.size * sizeof(f32)));
 		}
 
@@ -59,12 +59,22 @@ namespace Aoba
 		{
 			dim3 block(16, 1);
 			dim3 grid(
-				(mDataShape.batchSize + block.x - 1) / block.x);
+				(mBatchSize + block.x - 1) / block.x);
 
 			//エラーが出る（今後のために残しておく）
 			/*f32* lossTblOnGPU = nullptr;
 			CHECK(cudaMalloc((void**)(&lossTblOnGPU), mDataShape.batchSize * sizeof(f32)));*/
-			calc<<<grid, block>>>(mForwardResultOnGPU->address, mLabelDataOnGPU->address, mDInputDataOnGPU.address, mLossTblOnGPU.address, mDataShape.batchSize, mDataShape.width, mDataShape.channel * mDataShape.height * mDataShape.width);
+#if _DEBUG
+			assert(mBatchSize != 0);
+#endif
+			calcLoss<<<grid, block>>>(
+				mForwardResultOnGPU->address,
+				mCorrectDataOnGPU->address,
+				mDInputDataOnGPU.address, 
+				mLossTblOnGPU.address, 
+				mBatchSize,
+				mTrainingDataShape.width,
+				mForwardResultOnGPU->size / mBatchSize);
 #if _DEBUG
 			CHECK(cudaDeviceSynchronize());
 #endif
@@ -78,8 +88,7 @@ namespace Aoba
 			}
 
 
-
-			return loss / mDataShape.batchSize;
+			return loss / mBatchSize;
 		}
 	}
 }

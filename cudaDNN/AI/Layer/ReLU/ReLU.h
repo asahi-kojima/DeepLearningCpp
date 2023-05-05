@@ -17,15 +17,15 @@ namespace Aoba
 			~ReLU();
 
 		private:
-			void setupLayerInfo(DataShape*) override;
+			void setupLayerInfo(u32, DataShape&) override;
 			
 
-			void initializeOnCPU() override;
+			void mallocOnCPU() override;
 			void forwardOnCPU()  override;
 			void backwardOnCPU() override;
 			void terminateOnCPU() override;
 
-			void initializeOnGPU() override;
+			void mallocOnGPU() override;
 			void forwardOnGPU()  override;
 			void backwardOnGPU() override;
 			void terminateOnGPU() override;

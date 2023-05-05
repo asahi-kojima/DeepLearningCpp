@@ -22,12 +22,12 @@ namespace Aoba::layer
 	{
 	}
 
-	void Affine::setupLayerInfo(DataShape* pInputData)
+	void Affine::setupLayerInfo(u32 batchSize, DataShape& shape)
 	{
-		mBatchSize = pInputData->batchSize;
-		mInputSize = pInputData->width;
+		mBatchSize = batchSize;
+		mInputSize = shape.width;
 
-		pInputData->width = mOutputSize;
+		shape.width = mOutputSize;
 	}
 
 
@@ -37,7 +37,7 @@ namespace Aoba::layer
 	//////////////////////////////////////
 	//CPU ä÷êî
 	//////////////////////////////////////
-	void Affine::initializeOnCPU()
+	void Affine::mallocOnCPU()
 	{
 		pParametersOnCPU.resize(2);
 		pDParametersOnCPU.resize(2);

@@ -6,9 +6,7 @@
 #include <ostream>
 
 #include "AI/AI.h"
-#include "AI/Layer/Layer.h"
-#include "AI/Optimizer/Optimizer.h"
-#include "AI/LossFunction/LossFunction.h"
+
 #include "commonGPU.cuh"
 
 
@@ -112,18 +110,12 @@ int main()
 	std::vector<f32> trainingData, trainingLabel, testData, testLabel;
 	setupMnistData(trainingData, trainingLabel, testData, testLabel);
 
-	DataMemory trainingDataGPU, trainingLabelGPU, testDataGPU, testLabelGPU;
-	setupMnistGpuData(trainingDataGPU, trainingData);
-	setupMnistGpuData(trainingLabelGPU, trainingLabel);
-	setupMnistGpuData(testDataGPU, testData);
-	setupMnistGpuData(testLabelGPU, testLabel);
-
-
 
 	//データ形状は自分の手で決める。
-	AI::InputDataShape inputTrainingDataShape = { 100, 1, 1, 28 * 28 };
-	AI::InputDataShape inputCorrectDataShape = { 100, 1, 1, 1 };
-	AI::DataFormat4DeepLearning format(trainingDataNum, inputTrainingDataShape, inputCorrectDataShape);
+	DataShape inputTrainingDataShape = {1, 1, 28 * 28 };
+	DataShape inputCorrectDataShape = { 1, 1, 1 };
+	//訓練データと教師データの形状についてAIに教える
+	DataFormat4DeepLearning format(trainingDataNum, 100, inputTrainingDataShape, inputCorrectDataShape);
 
 	//////////////////////////////////////////
 	//AIの準備
@@ -131,12 +123,13 @@ int main()
 
 
 	AI Aira{};
-	Aira.addLayer<layer::Affine>(100, 0.001f);
+	Aira.addLayer<layer::Affine>(50, 0.001f);
 	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Affine>(10, 0.001f);
+	Aira.setOptimizer<optimizer::Sgd>(0.001f);
+	Aira.setLossFunction<lossFunction::CrossEntropyWithSM>();
 
-
-	Aira.build(format, std::make_unique<optimizer::Sgd>(0.001f), std::make_unique<lossFunction::CrossEntropyWithSM>());
+	Aira.build(format);
 
 	//////////////////////////////////////////
 	//学習ループ

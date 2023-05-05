@@ -17,10 +17,10 @@ namespace Aoba::layer
 	ReLU::~ReLU(){}
 
 
-	void ReLU::setupLayerInfo(DataShape* pInputData)
+	void ReLU::setupLayerInfo(u32 batchSize, DataShape& shape)
 	{
-		mBatchSize = pInputData->batchSize;
-		mInputSize = pInputData->width;
+		mBatchSize = batchSize;
+		mInputSize = shape.width;
 		mOutputSize = mInputSize;
 	}
 
@@ -29,7 +29,7 @@ namespace Aoba::layer
 	//////////////////////////////////////
 	//CPU ä÷êî
 	//////////////////////////////////////
-	void ReLU::initializeOnCPU()
+	void ReLU::mallocOnCPU()
 	{
 		mMaskOnCPU.size = mBatchSize * mInputSize;;
 		mMaskOnCPU.address = new f32[mMaskOnCPU.size];

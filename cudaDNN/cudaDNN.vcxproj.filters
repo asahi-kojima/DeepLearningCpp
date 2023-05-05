@@ -40,6 +40,9 @@
     <Filter Include="ソース ファイル\AI\LossFunction\CrossEntropyWithSM">
       <UniqueIdentifier>{7e164bbe-00a4-49d5-bd17-4e6adbef13cb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\AI\Layer\BatchNorm2d">
+      <UniqueIdentifier>{df9e468e-f6ab-48b0-b2e3-046dc70ca0e8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="main.cpp">
@@ -62,6 +65,9 @@
     </CudaCompile>
     <CudaCompile Include="AI\LossFunction\CrossEntropyWithSM\CrossEntropyWithSM.cu">
       <Filter>ソース ファイル\AI\LossFunction\CrossEntropyWithSM</Filter>
+    </CudaCompile>
+    <CudaCompile Include="AI\Layer\BatchNorm2d\BatchNorm2d.cu">
+      <Filter>ソース ファイル\AI\Layer\BatchNorm2d</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
@@ -113,6 +119,12 @@
     <ClInclude Include="AI\LossFunction\CrossEntropyWithSM\CrossEntropyWithSM.h">
       <Filter>ソース ファイル\AI\LossFunction\CrossEntropyWithSM</Filter>
     </ClInclude>
+    <ClInclude Include="AI\Layer\BatchNorm2d\BatchNorm2d.h">
+      <Filter>ソース ファイル\AI\Layer\BatchNorm2d</Filter>
+    </ClInclude>
+    <ClInclude Include="AI\AIMacro.h">
+      <Filter>ソース ファイル\AI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AI\Optimizer\BaseOptimizer.cpp">
@@ -132,6 +144,9 @@
     </ClCompile>
     <ClCompile Include="AI\LossFunction\CrossEntropyWithSM\CrossEntropyWithSM.cpp">
       <Filter>ソース ファイル\AI\LossFunction\CrossEntropyWithSM</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\Layer\BatchNorm2d\BatchNorm2d.cpp">
+      <Filter>ソース ファイル\AI\Layer\BatchNorm2d</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

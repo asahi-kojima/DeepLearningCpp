@@ -4,10 +4,12 @@
 
 #include "AISetting.h"
 #include "./Layer/BaseLayer.h"
+#include "./Layer/Layer.h"
 #include "./Optimizer/BaseOptimizer.h"
+#include "./Optimizer/Optimizer.h"
 #include "./LossFunction/BaseLossFunction.h"
+#include "./LossFunction/LossFunction.h"
 
-#define CREATELAYER(classname, ...) std::make_unique<classname>(__VA_ARGS__)
 namespace Aoba
 {
 
@@ -16,33 +18,7 @@ namespace Aoba
 	{
 	public:
 		using InputDataShape = DataShape;
-		struct DataFormat4DeepLearning
-		{
-			u32 dataNum;
-			u32 batchSize = 100;
-
-			DataShape trainingDataShape;
-			u32 eachTrainingDataSize;
-
-			DataShape correctDataShape;
-			u32 eachCorrectDataSize;
-
-			DataFormat4DeepLearning(u32 dataNum,DataShape trainingDataShape, DataShape correctDataShape)
-				: dataNum(dataNum)
-				, trainingDataShape(trainingDataShape)
-				, correctDataShape(correctDataShape)
-			{
-				if (trainingDataShape.batchSize != correctDataShape.batchSize)
-				{
-					correctDataShape.batchSize = trainingDataShape.batchSize;
-				}
-
-				eachTrainingDataSize = trainingDataShape.channel * trainingDataShape.height * trainingDataShape.width;
-				eachCorrectDataSize = correctDataShape.channel * correctDataShape.height * correctDataShape.width;
-			}
-
-			DataFormat4DeepLearning() = default;
-		};
+		
 
 		AI();
 		~AI();
@@ -52,9 +28,22 @@ namespace Aoba
 		{
 			mLayerList.push_back(std::make_unique<T>(args...));
 		}
-		void build(DataFormat4DeepLearning&, std::unique_ptr<optimizer::BaseOptimizer>&&, std::unique_ptr<lossFunction::BaseLossFunction>&&);
 
-		void deepLearning(f32*, f32*, u32 epochs = 50, f32 = 0.001f);
+		template <typename T, typename ... Args>
+		void setOptimizer(Args ... args)
+		{
+			mOptimizer = std::make_unique<T>(args...);
+		}
+
+		template <typename T, typename ... Args>
+		void setLossFunction(Args ... args)
+		{
+			mLossFunction = std::make_unique<T>(args...);
+		}
+
+		void build(DataFormat4DeepLearning&);
+
+		void deepLearning(f32*, f32*, u32 epochs = 50);
 		DataMemory operator()(f32*);//未実装
 		f32 getLoss()
 		{
@@ -67,14 +56,17 @@ namespace Aoba
 
 	private:
 		void checkGpuIsAvailable();
-		void setupLayerInfo(InputDataShape&);
-		void allocLayerMemory();
+		void initializeLayer();
 
 		void dataSetup(f32*, f32*);
+
 		void forward();
 		void backward();
 		void optimize();
 
+		//////////////////////////////////////////////////////////////////////
+		//共通変数
+		//////////////////////////////////////////////////////////////////////
 		//AIを構成する層のリスト
 		std::vector<std::unique_ptr<layer::BaseLayer> > mLayerList;
 		//オプティマイザー
@@ -82,34 +74,43 @@ namespace Aoba
 		//損失関数
 		std::unique_ptr<lossFunction::BaseLossFunction> mLossFunction;
 
+		bool mIsGpuAvailable = true;
+		DataFormat4DeepLearning mDataFormat4DeepLearning;
 
+
+
+
+		//////////////////////////////////////////////////////////////////////
+		//CPU関係の変数
+		//////////////////////////////////////////////////////////////////////
 		//入力データの基点
 		f32* mInputTrainingDataStartAddressOnCPU;
-		f32* mInputTrainingLableStartAddressOnCPU;
+		f32* mInputCorrectDataStartAddressOnCPU;
 		//入力データを置く場所
 		DataMemory mInputTrainingDataOnCPU;
-		DataMemory mInputLabelDataOnCPU;
+		DataMemory mInputCorrectDataOnCPU;
 		//順伝搬の結果がある場所
 		DataMemory* mForwardResultOnCPU;
 
-		f32 mLossOnCPU;
+		f32 mLossOnCPU = 0.0f;
 
 
-
+		
+		//////////////////////////////////////////////////////////////////////
+		//GPU関係の変数
+		//////////////////////////////////////////////////////////////////////
 		//入力データの基点
 		f32* mInputTrainingDataStartAddressOnGPU;
-		f32* mInputTrainingLableStartAddressOnGPU;
+		f32* mInputCorrectDataStartAddressOnGPU;
 		//入力データを置く場所
 		DataMemory mInputTrainingDataOnGPU;
-		DataMemory mInputLabelDataOnGPU;
+		DataMemory mInputCorrectDataOnGPU;
 		//順伝搬の結果がある場所
 		DataMemory* mForwardResultOnGPU;
 
-		f32 mLossOnGPU;
+		f32 mLossOnGPU = 0.0f;
 
 
 
-		bool mIsGpuAvailable = true;
-		DataFormat4DeepLearning mDataFormat4DeepLearning;
 	};
 }

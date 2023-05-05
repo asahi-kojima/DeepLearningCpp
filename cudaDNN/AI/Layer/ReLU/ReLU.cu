@@ -40,6 +40,7 @@ namespace Aoba {
 					mask[id] = 1;
 					y[id] = input;
 				}
+				//printf("%lf\n",y[id]);
 			}
 
 
@@ -67,7 +68,7 @@ namespace Aoba {
 		}
 
 
-		void ReLU::initializeOnGPU()
+		void ReLU::mallocOnGPU()
 		{
 			mMaskOnGPU.size =  mBatchSize * mInputSize;
 			CHECK(cudaMalloc((void**)(&mMaskOnGPU.address), mMaskOnGPU.size * sizeof(f32)));
@@ -123,7 +124,10 @@ namespace Aoba {
 				mMaskOnGPU.address,
 				mOutputSize,
 				mInputSize,
-				mBatchSize);
+				mBatchSize); 
+#if _DEBUG
+			CHECK(cudaDeviceSynchronize());
+#endif
 		}
 
 		void ReLU::backwardOnGPU()

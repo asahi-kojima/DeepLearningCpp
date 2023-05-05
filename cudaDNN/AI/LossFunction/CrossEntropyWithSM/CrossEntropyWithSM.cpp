@@ -5,21 +5,21 @@ namespace Aoba
 {
 	namespace lossFunction
 	{
-		void CrossEntropyWithSM::initializeOnCPU()
+		void CrossEntropyWithSM::mallocOnCPU()
 		{
-			mDInputDataOnCPU.size = mDataShape.batchSize * mDataShape.channel * mDataShape.height * mDataShape.width;
+			mDInputDataOnCPU.size = mBatchSize * mTrainingDataShape.channel * mTrainingDataShape.height * mTrainingDataShape.width;
 			mDInputDataOnCPU.address = new f32[mDInputDataOnCPU.size];
 
-			mLossTblOnCPU.size = mDataShape.batchSize;
+			mLossTblOnCPU.size = mBatchSize;
 			mLossTblOnCPU.address = new f32[mLossTblOnCPU.size];
 		}
 
 		f32 CrossEntropyWithSM::calcLossAndDInputOnCPU()
 		{
 			DataMemory& input = *mForwardResultOnCPU;
-			DataMemory& label = *mLabelDataOnCPU;
+			DataMemory& correctData = *mCorrectDataOnCPU;
 
-			u32 batchSize = mDataShape.batchSize;
+			u32 batchSize = mBatchSize;
 			u32 dataSize = input.size / batchSize;
 
 			f32 loss = 0.0f;
@@ -27,7 +27,7 @@ namespace Aoba
 			for (u32 batchID = 0; batchID < batchSize; batchID++)
 			{
 				u32 offset = batchID * dataSize;
-				u32 correct = static_cast<u32>(label.address[batchID]);
+				u32 correct = static_cast<u32>(correctData.address[batchID]);
 
 
 				f32 max = input.address[offset + 0];
@@ -55,8 +55,10 @@ namespace Aoba
 				loss += mLossTblOnCPU.address[batchID] = -log(exp(input.address[offset + correct] - max) / sum + 1e-7);;
 			}
 
-			
-			return loss / mDataShape.batchSize;
+#if _DEBUG
+			assert(mBatchSize != 0);
+#endif
+			return loss / mBatchSize;
 		}
 	}
 }

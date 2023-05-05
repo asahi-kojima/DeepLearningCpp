@@ -4,6 +4,7 @@
 
 #include "../AISetting.h"
 #include "../Optimizer/BaseOptimizer.h"
+#include <iostream>
 
 namespace Aoba
 {
@@ -16,17 +17,6 @@ namespace Aoba
 		public:
 			BaseLayer() = default;
 			virtual ~BaseLayer() = default;
-
-
-			/// <summary>
-			/// 入力・出力サイズ、カーネルサイズなどの決定などを行う。
-			/// </summary>
-			/// <param name=""></param>
-			virtual void setupLayerInfo(DataShape*) = 0;
-
-
-
-
 
 			virtual void setInputDataOnCPU(DataMemory*& pInputData) final
 			{
@@ -50,6 +40,10 @@ namespace Aoba
 				pDInputData = &mBackwardResultOnGPU;
 			}
 
+			virtual void printLayerInfo()
+			{
+				std::cout << "layer information" << std::endl;
+			}
 
 			//CPU
 			std::vector<paramMemory> pParametersOnCPU;
@@ -59,7 +53,17 @@ namespace Aoba
 			DataMemory* mInputDataOnCPU;
 			DataMemory* mDInputDataOnCPU;
 
-			virtual void initializeOnCPU() = 0;
+			virtual void initializeOnCPU(u32 batchSize, DataShape& shape) final
+			{
+				if (!mIsSetupLayerInfo)
+				{
+					setupLayerInfo(batchSize, shape);
+					mIsSetupLayerInfo = true;
+				}
+				mallocOnCPU();
+			}
+			virtual void mallocOnCPU() = 0;
+
 			virtual void forwardOnCPU() = 0;
 			virtual void backwardOnCPU() = 0;
 			virtual void terminateOnCPU() = 0;
@@ -73,10 +77,24 @@ namespace Aoba
 			DataMemory* mInputDataOnGPU;
 			DataMemory* mDInputDataOnGPU;
 
-			virtual void initializeOnGPU() = 0;
+			virtual void initializeOnGPU(u32 batchSize, DataShape& shape) final
+			{
+				if (!mIsSetupLayerInfo)
+				{
+					setupLayerInfo(batchSize, shape);
+					mIsSetupLayerInfo = true;
+				}
+				mallocOnGPU();
+			}
+			virtual void mallocOnGPU() = 0;
+
 			virtual void forwardOnGPU() = 0;
 			virtual void backwardOnGPU() = 0;
 			virtual void terminateOnGPU() = 0;
+
+		private:
+			virtual void setupLayerInfo(u32, DataShape&) = 0;
+			bool mIsSetupLayerInfo = false;
 		};
 
 

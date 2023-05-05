@@ -43,6 +43,8 @@ namespace Aoba {
 					}
 #endif
 					result += A[xid * inputSize + i] * x[yid * inputSize + i];
+					if (xid == 0)
+						printf("%lf\n", x[yid * inputSize + i]);
 				}
 #if _DEBUG
 				if (!(id >= 0 && id < batchSize * outputSize))
@@ -52,7 +54,6 @@ namespace Aoba {
 				}
 #endif
 				y[id] = result + b[xid];
-				//printf("yid=%d , xid=%d , %lf\n",yid,xid,y[id]);
 			}
 
 			__global__ void AffineBackward(f32* dA, f32* dout, f32* input, u32 outputSize, u32 inputSize, u32 batchSize)
@@ -143,7 +144,7 @@ namespace Aoba {
 				//printf("dOut[%d * %d + %d] = %lf\n",yid, inputSize, xid, dOut[yid * inputSize + xid]);
 			}
 		}
-		void Affine::initializeOnGPU()
+		void Affine::mallocOnGPU()
 		{
 			pParametersOnGPU.resize(2);
 			pDParametersOnGPU.resize(2);

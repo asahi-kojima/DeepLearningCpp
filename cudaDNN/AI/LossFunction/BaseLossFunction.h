@@ -12,16 +12,23 @@ namespace Aoba
 			BaseLossFunction() = default;
 			~BaseLossFunction() = default;
 
-			void setupDataShape(DataShape& dataShape) { mDataShape = dataShape; }
-
-
 
 			virtual f32 calcLossAndDInputOnCPU() = 0;
-			virtual void initializeOnCPU() = 0;
-			void setInputOnCPU(DataMemory* pData, DataMemory* pLabel)
+			virtual void initializeOnCPU(u32 batchSize, DataShape& trainingDataShape, DataShape& correctDataShape) final
+			{
+				if (!mIsSetupDataShape)
+				{
+					mBatchSize = batchSize;
+					mTrainingDataShape = trainingDataShape;
+					mCorrectDataShape = correctDataShape;
+					mIsSetupDataShape = true;
+				}
+				mallocOnCPU();
+			}
+			void setInputOnCPU(DataMemory* pData, DataMemory* pCorrectData)
 			{
 				mForwardResultOnCPU = pData;
-				mLabelDataOnCPU = pLabel;
+				mCorrectDataOnCPU = pCorrectData;
 			}
 			DataMemory* getDInputDataOnCPU()
 			{
@@ -30,12 +37,22 @@ namespace Aoba
 
 
 
-			virtual void initializeOnGPU() = 0;
+			virtual void initializeOnGPU(u32 batchSize, DataShape& trainingDataShape, DataShape& correctDataShape) final
+			{
+				if (!mIsSetupDataShape)
+				{
+					mBatchSize = batchSize;
+					mTrainingDataShape = trainingDataShape;
+					mCorrectDataShape = correctDataShape;
+					mIsSetupDataShape = true;
+				}
+				mallocOnGPU();
+			}
 			virtual f32 calcLossAndDInputOnGPU() = 0;
-			void setInputOnGPU(DataMemory* pData, DataMemory* pLabel)
+			void setInputOnGPU(DataMemory* pData, DataMemory* pCorrectData)
 			{
 				mForwardResultOnGPU = pData;
-				mLabelDataOnGPU = pLabel;
+				mCorrectDataOnGPU = pCorrectData;
 			}
 
 			DataMemory* getDInputDataOnGPU()
@@ -44,17 +61,36 @@ namespace Aoba
 			}
 
 		protected:
-			DataShape mDataShape;
+			//////////////////////////////////////////////////////////////////////
+			//共通変数
+			//////////////////////////////////////////////////////////////////////
+			//この変数は教師データのデータ形状
+			u32 mBatchSize;
+			DataShape mTrainingDataShape;
+			DataShape mCorrectDataShape;
 
+			//////////////////////////////////////////////////////////////////////
+			//CPU関係の変数
+			//////////////////////////////////////////////////////////////////////
 			DataMemory mLossTblOnCPU;
 			DataMemory mDInputDataOnCPU;
 			DataMemory* mForwardResultOnCPU;
-			DataMemory* mLabelDataOnCPU;
+			DataMemory* mCorrectDataOnCPU;
 
+			virtual void mallocOnCPU() = 0;
+
+			//////////////////////////////////////////////////////////////////////
+			//GPU関係の変数
+			//////////////////////////////////////////////////////////////////////
 			DataMemory mLossTblOnGPU;
 			DataMemory mDInputDataOnGPU;
 			DataMemory* mForwardResultOnGPU;
-			DataMemory* mLabelDataOnGPU;
+			DataMemory* mCorrectDataOnGPU;
+
+			virtual void mallocOnGPU() = 0;
+
+		private:
+			bool mIsSetupDataShape = false;
 		};
 	}
 }
