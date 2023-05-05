@@ -98,6 +98,7 @@ void setupMnistGpuData(Aoba::DataMemory& dataGPU, std::vector<f32>& data)
 #endif // _DEBUG
 }
 
+
 int main()
 {
 	using namespace Aoba;
@@ -112,8 +113,8 @@ int main()
 
 
 	//データ形状は自分の手で決める。
-	DataShape inputTrainingDataShape = {1, 1, 28 * 28 };
-	DataShape inputCorrectDataShape = { 1, 1, 1 };
+	DataShape inputTrainingDataShape = { 1, 1, 28 * 28 };
+	DataShape inputCorrectDataShape = { 1, 1,  28 * 28 };
 	//訓練データと教師データの形状についてAIに教える
 	DataFormat4DeepLearning format(trainingDataNum, 100, inputTrainingDataShape, inputCorrectDataShape);
 
@@ -125,9 +126,9 @@ int main()
 	AI Aira{};
 	Aira.addLayer<layer::Affine>(50, 0.001f);
 	Aira.addLayer<layer::ReLU>();
-	Aira.addLayer<layer::Affine>(10, 0.001f);
-	Aira.setOptimizer<optimizer::Sgd>(0.001f);
-	Aira.setLossFunction<lossFunction::CrossEntropyWithSM>();
+	Aira.addLayer<layer::Affine>(784, 0.001f);
+	Aira.setOptimizer<optimizer::Sgd>(0.0001f);
+	Aira.setLossFunction<lossFunction::L2Loss>();
 
 	Aira.build(format);
 
@@ -135,7 +136,51 @@ int main()
 	//学習ループ
 	//////////////////////////////////////////
 
-	Aira.deepLearning(trainingData.data(), trainingLabel.data());
+	Aira.deepLearning(trainingData.data(), trainingData.data());
 
 	return 0;
 }
+
+//
+//int main()
+//{
+//	using namespace Aoba;
+//	//////////////////////////////////////////
+//	//データの準備
+//	//////////////////////////////////////////
+//	constexpr u32 dataSize = 784;
+//	constexpr u32 trainingDataNum = 60000;
+//	constexpr u32 testDataNum = 10000;
+//	std::vector<f32> trainingData, trainingLabel, testData, testLabel;
+//	setupMnistData(trainingData, trainingLabel, testData, testLabel);
+//
+//
+//	//データ形状は自分の手で決める。
+//	DataShape inputTrainingDataShape = {1, 1, 28 * 28 };
+//	DataShape inputCorrectDataShape = { 1, 1, 1 };
+//	//訓練データと教師データの形状についてAIに教える
+//	DataFormat4DeepLearning format(trainingDataNum, 100, inputTrainingDataShape, inputCorrectDataShape);
+//
+//	//////////////////////////////////////////
+//	//AIの準備
+//	//////////////////////////////////////////
+//
+//
+//	AI Aira{};
+//	Aira.addLayer<layer::Affine>(50, 0.001f);
+//	Aira.addLayer<layer::ReLU>();
+//	Aira.addLayer<layer::Affine>(10, 0.001f);
+//	Aira.setOptimizer<optimizer::Sgd>(0.001f);
+//	Aira.setLossFunction<lossFunction::CrossEntropyWithSM>();
+//	//Aira.setLossFunction<lossFunction::L2Loss>();
+//
+//	Aira.build(format);
+//
+//	//////////////////////////////////////////
+//	//学習ループ
+//	//////////////////////////////////////////
+//
+//	Aira.deepLearning(trainingData.data(), trainingLabel.data());
+//
+//	return 0;
+//}

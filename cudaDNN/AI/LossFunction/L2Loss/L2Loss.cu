@@ -1,4 +1,4 @@
-#include "CrossEntropyWithSM.h"
+#include "L2Loss.h"
 #include "../../../commonGPU.cuh"
 
 namespace Aoba
@@ -6,7 +6,7 @@ namespace Aoba
 	namespace
 	{
 		__global__ void calcLoss(
-			f32* forwardResult, 
+			f32* forwardResult,
 			f32* correctData,
 			f32* dInput,
 			f32* loss,
@@ -21,47 +21,32 @@ namespace Aoba
 			}
 
 			u32 offset = batchID * dataSize;
-			u32 correct = static_cast<u32>(correctData[batchID]);
+			
 
-			f32 max = forwardResult[offset + 0];
-			u32 maxIndex = 0;
-			f32 sum = 0.0f;
+			f32 tmpLoss = 0.0f;
 			for (u32 i = 0; i < dataSize; i++)
 			{
-				f32 cand = forwardResult[offset + i]; 
-				if (max < cand)
-				{
-					max = cand;
-					maxIndex = i;
-				}
+				f32 sub = forwardResult[offset + i] - correctData[offset + i];
+				tmpLoss += (0.5f * sub * sub);
+				dInput[offset + i] = sub / batchSize;
 			}
 
-			for (u32 i = 0; i < dataSize; i++)
-			{
-				sum += exp(forwardResult[offset + i] - max);
-			}
-
-			for (u32 i = 0; i < dataSize; i++)
-			{
-				dInput[offset + i] = ((exp(forwardResult[offset + i] - max) / sum) - (correct == i ? 1 : 0)) / batchSize;
-			}
-
-			loss[batchID] = -log(exp(forwardResult[offset + correct] - max) / sum + 1e-7);
+			loss[batchID] = tmpLoss;
 		}
 	}
 
 	namespace lossFunction
 	{
-		void CrossEntropyWithSM::mallocOnGPU()
+		void L2Loss::mallocOnGPU()
 		{
-			mDInputDataOnGPU.size = mBatchSize * mTrainingDataShape.channel * mTrainingDataShape.height * mTrainingDataShape.width;
+			mDInputDataOnGPU.size = mBatchSize * mTrainingDataShape.getDataSize();
 			CHECK(cudaMalloc((void**)(&(mDInputDataOnGPU.address)), mDInputDataOnGPU.size * sizeof(f32)));
 
 			mLossTblOnGPU.size = mBatchSize;
 			CHECK(cudaMalloc((void**)(&mLossTblOnGPU.address), mLossTblOnGPU.size * sizeof(f32)));
 		}
 
-		f32 CrossEntropyWithSM::calcLossAndDInputOnGPU()
+		f32 L2Loss::calcLossAndDInputOnGPU()
 		{
 			dim3 block(16, 1);
 			dim3 grid(
@@ -73,11 +58,11 @@ namespace Aoba
 #if _DEBUG
 			assert(mBatchSize != 0);
 #endif
-			calcLoss<<<grid, block>>>(
+			calcLoss << <grid, block >> > (
 				mForwardResultOnGPU->address,
 				mCorrectDataOnGPU->address,
-				mDInputDataOnGPU.address, 
-				mLossTblOnGPU.address, 
+				mDInputDataOnGPU.address,
+				mLossTblOnGPU.address,
 				mBatchSize,
 				mForwardResultOnGPU->size / mBatchSize);
 #if _DEBUG

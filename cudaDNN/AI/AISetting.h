@@ -25,6 +25,23 @@ namespace Aoba
 		u32 channel;
 		u32 height;
 		u32 width;
+
+		u32 getDataSize() const
+		{
+			return channel * height * width;
+		}
+
+		bool operator==(const DataShape& comp) const
+		{
+			return ((this->channel == comp.channel)
+				&& (this->height == comp.height)
+				&& (this->width == comp.width));
+		}
+
+		bool operator!=(const DataShape& comp) const
+		{
+			return !((*this) == comp);
+		}
 	};
 
 	struct DataFormat4DeepLearning
@@ -51,8 +68,8 @@ namespace Aoba
 			, trainingDataShape(trainingDataShape)
 			, correctDataShape(correctDataShape)
 		{
-			eachTrainingDataSize = trainingDataShape.channel * trainingDataShape.height * trainingDataShape.width;
-			eachCorrectDataSize = correctDataShape.channel * correctDataShape.height * correctDataShape.width;
+			eachTrainingDataSize = trainingDataShape.getDataSize();
+			eachCorrectDataSize = correctDataShape.getDataSize();
 		}
 
 		DataFormat4DeepLearning() = default;

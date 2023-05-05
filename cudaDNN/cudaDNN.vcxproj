@@ -153,6 +153,7 @@
     <CudaCompile Include="AI\Layer\BatchNorm2d\BatchNorm2d.cu" />
     <CudaCompile Include="AI\Layer\ReLU\ReLU.cu" />
     <CudaCompile Include="AI\LossFunction\CrossEntropyWithSM\CrossEntropyWithSM.cu" />
+    <CudaCompile Include="AI\LossFunction\L2Loss\L2Loss.cu" />
     <CudaCompile Include="AI\Optimizer\Adam\Adam.cu" />
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +167,7 @@
     <ClInclude Include="AI\Layer\ReLU\ReLU.h" />
     <ClInclude Include="AI\LossFunction\BaseLossFunction.h" />
     <ClInclude Include="AI\LossFunction\CrossEntropyWithSM\CrossEntropyWithSM.h" />
+    <ClInclude Include="AI\LossFunction\L2Loss\L2Loss.h" />
     <ClInclude Include="AI\LossFunction\LossFunction.h" />
     <ClInclude Include="AI\Optimizer\Adam\Adam.h" />
     <ClInclude Include="AI\Optimizer\BaseOptimizer.h" />
@@ -185,6 +187,7 @@
     <ClCompile Include="AI\Layer\BatchNorm2d\BatchNorm2d.cpp" />
     <ClCompile Include="AI\Layer\ReLU\ReLU.cpp" />
     <ClCompile Include="AI\LossFunction\CrossEntropyWithSM\CrossEntropyWithSM.cpp" />
+    <ClCompile Include="AI\LossFunction\L2Loss\L2Loss.cpp" />
     <ClCompile Include="AI\Optimizer\Adam\Adam.cpp" />
     <ClCompile Include="AI\Optimizer\BaseOptimizer.cpp" />
     <ClCompile Include="AI\Optimizer\Sgd\Sgd.cpp" />
