@@ -77,8 +77,8 @@ namespace Aoba
 			layer->printLayerInfo();
 		}
 		std::cout << std::endl;
-		
-		
+
+
 		//------------------------------------------------------------------
 		//訓練データの情報を表示
 		//------------------------------------------------------------------
@@ -194,9 +194,78 @@ namespace Aoba
 #pragma region private
 	void AI::checkGpuIsAvailable()
 	{
+		std::cout << "  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ " << std::endl;
+		std::cout << " / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /" << std::endl;
 		std::cout << "[ GPU Information ]" << std::endl;
+		std::cout << "/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_" << std::endl;
+
+		s32 gpuDeviceNum = 0;
+		const cudaError_t error = cudaGetDeviceCount(&gpuDeviceNum);
+		if (error != cudaSuccess)
+		{
+			std::cout << "Error : " << __FILE__ << ":" << __LINE__ << std::endl;
+			std::cout << "code : " << error << std::endl;
+			std::cout << "reason : " << cudaGetErrorString(error) << std::endl;
+			std::cout << "\nSystem can't get any Device Information. So this AI use CPU to DeepLearn.\n";
+			mIsGpuAvailable = false;
+			return;
+		}
+
+		if (gpuDeviceNum == 0)
+		{
+			std::cout << "No GPU Device that support CUDA. So this AI use CPU  to DeepLearn.";
+			mIsGpuAvailable = false;
+			return;
+		}
+
+		std::cout << gpuDeviceNum << " GPU device(s) that support CUDA detected.\n";
+
+		s32 maxDeviceId = 0;
+		s32 maxMultiProcessorCount = 0;
+
+		for (s32 index = 0; index < gpuDeviceNum; index++)
+		{
+			cudaDeviceProp deviceProp;
+			cudaGetDeviceProperties(&deviceProp, index);
+			s32 driverVersion = 0;
+			s32 runtimeVersion = 0;
+			cudaDriverGetVersion(&driverVersion);
+			cudaRuntimeGetVersion(&runtimeVersion);
+
+			auto formater = [](std::string s, s32 length = 50)
+			{
+				return s + std::string(std::max(0, length - static_cast<s32>(s.length())), ' ') + " : ";
+			};
+
+			std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
+			std::cout << "Information of DeviceID = " << index << "\n" << std::endl;
+			std::cout << formater("Device name") << "\"" << deviceProp.name << "\"" << std::endl;
+			std::cout << formater("CUDA Driver Version") << driverVersion / 1000 << "." << (driverVersion % 100) / 10 << std::endl;
+			std::cout << formater("CUDA Runtime Versionz") << runtimeVersion / 1000 << "." << (runtimeVersion % 100) / 10 << std::endl;
+			std::cout << formater("CUDA Capability Major/Minor version number") << deviceProp.major << "." << deviceProp.minor << std::endl;
+
+			std::cout << formater("VRAM") << static_cast<f32>(deviceProp.totalGlobalMem / pow(1024.0, 3)) << "GB (" << deviceProp.totalGlobalMem << "Bytes)" << std::endl;
+			std::cout << formater("Max Texture Dimension Size of 1D") << "(" << deviceProp.maxTexture1D << ")" << std::endl;
+			std::cout << formater("Max Texture Dimension Size of 2D") << "(" << deviceProp.maxTexture2D[0] << ", " << deviceProp.maxTexture2D[1] << ")" << std::endl;
+			std::cout << formater("Max Texture Dimension Size of 3D") << "(" << deviceProp.maxTexture3D[0] << ", " << deviceProp.maxTexture3D[1] << ", " << deviceProp.maxTexture3D[2] << ")" << std::endl;
+
+
+
+			if (deviceProp.multiProcessorCount > maxMultiProcessorCount)
+			{
+				maxMultiProcessorCount = deviceProp.multiProcessorCount;
+				maxDeviceId = index;
+			}
+		}
+
+		std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
+		std::cout << "" << std::endl;
+		std::cout << "-------------------------------------------------------------" << std::endl;
+		std::cout << "this time AI use deviceID = " << maxDeviceId << std::endl;
+		cudaSetDevice(maxDeviceId);
 		mIsGpuAvailable = true;
-		std::cout <<  std::endl;
+		std::cout << "-------------------------------------------------------------" << std::endl;
+		std::cout << std::endl;
 	}
 
 
