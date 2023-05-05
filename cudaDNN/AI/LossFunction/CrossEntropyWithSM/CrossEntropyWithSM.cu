@@ -5,7 +5,13 @@ namespace Aoba
 {
 	namespace
 	{
-		__global__ void calcLoss(f32* forwardResult, f32* correctData, f32* dInput, f32* loss, u32 batchSize, u32 width, u32 dataSize)
+		__global__ void calcLoss(
+			f32* forwardResult, 
+			f32* correctData,
+			f32* dInput,
+			f32* loss,
+			u32 batchSize,
+			u32 dataSize)
 		{
 			u32 batchID = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -20,9 +26,9 @@ namespace Aoba
 			f32 max = forwardResult[offset + 0];
 			u32 maxIndex = 0;
 			f32 sum = 0.0f;
-			for (u32 i = 0; i < width; i++)
+			for (u32 i = 0; i < dataSize; i++)
 			{
-				f32 cand = forwardResult[offset + i];
+				f32 cand = forwardResult[offset + i]; 
 				if (max < cand)
 				{
 					max = cand;
@@ -30,16 +36,16 @@ namespace Aoba
 				}
 			}
 
-			for (u32 i = 0; i < width; i++)
+			for (u32 i = 0; i < dataSize; i++)
 			{
 				sum += exp(forwardResult[offset + i] - max);
 			}
 
-			for (u32 i = 0; i < width; i++)
+			for (u32 i = 0; i < dataSize; i++)
 			{
 				dInput[offset + i] = ((exp(forwardResult[offset + i] - max) / sum) - (correct == i ? 1 : 0)) / batchSize;
 			}
-			
+
 			loss[batchID] = -log(exp(forwardResult[offset + correct] - max) / sum + 1e-7);
 		}
 	}
@@ -73,7 +79,6 @@ namespace Aoba
 				mDInputDataOnGPU.address, 
 				mLossTblOnGPU.address, 
 				mBatchSize,
-				mTrainingDataShape.width,
 				mForwardResultOnGPU->size / mBatchSize);
 #if _DEBUG
 			CHECK(cudaDeviceSynchronize());

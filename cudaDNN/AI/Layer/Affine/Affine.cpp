@@ -59,7 +59,7 @@ namespace Aoba::layer
 			std::normal_distribution<> dist(0.0, std::sqrt(2.0 / mInputSize));
 			for (u32 idx = 0; idx < affineParam.size; idx++)
 			{
-				affineParam.address[idx] = mAffineParamWeight * static_cast<f32>(dist(engine)) / std::sqrt(2.0f / mInputSize);
+				affineParam.address[idx] = mAffineParamWeight * static_cast<f32>(dist(engine));
 			}
 
 			for (u32 idx = 0; idx < affineDParam.size; idx++)

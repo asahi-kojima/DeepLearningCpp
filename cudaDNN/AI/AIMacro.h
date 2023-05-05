@@ -40,7 +40,7 @@ for (auto& layer : mLayerList)																																	\
 	layer->initializeOn##Device(mDataFormat4DeepLearning.batchSize, shape);																						\
 }																																								\
 																																								\
-mLossFunction->initializeOn##Device(mDataFormat4DeepLearning.batchSize,mDataFormat4DeepLearning.trainingDataShape,mDataFormat4DeepLearning.correctDataShape);	\
+mLossFunction->initializeOn##Device(mDataFormat4DeepLearning.batchSize,shape,mDataFormat4DeepLearning.correctDataShape);	\
 																																								\
 DataMemory* pInputDataOn##Device = &mInputTrainingDataOn##Device;																								\
 																																								\

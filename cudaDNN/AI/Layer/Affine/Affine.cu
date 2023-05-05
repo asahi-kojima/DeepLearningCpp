@@ -43,8 +43,6 @@ namespace Aoba {
 					}
 #endif
 					result += A[xid * inputSize + i] * x[yid * inputSize + i];
-					if (xid == 0)
-						printf("%lf\n", x[yid * inputSize + i]);
 				}
 #if _DEBUG
 				if (!(id >= 0 && id < batchSize * outputSize))
