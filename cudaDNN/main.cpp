@@ -79,26 +79,12 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 	loadMnistFromBin("C:\\Users\\asahi\\Downloads\\mnist_data_test.bin", testData, sizeof(f32) * testData.size());
 	loadMnistFromBin("C:\\Users\\asahi\\Downloads\\mnist_label_test.bin", testLabel, sizeof(f32) * testLabel.size());
 
-	printMNIST(testData.data() + 784 * 1000);
-	printMNIST(trainingData.data() + 784 * 59999);
 	mnistNormalizer(trainingData, trainingDataNum);
 	mnistNormalizer(testData, testDataNum);
 }
 
-void setupMnistGpuData(Aoba::DataMemory& dataGPU, std::vector<f32>& data)
-{
-	dataGPU.size = data.size();
-	CHECK(cudaMalloc((void**)(&(dataGPU.address)), data.size() * sizeof(f32)));
-	CHECK(cudaMemcpy(dataGPU.address, data.data(), data.size() * sizeof(f32), cudaMemcpyHostToDevice));
-#ifdef _DEBUG
-	{
-		std::vector<f32> tester(data.size());
-		CHECK(cudaMemcpy(tester.data(), dataGPU.address, tester.size() * sizeof(f32), cudaMemcpyDeviceToHost));
-	}
-#endif // _DEBUG
-}
 
-
+#if 1
 int main()
 {
 	using namespace Aoba;
@@ -125,8 +111,10 @@ int main()
 
 	AI Aira{};
 	Aira.addLayer<layer::Affine>(50, 0.001f);
+	Aira.addLayer<layer::BatchNorm2d>();
 	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Affine>(784, 0.001f);
+	Aira.addLayer<layer::BatchNorm2d>();
 	Aira.setOptimizer<optimizer::Sgd>(0.0001f);
 	Aira.setLossFunction<lossFunction::L2Loss>();
 
@@ -141,46 +129,47 @@ int main()
 	return 0;
 }
 
-//
-//int main()
-//{
-//	using namespace Aoba;
-//	//////////////////////////////////////////
-//	//データの準備
-//	//////////////////////////////////////////
-//	constexpr u32 dataSize = 784;
-//	constexpr u32 trainingDataNum = 60000;
-//	constexpr u32 testDataNum = 10000;
-//	std::vector<f32> trainingData, trainingLabel, testData, testLabel;
-//	setupMnistData(trainingData, trainingLabel, testData, testLabel);
-//
-//
-//	//データ形状は自分の手で決める。
-//	DataShape inputTrainingDataShape = {1, 1, 28 * 28 };
-//	DataShape inputCorrectDataShape = { 1, 1, 1 };
-//	//訓練データと教師データの形状についてAIに教える
-//	DataFormat4DeepLearning format(trainingDataNum, 100, inputTrainingDataShape, inputCorrectDataShape);
-//
-//	//////////////////////////////////////////
-//	//AIの準備
-//	//////////////////////////////////////////
-//
-//
-//	AI Aira{};
-//	Aira.addLayer<layer::Affine>(50, 0.001f);
-//	Aira.addLayer<layer::ReLU>();
-//	Aira.addLayer<layer::Affine>(10, 0.001f);
-//	Aira.setOptimizer<optimizer::Sgd>(0.001f);
-//	Aira.setLossFunction<lossFunction::CrossEntropyWithSM>();
-//	//Aira.setLossFunction<lossFunction::L2Loss>();
-//
-//	Aira.build(format);
-//
-//	//////////////////////////////////////////
-//	//学習ループ
-//	//////////////////////////////////////////
-//
-//	Aira.deepLearning(trainingData.data(), trainingLabel.data());
-//
-//	return 0;
-//}
+#else
+int main()
+{
+	using namespace Aoba;
+	//////////////////////////////////////////
+	//データの準備
+	//////////////////////////////////////////
+	constexpr u32 dataSize = 784;
+	constexpr u32 trainingDataNum = 60000;
+	constexpr u32 testDataNum = 10000;
+	std::vector<f32> trainingData, trainingLabel, testData, testLabel;
+	setupMnistData(trainingData, trainingLabel, testData, testLabel);
+
+
+	//データ形状は自分の手で決める。
+	DataShape inputTrainingDataShape = {1, 1, 28 * 28 };
+	DataShape inputCorrectDataShape = { 1, 1, 1 };
+	//訓練データと教師データの形状についてAIに教える
+	DataFormat4DeepLearning format(trainingDataNum, 100, inputTrainingDataShape, inputCorrectDataShape);
+
+	//////////////////////////////////////////
+	//AIの準備
+	//////////////////////////////////////////
+
+
+	AI Aira{};
+	Aira.addLayer<layer::Affine>(50, 0.001f);
+	Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Affine>(10, 0.001f);
+	Aira.setOptimizer<optimizer::Sgd>(0.001f);
+	Aira.setLossFunction<lossFunction::CrossEntropyWithSM>();
+	//Aira.setLossFunction<lossFunction::L2Loss>();
+
+	Aira.build(format);
+
+	//////////////////////////////////////////
+	//学習ループ
+	//////////////////////////////////////////
+
+	Aira.deepLearning(trainingData.data(), trainingLabel.data());
+
+	return 0;
+}
+#endif

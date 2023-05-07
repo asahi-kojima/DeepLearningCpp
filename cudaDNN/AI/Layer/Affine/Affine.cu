@@ -240,6 +240,10 @@ namespace Aoba {
 				mOutputSize,
 				mInputSize,
 				mBatchSize);
+
+#if _DEBUG
+			CHECK(cudaDeviceSynchronize());
+#endif
 		}
 
 		void Affine::backwardOnGPU()
@@ -276,6 +280,10 @@ namespace Aoba {
 					mOutputSize,
 					mInputSize,
 					mBatchSize);
+
+#if _DEBUG
+				CHECK(cudaDeviceSynchronize());
+#endif
 			}
 
 			//Bias‚Ì‹t“`”À
@@ -288,6 +296,10 @@ namespace Aoba {
 					mDInputDataOnGPU->address,
 					mOutputSize,
 					mBatchSize);
+
+#if _DEBUG
+				CHECK(cudaDeviceSynchronize());
+#endif
 			}
 		}
 

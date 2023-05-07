@@ -10,6 +10,18 @@
 #include "../commonGPU.cuh"
 #include "../commonCPU.h"
 
+namespace
+{
+	void informationFormat(std::string s)
+	{
+		std::cout << "  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ " << std::endl;
+		std::cout << " / / / / / / / / / / / / / / / / / / / / / / / / / / / / " << std::endl;
+		std::string bar = " / / / / / / / / / / / / / / / / / / / / / / / / / / / / ";
+		u32 sideLength = (bar.length() - s.length()) / 2;
+		std::cout << std::string(sideLength, ' ') + s + std::string(sideLength, ' ') << std::endl;
+		std::cout << "/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/" << std::endl;
+	}
+}
 
 
 namespace Aoba
@@ -71,10 +83,12 @@ namespace Aoba
 		//------------------------------------------------------------------
 		//‘w‚Ìî•ñ‚ð•\Ž¦
 		//------------------------------------------------------------------
-		std::cout << "[ Layer Information ]" << std::endl;
+		informationFormat("Layer Information");
+		u32 index = 0;
 		for (auto& layer : mLayerList)
 		{
 			layer->printLayerInfo();
+			index++;
 		}
 		std::cout << std::endl;
 
@@ -82,7 +96,7 @@ namespace Aoba
 		//------------------------------------------------------------------
 		//ŒP—ûƒf[ƒ^‚Ìî•ñ‚ð•\Ž¦
 		//------------------------------------------------------------------
-		std::cout << "[ Training Data Information ]" << std::endl;
+		informationFormat("Training Data Information");
 #pragma region print_TrainingData_infomation
 		auto printer = [](std::string name, u32 value, u32 stringLen = 15)
 		{
@@ -107,7 +121,7 @@ namespace Aoba
 		//------------------------------------------------------------------
 		//[‘wŠwK‚ÌŽÀs‰ÓŠ
 		//------------------------------------------------------------------
-		std::cout << "[ Deep Learning Start ]" << std::endl;
+		informationFormat("Deep Learning Start");
 		u32 loopTime = mDataFormat4DeepLearning.dataNum / mDataFormat4DeepLearning.batchSize;
 		u32 batch = mDataFormat4DeepLearning.batchSize;
 		auto progressBar = [](u32 currentLoop, u32 totalLoop, u32 length = 20)
@@ -194,10 +208,7 @@ namespace Aoba
 #pragma region private
 	void AI::checkGpuIsAvailable()
 	{
-		std::cout << "  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ " << std::endl;
-		std::cout << " / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /" << std::endl;
-		std::cout << "[ GPU Information ]" << std::endl;
-		std::cout << "/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_" << std::endl;
+		informationFormat("GPU Information");
 
 		s32 gpuDeviceNum = 0;
 		const cudaError_t error = cudaGetDeviceCount(&gpuDeviceNum);
@@ -206,14 +217,14 @@ namespace Aoba
 			std::cout << "Error : " << __FILE__ << ":" << __LINE__ << std::endl;
 			std::cout << "code : " << error << std::endl;
 			std::cout << "reason : " << cudaGetErrorString(error) << std::endl;
-			std::cout << "\nSystem can't get any Device Information. So this AI use CPU to DeepLearn.\n";
+			std::cout << "\nSystem can't get any Device Information. So this AI uses CPU to DeepLearning.\n";
 			mIsGpuAvailable = false;
 			return;
 		}
 
 		if (gpuDeviceNum == 0)
 		{
-			std::cout << "No GPU Device that support CUDA. So this AI use CPU  to DeepLearn.";
+			std::cout << "No GPU Device that support CUDA. So this AI use CPU  to DeepLearning.";
 			mIsGpuAvailable = false;
 			return;
 		}
@@ -248,7 +259,10 @@ namespace Aoba
 			std::cout << formater("Max Texture Dimension Size of 1D") << "(" << deviceProp.maxTexture1D << ")" << std::endl;
 			std::cout << formater("Max Texture Dimension Size of 2D") << "(" << deviceProp.maxTexture2D[0] << ", " << deviceProp.maxTexture2D[1] << ")" << std::endl;
 			std::cout << formater("Max Texture Dimension Size of 3D") << "(" << deviceProp.maxTexture3D[0] << ", " << deviceProp.maxTexture3D[1] << ", " << deviceProp.maxTexture3D[2] << ")" << std::endl;
-
+			std::cout << formater("Maximum sizes of threads per block") << deviceProp.maxThreadsPerBlock  << std::endl;
+			std::cout << formater("Maximum sizes of each dimension of a block") << "(" << deviceProp.maxThreadsDim[0] << ", " << deviceProp.maxThreadsDim[1] << ", " << deviceProp.maxThreadsDim[2] << ")" << std::endl;
+			std::cout << formater("Maximum sizes of each dimension of a grid") << "(" << deviceProp.maxGridSize[0] << ", " << deviceProp.maxGridSize[1] << ", " << deviceProp.maxGridSize[2] << ")" << std::endl;
+			
 
 
 			if (deviceProp.multiProcessorCount > maxMultiProcessorCount)

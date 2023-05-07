@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../setting.h"
-
+#include <cassert>
 namespace Aoba
 {
 	using cf32 = const f32;
@@ -11,6 +11,17 @@ namespace Aoba
 		f32* address;
 		u32 size;
 		u32 byteSize;
+
+		f32& operator[](u32 index)
+		{
+#if _DEBUG
+			if (index >= size)
+			{
+				assert(0);
+			}
+#endif
+			return this->address[index];
+		}
 	};
 
 	struct paramMemory
@@ -18,6 +29,17 @@ namespace Aoba
 		f32* address;
 		u32 size;
 		u32 byteSize;
+
+		f32& operator[](u32 index)
+		{
+#if _DEBUG
+			if (index >= size)
+			{
+				assert(0);
+			}
+#endif
+			return this->address[index];
+		}
 	};
 
 	struct DataShape
