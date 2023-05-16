@@ -3,25 +3,15 @@
 #include <random>
 #include <cassert>
 
-#include "./Layer/Layer.h"
-#include "./Optimizer/Optimizer.h"
 #include "AI.h"
 #include "AIMacro.h"
-#include "../commonGPU.cuh"
-#include "../commonCPU.h"
 
-namespace
-{
-	void informationFormat(std::string s)
-	{
-		std::cout << "  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ " << std::endl;
-		std::cout << " / / / / / / / / / / / / / / / / / / / / / / / / / / / / " << std::endl;
-		std::string bar = " / / / / / / / / / / / / / / / / / / / / / / / / / / / / ";
-		u32 sideLength = (bar.length() - s.length()) / 2;
-		std::cout << std::string(sideLength, ' ') + s + std::string(sideLength, ' ') << std::endl;
-		std::cout << "/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/" << std::endl;
-	}
-}
+#include "./Layer/Layer.h"
+#include "./Optimizer/Optimizer.h"
+
+#include "../common.h"
+#include "../commonOnlyGPU.cuh"
+
 
 
 namespace Aoba
@@ -38,6 +28,8 @@ namespace Aoba
 		//層が最低でも一つあるかのチェック
 		//------------------------------------------------------------------
 		assert(mLayerList.size() > 0);
+
+
 
 		//------------------------------------------------------------------
 		//オプティマイザーの登録
@@ -72,12 +64,6 @@ namespace Aoba
 		// 及び、層のメモリを構成する上で必要になるパラメータの設定を行う。
 		//------------------------------------------------------------------
 		initializeLayer();
-	}
-
-
-	void AI::deepLearning(f32* pTrainingData, f32* pCorrectData, u32 epochs)
-	{
-		//mOptimizer->setLearningRate(learningRate);
 
 
 		//------------------------------------------------------------------
@@ -91,23 +77,42 @@ namespace Aoba
 			index++;
 		}
 		std::cout << std::endl;
+		
+		
+		
+		mAlreadyBuild = true;
+	}
 
+
+	void AI::deepLearning(f32* pTrainingData, f32* pCorrectData, u32 epochs)
+	{
+		//mOptimizer->setLearningRate(learningRate);
 
 		//------------------------------------------------------------------
 		//訓練データの情報を表示
 		//------------------------------------------------------------------
 		informationFormat("Training Data Information");
 #pragma region print_TrainingData_infomation
-		auto printer = [](std::string name, u32 value, u32 stringLen = 15)
+		auto printer = [](std::string name, u32 value, u32 stringLen = 25)
 		{
 			u32 res = stringLen - name.length();
+#if _DEBUG
+			if (res >= stringLen)
+			{
+				assert(0);
+			}
+#endif
 			std::string space = std::string(res, ' ');
 			std::cout << name << space << " = " << value << "\n";
 		};
-		printer("TotalData num", mDataFormat4DeepLearning.dataNum);
+		printer("Total TrainingData num", mDataFormat4DeepLearning.dataNum);
 		printer("channel", mDataFormat4DeepLearning.trainingDataShape.channel);
 		printer("height", mDataFormat4DeepLearning.trainingDataShape.height);
 		printer("width", mDataFormat4DeepLearning.trainingDataShape.width);
+		std::cout << "\n";
+		printer("channel", mDataFormat4DeepLearning.correctDataShape.channel);
+		printer("height", mDataFormat4DeepLearning.correctDataShape.height);
+		printer("width", mDataFormat4DeepLearning.correctDataShape.width);
 		std::cout << std::endl;
 #pragma endregion
 
@@ -171,8 +176,6 @@ namespace Aoba
 				//------------------------------------------------------------------
 #endif
 
-
-
 				backward();
 #if _DEBUG
 				//------------------------------------------------------------------
@@ -180,13 +183,14 @@ namespace Aoba
 				//------------------------------------------------------------------
 #endif
 
-
 				optimize();
 #if _DEBUG
 				//------------------------------------------------------------------
 				//ここで整合性チェック
 				//------------------------------------------------------------------
 #endif
+
+
 				if (mIsGpuAvailable)
 					loss += mLossOnGPU;
 				else
@@ -200,12 +204,22 @@ namespace Aoba
 
 	DataMemory AI::operator()(f32* inputData)
 	{
+		if (!mAlreadyBuild)
+		{
+			std::cout << "AI build not yet done!!";
+			assert(0);
+		}
 		return DataMemory();
 	}
 
 #pragma endregion
 
 #pragma region private
+
+	/// <summary>
+	/// GPUが使えるかAPIを使って調べる。
+	/// CUDAを使えるGPUがある場合、それを全て列挙し、特性を出力する。
+	/// </summary>
 	void AI::checkGpuIsAvailable()
 	{
 		informationFormat("GPU Information");
@@ -256,6 +270,7 @@ namespace Aoba
 			std::cout << formater("CUDA Capability Major/Minor version number") << deviceProp.major << "." << deviceProp.minor << std::endl;
 
 			std::cout << formater("VRAM") << static_cast<f32>(deviceProp.totalGlobalMem / pow(1024.0, 3)) << "GB (" << deviceProp.totalGlobalMem << "Bytes)" << std::endl;
+			std::cout << formater("Total amount of shared memory per block") <<  deviceProp.sharedMemPerBlock << "Bytes" << std::endl;
 			std::cout << formater("Max Texture Dimension Size of 1D") << "(" << deviceProp.maxTexture1D << ")" << std::endl;
 			std::cout << formater("Max Texture Dimension Size of 2D") << "(" << deviceProp.maxTexture2D[0] << ", " << deviceProp.maxTexture2D[1] << ")" << std::endl;
 			std::cout << formater("Max Texture Dimension Size of 3D") << "(" << deviceProp.maxTexture3D[0] << ", " << deviceProp.maxTexture3D[1] << ", " << deviceProp.maxTexture3D[2] << ")" << std::endl;
@@ -273,12 +288,10 @@ namespace Aoba
 		}
 
 		std::cout << "---------------------------------------------------------------------------------------------------" << std::endl;
-		std::cout << "" << std::endl;
-		std::cout << "-------------------------------------------------------------" << std::endl;
+		std::cout << "\n" << std::endl;
 		std::cout << "this time AI use deviceID = " << maxDeviceId << std::endl;
 		cudaSetDevice(maxDeviceId);
 		mIsGpuAvailable = true;
-		std::cout << "-------------------------------------------------------------" << std::endl;
 		std::cout << std::endl;
 	}
 
@@ -299,6 +312,13 @@ namespace Aoba
 		}
 	}
 
+
+	/// <summary>
+	/// AIクラス利用者が指定してきたデータをデータフォーマットに応じ、
+	/// またGPUの利用可否にも応じて、データの準備を行う。
+	/// </summary>
+	/// <param name="pTrainingData">訓練データのCPUアドレス</param>
+	/// <param name="pCorrectData">教師データのCPUアドレス</param>
 	void AI::dataSetup(f32* pTrainingData, f32* pCorrectData)
 	{
 		mInputTrainingDataStartAddressOnCPU = pTrainingData;
@@ -327,6 +347,7 @@ namespace Aoba
 		}
 	}
 
+
 	void AI::forward()
 	{
 		if (mIsGpuAvailable)
@@ -338,6 +359,7 @@ namespace Aoba
 			FORWARD_ON_(CPU);
 		}
 	}
+
 
 	void AI::backward()
 	{

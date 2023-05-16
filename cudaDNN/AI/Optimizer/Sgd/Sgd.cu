@@ -1,6 +1,6 @@
 #include <cuda_runtime.h>
 
-#include "../../../commonGPU.cuh"
+#include "../../../commonOnlyGPU.cuh"
 #include "Sgd.h"
 
 

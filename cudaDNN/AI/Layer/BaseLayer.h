@@ -1,10 +1,11 @@
 #pragma once
 #include <vector>
 #include <cassert>
+#include <iostream>
 
+#include "../../common.h"
 #include "../AISetting.h"
 #include "../Optimizer/BaseOptimizer.h"
-#include <iostream>
 
 namespace Aoba
 {
@@ -42,7 +43,8 @@ namespace Aoba
 
 			virtual void printLayerInfo()
 			{
-				std::cout << "layer information" << std::endl;
+				printDoubleLine();
+				std::cout << "not implement" << std::endl;
 			}
 
 			//CPU

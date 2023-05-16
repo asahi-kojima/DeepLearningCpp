@@ -1,5 +1,5 @@
 #include "L2Loss.h"
-#include "../../../commonGPU.cuh"
+#include "../../../commonOnlyGPU.cuh"
 
 namespace Aoba
 {

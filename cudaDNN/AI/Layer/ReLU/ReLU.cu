@@ -3,7 +3,7 @@
 #include <cassert>
 
 #include "ReLU.h"
-#include "../../../commonGPU.cuh"
+#include "../../../commonOnlyGPU.cuh"
 
 namespace Aoba {
 	namespace layer

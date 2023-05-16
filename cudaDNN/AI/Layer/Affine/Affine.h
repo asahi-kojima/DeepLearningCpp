@@ -1,7 +1,7 @@
 #pragma once
+#include "../../../common.h"
 #include "../../AISetting.h"
 #include "../BaseLayer.h"
-
 
 namespace Aoba
 {
@@ -27,6 +27,14 @@ namespace Aoba
 			void backwardOnGPU() override;
 			void terminateOnGPU() override;
 
+			void printLayerInfo() override
+			{
+				printDoubleLine();
+				std::cout << "Affine Layer" << std::endl;
+				std::cout << "	InputSize         = " << mInputSize << std::endl;
+				std::cout << "	OutputSize        = " << mOutputSize << std::endl;
+				std::cout << "	AffineParamWeight = " << mAffineParamWeight << std::endl;
+			}
 
 		private:
 			u32 mOutputSize;

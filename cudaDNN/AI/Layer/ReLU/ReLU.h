@@ -30,6 +30,13 @@ namespace Aoba
 			void backwardOnGPU() override;
 			void terminateOnGPU() override;
 
+			void printLayerInfo() override
+			{
+				printDoubleLine();
+				std::cout << "ReLU Layer" << std::endl;
+				std::cout << "	InputSize         = " << mInputSize << std::endl;
+				std::cout << "	OutputSize        = " << mOutputSize << std::endl;
+			}
 
 		private:
 			u32 mOutputSize;

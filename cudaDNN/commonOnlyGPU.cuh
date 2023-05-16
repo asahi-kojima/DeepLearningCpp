@@ -40,8 +40,19 @@ inline void printGpuDriverInfo()
     printf("time %lf[ms]\n", time);                                                                                             \
 }
 
-inline __global__ void testGPUfun(float* A, float* B, float* C)
-{
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    C[idx] = A[idx] + B[idx];
+
+
+#define GPUTIME_MEASUREMENT(elapsedTime, ...)                                                                                                           \
+{                                                                                                                               \
+    using namespace std;                                                                                                        \
+    chrono::system_clock::time_point start, end;                                                                                \
+                                                                                                                                \
+    start = chrono::system_clock::now();                                                                                        \
+                                                                                                                                \
+    __VA_ARGS__;                                                                                                                \
+    cudaDeviceSynchronize();                                                                                                    \
+                                                                                                                                \
+    end = chrono::system_clock::now();                                                                                          \
+                                                                                                                                \
+    elapsedTime = static_cast<f32>(chrono::duration_cast<chrono::microseconds>(end - start).count() / 1000.0);               \
 }

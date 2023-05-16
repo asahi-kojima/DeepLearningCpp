@@ -74,8 +74,10 @@ namespace Aoba
 		//ëπé∏ä÷êî
 		std::unique_ptr<lossFunction::BaseLossFunction> mLossFunction;
 
-		bool mIsGpuAvailable = true;
+		bool mIsGpuAvailable = false;
 		DataFormat4DeepLearning mDataFormat4DeepLearning;
+
+		bool mAlreadyBuild = false;
 
 
 

@@ -173,8 +173,8 @@
     <ClInclude Include="AI\Optimizer\BaseOptimizer.h" />
     <ClInclude Include="AI\Optimizer\Optimizer.h" />
     <ClInclude Include="AI\Optimizer\Sgd\Sgd.h" />
-    <ClInclude Include="commonCPU.h" />
-    <ClInclude Include="commonGPU.cuh">
+    <ClInclude Include="common.h" />
+    <ClInclude Include="commonOnlyGPU.cuh">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>

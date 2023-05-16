@@ -1,7 +1,24 @@
 #pragma once
 #include <iostream>
 #include <string>
-#define LINE_WIDTH 50
+#if _DEBUG
+#include <chrono>
+#endif
+
+
+#define LINE_WIDTH 100
+
+#if _DEBUG
+using TimeType = std::chrono::system_clock::time_point;
+#define TIME_MEASUREMENT(call, elapedTime)																	\
+{																								\
+	{																							\
+		std::chrono::system_clock::time_point initTime = std::chrono::system_clock::now();		\
+		call;																					\
+		elapedTime = std::chrono::system_clock::now() - initTime;								\
+	}																							\
+}
+#endif
 
 namespace Aoba
 {
@@ -13,6 +30,46 @@ namespace Aoba
 	inline void printDoubleLine()
 	{
 		std::cout << std::string(LINE_WIDTH, '=') << std::endl;
+	}
+
+	inline void informationFormat(std::string s)
+	{
+#if 0  
+		std::cout << "  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ " << std::endl;
+		std::cout << " / / / / / / / / / / / / / / / / / / / / / / / / / / / / " << std::endl;
+		std::string bar = " / / / / / / / / / / / / / / / / / / / / / / / / / / / / ";
+		unsigned int sideLength = (bar.length() - s.length()) / 2;
+		std::cout << std::string(sideLength, ' ') + s + std::string(sideLength, ' ') << std::endl;
+		std::cout << "/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/" << std::endl;
+
+#else	
+		std::string topBar = "  ";
+		std::string topBarParts = "_ ";
+		for (int i = 0; i < LINE_WIDTH / 2 - 1; i++)
+		{
+			topBar = topBar + topBarParts;
+		}
+		std::cout << topBar << std::endl;
+
+		std::string bar = "";
+		std::string parts = " /";
+		for (int i = 0; i < LINE_WIDTH / 2; i++)
+		{
+			bar = bar + parts;
+		}
+		std::cout << bar << std::endl;
+
+		unsigned int sideLength = (bar.length() - s.length()) / 2;
+		std::cout << std::string(sideLength, ' ') + s + std::string(sideLength, ' ') << std::endl;
+
+		std::string underBar = "/";
+		std::string underBarParts = "_/";
+		for (int i = 0; i < LINE_WIDTH / 2 - 1; i++)
+		{
+			underBar = underBar + underBarParts;
+		}
+		std::cout << underBar << std::endl;
+#endif
 	}
 
 	/*inline void loadMnistFromCsv(std::string filePath, std::vector<u32>& data, std::vector<u32>& label, u32 printInterval = 1000)

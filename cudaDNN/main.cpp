@@ -7,7 +7,7 @@
 
 #include "AI/AI.h"
 
-#include "commonGPU.cuh"
+#include "commonOnlyGPU.cuh"
 
 
 void loadMnistFromBin(std::string filePath, std::vector<f32>& data, u32 loadByteSize)
@@ -84,7 +84,7 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 }
 
 
-#if 1
+#if 0
 int main()
 {
 	using namespace Aoba;
@@ -155,6 +155,14 @@ int main()
 
 
 	AI Aira{};
+	Aira.addLayer<layer::Affine>(200, 0.001f);
+	Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Affine>(100, 0.001f); Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Affine>(100, 0.001f); Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Affine>(100, 0.001f); Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Affine>(100, 0.001f); Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Affine>(100, 0.001f); Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Affine>(100, 0.001f); Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Affine>(50, 0.001f);
 	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Affine>(10, 0.001f);

@@ -2,8 +2,20 @@
 #include <cuda_runtime.h>
 #include <cassert>
 
+//このマクロはCUDAソースファイルがコンパイルされる時に定義される。
+//インテリセンスのエラーを一時的に抑制するためにこの定義を置いている。
+#if !defined(__CUDACC__)
+#define __CUDACC__
+#endif
+
+#include <device_functions.h>
+
+
 #include "Affine.h"
-#include "../../../commonGPU.cuh"
+#include "../../../commonOnlyGPU.cuh"
+#include "../../../common.h"
+
+
 
 namespace Aoba {
 	namespace layer
@@ -52,6 +64,70 @@ namespace Aoba {
 				}
 #endif
 				y[id] = result + b[xid];
+			}
+
+
+			struct DataShape
+			{
+				u32 inputSize;
+				u32 outputSize;
+				u32 batchSize;
+				u32 blockSize;
+			};
+
+			__global__ void AffineForward_test(
+				f32* y, f32* A,
+				f32* X, f32* b, u32 outputSize, u32 inputSize, u32 batchSize)
+			{
+				u32 outputID = blockIdx.x * blockDim.x + threadIdx.x;
+				u32 batchID =  blockIdx.y * blockDim.y + threadIdx.y;
+				if (outputID >= outputSize || batchID >= batchSize)
+				{
+					return;
+				}
+
+
+				const u32 BlockSize = blockDim.x;
+				const u32 subMatSize = BlockSize * BlockSize;
+
+				const u32 startPointOfA = inputSize * blockIdx.x;
+				const u32 startPointOfX = inputSize * blockIdx.y;
+				
+				extern __shared__ f32 shareRegion[];
+
+				f32* subA = shareRegion;
+				f32* subX = static_cast<f32*>(&shareRegion[inputSize * BlockSize]);
+
+				u32 subMatID = threadIdx.y * blockDim.x + threadIdx.x;
+				
+				for (u32 i = 0; i < inputSize / BlockSize; i++)
+				{
+					u32 index = i * subMatSize;
+					if (index >= inputSize * BlockSize)
+					{
+						return;
+					}
+
+					u32 indexA = startPointOfA + index;
+					if (indexA < inputSize * outputSize)
+					{
+						subA[index] = A[indexA];
+					}
+					u32 indexX = startPointOfX + index;
+					if (indexX < inputSize * batchSize)
+					{
+						subX[index] = X[indexX];
+					}
+				}
+				__syncthreads();
+
+
+				f32 result = 0.0f;
+				for (int i = 0; i < inputSize; i++)
+				{
+					result += subA[] * subX[];
+				}
+				y[] = result;
 			}
 
 			__global__ void AffineBackward(f32* dA, f32* dout, f32* input, u32 outputSize, u32 inputSize, u32 batchSize)
@@ -227,10 +303,12 @@ namespace Aoba {
 
 		void Affine::forwardOnGPU()
 		{
+#if 0
 			dim3 block(16, 16);
 			dim3 grid(
 				(mOutputSize + block.x - 1) / block.x,
 				(mBatchSize + block.y - 1) / block.y);
+
 
 			AffineForward << <grid, block >> > (
 				mForwardResultOnGPU.address,
@@ -243,6 +321,32 @@ namespace Aoba {
 
 #if _DEBUG
 			CHECK(cudaDeviceSynchronize());
+#endif
+
+#else
+			std::chrono::system_clock::time_point time = std::chrono::system_clock::now();
+			u32 sharedMemorySize = 48000;
+
+
+			const u32 BlockSize = std::min(static_cast<u32>(1 << 5), sharedMemorySize / (2 * mInputSize));
+
+			dim3 block(BlockSize, BlockSize);
+			dim3 grid(mOutputSize / BlockSize, mBatchSize / BlockSize);
+
+			AffineForward_test << <grid, block, 2 * mInputSize * BlockSize >> > (
+				mForwardResultOnGPU.address,
+				pParametersOnGPU[0].address,
+				mInputDataOnGPU->address,
+				pParametersOnGPU[1].address,
+				mOutputSize,
+				mInputSize,
+				mBatchSize);
+
+#if _DEBUG
+			CHECK(cudaDeviceSynchronize());
+#endif
+			auto time2 = static_cast<f32>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - time).count() / 1000.0f);
+
 #endif
 		}
 
