@@ -39,30 +39,30 @@ namespace Aoba {
 				f32 result = 0.0f;
 				for (u32 i = 0; i < inputSize; i++)
 				{
-#if _DEBUG
-					u32 tmp = xid * inputSize + i;
-					if (tmp < 0 || tmp >= inputSize * outputSize)
-					{
-						printf("Affine A parameter : out of range : %d\n", tmp);
-						printf("threadId x = %d  ,  y = %d\n", threadIdx.x, threadIdx.y);
-						assert(0);
-					}
-					tmp = yid * inputSize + i;
-					if (tmp < 0 || tmp >= inputSize * batchSize)
-					{
-						printf("Affine x parameter : out of range : %d", tmp);
-						assert(0);
-					}
-#endif
+//#if _DEBUG
+//					u32 tmp = xid * inputSize + i;
+//					if (tmp < 0 || tmp >= inputSize * outputSize)
+//					{
+//						printf("Affine A parameter : out of range : %d\n", tmp);
+//						printf("threadId x = %d  ,  y = %d\n", threadIdx.x, threadIdx.y);
+//						assert(0);
+//					}
+//					tmp = yid * inputSize + i;
+//					if (tmp < 0 || tmp >= inputSize * batchSize)
+//					{
+//						printf("Affine x parameter : out of range : %d", tmp);
+//						assert(0);
+//					}
+//#endif
 					result += A[xid * inputSize + i] * x[yid * inputSize + i];
 				}
-#if _DEBUG
-				if (!(id >= 0 && id < batchSize * outputSize))
-				{
-					printf("Affine y parameter : out of range : %d", id);
-					assert(0);
-				}
-#endif
+//#if _DEBUG
+//				if (!(id >= 0 && id < batchSize * outputSize))
+//				{
+//					printf("Affine y parameter : out of range : %d", id);
+//					assert(0);
+//				}
+//#endif
 				y[id] = result + b[xid];
 			}
 
@@ -80,54 +80,77 @@ namespace Aoba {
 				f32* X, f32* b, u32 outputSize, u32 inputSize, u32 batchSize)
 			{
 				u32 outputID = blockIdx.x * blockDim.x + threadIdx.x;
-				u32 batchID =  blockIdx.y * blockDim.y + threadIdx.y;
+				u32 batchID = blockIdx.y * blockDim.y + threadIdx.y;
+
+
+				const u32 BlockSize = blockDim.x;
+				const u32 subMatSize = BlockSize * BlockSize;
+
+				const u32 startPointOfA = inputSize * (blockIdx.x * BlockSize);
+				const u32 startPointOfX = inputSize * (blockIdx.y * BlockSize);
+
+				extern __shared__ f32 shareRegion[];
+				f32* subA = shareRegion;
+				f32* subX = shareRegion + inputSize * BlockSize;
+				u32 subMatID = threadIdx.y * blockDim.x + threadIdx.x;
+
+
+				for (u32 i = 0, end = inputSize / BlockSize; i < end; i++)
+				{
+					u32 index = i * subMatSize + subMatID;
+					if (index >= inputSize * BlockSize)
+					{
+						continue;
+					}
+
+					u32 indexA = startPointOfA + index;
+					if (indexA >= inputSize * outputSize)
+					{
+						continue;
+					}
+//#if _DEBUG
+//					if (indexA >= inputSize * outputSize)
+//					{
+//						printf("out of range\n");
+//						assert(0);
+//					}
+//#endif
+					subA[index] = A[indexA];
+
+					u32 indexX = startPointOfX + index;
+					if (indexX >= inputSize * batchSize)
+					{
+						continue;
+					}
+//#if _DEBUG
+//					if (indexX >= inputSize * batchSize)
+//					{
+//						printf("out of range\n");
+//						assert(0);
+//					}
+//#endif
+					subX[index] = X[indexX];
+				}
+				__syncthreads();
+
+
+
+
 				if (outputID >= outputSize || batchID >= batchSize)
 				{
 					return;
 				}
 
 
-				const u32 BlockSize = blockDim.x;
-				const u32 subMatSize = BlockSize * BlockSize;
-
-				const u32 startPointOfA = inputSize * blockIdx.x;
-				const u32 startPointOfX = inputSize * blockIdx.y;
-				
-				extern __shared__ f32 shareRegion[];
-
-				f32* subA = shareRegion;
-				f32* subX = static_cast<f32*>(&shareRegion[inputSize * BlockSize]);
-
-				u32 subMatID = threadIdx.y * blockDim.x + threadIdx.x;
-				
-				for (u32 i = 0; i < inputSize / BlockSize; i++)
-				{
-					u32 index = i * subMatSize;
-					if (index >= inputSize * BlockSize)
-					{
-						return;
-					}
-
-					u32 indexA = startPointOfA + index;
-					if (indexA < inputSize * outputSize)
-					{
-						subA[index] = A[indexA];
-					}
-					u32 indexX = startPointOfX + index;
-					if (indexX < inputSize * batchSize)
-					{
-						subX[index] = X[indexX];
-					}
-				}
-				__syncthreads();
 
 
 				f32 result = 0.0f;
 				for (int i = 0; i < inputSize; i++)
 				{
-					result += subA[] * subX[];
+					result += subA[threadIdx.x * inputSize + i] * subX[threadIdx.y * inputSize + i];
 				}
-				y[] = result;
+
+				y[batchID * outputSize + outputID] = result + b[outputID];
 			}
 
 			__global__ void AffineBackward(f32* dA, f32* dout, f32* input, u32 outputSize, u32 inputSize, u32 batchSize)
@@ -303,6 +326,7 @@ namespace Aoba {
 
 		void Affine::forwardOnGPU()
 		{
+			std::chrono::system_clock::time_point time = std::chrono::system_clock::now();
 #if 0
 			dim3 block(16, 16);
 			dim3 grid(
@@ -324,16 +348,19 @@ namespace Aoba {
 #endif
 
 #else
-			std::chrono::system_clock::time_point time = std::chrono::system_clock::now();
-			u32 sharedMemorySize = 48000;
+			u32 sharedMemorySize = 48000/ sizeof(f32);
 
 
 			const u32 BlockSize = std::min(static_cast<u32>(1 << 5), sharedMemorySize / (2 * mInputSize));
-
+			if (BlockSize < 1)
+			{
+				std::cout << "BlockSize is less than 1\n";
+				assert(0);
+			}
 			dim3 block(BlockSize, BlockSize);
-			dim3 grid(mOutputSize / BlockSize, mBatchSize / BlockSize);
+			dim3 grid((mOutputSize + BlockSize - 1) / BlockSize, (mBatchSize + BlockSize - 1) / BlockSize);
 
-			AffineForward_test << <grid, block, 2 * mInputSize * BlockSize >> > (
+			AffineForward_test << <grid, block, 2 * mInputSize * BlockSize * sizeof(f32) >> > (
 				mForwardResultOnGPU.address,
 				pParametersOnGPU[0].address,
 				mInputDataOnGPU->address,
@@ -345,9 +372,10 @@ namespace Aoba {
 #if _DEBUG
 			CHECK(cudaDeviceSynchronize());
 #endif
-			auto time2 = static_cast<f32>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - time).count() / 1000.0f);
 
 #endif
+			auto time2 = static_cast<f32>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - time).count() / 1000.0f);
+			//std::cout << time2 << std::endl;
 		}
 
 		void Affine::backwardOnGPU()
@@ -412,5 +440,5 @@ namespace Aoba {
 
 		}
 
-	}
+}
 }

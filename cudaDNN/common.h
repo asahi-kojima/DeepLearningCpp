@@ -1,7 +1,8 @@
 #pragma once
 #include <iostream>
 #include <string>
-#if _DEBUG
+
+#if 1
 #include <chrono>
 #endif
 
