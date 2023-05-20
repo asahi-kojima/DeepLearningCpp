@@ -41,6 +41,17 @@ namespace Aoba
 			u32 mInputSize;
 			u32 mBatchSize;
 			f32 mAffineParamWeight = 0.01f;
+
+
+			u32 mFunc0CallCnt = 0;
+			f32 mFunc0AveTime = 0.0f;
+
+			u32 mFunc1CallCnt = 0;
+			f32 mFunc1AveTime = 0.0f;
+
+			u32 mWhich = 0;
+			bool mNowComparing = true;
+			const u32 CaptureTimes = 100;
 		};
 
 	}

@@ -155,6 +155,10 @@ int main()
 
 
 	AI Aira{};
+	Aira.addLayer<layer::Affine>(300, 0.001f);
+	Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Affine>(100, 0.001f);
+	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Affine>(50, 0.001f);
 	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Affine>(10, 0.001f);
