@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 
 #include "../BaseOptimizer.h"
 
@@ -9,13 +10,24 @@ namespace Aoba
 		class Adam : public BaseOptimizer
 		{
 		public:
-			Adam() = default;
+			Adam(f32 = 0.001f, f32 = 0.9,f32 = 0.9);
 			~Adam() = default;
 
 		
 		private:
+			void initializeOnCPU(std::vector<std::unique_ptr<layer::BaseLayer> >&) override;
+			void initializeOnGPU(std::vector<std::unique_ptr<layer::BaseLayer> >&) override;
 			void optimizeOnCPU(std::unique_ptr<layer::BaseLayer>&) override;
 			void optimizeOnGPU(std::unique_ptr<layer::BaseLayer>&) override;
+
+			std::vector<std::vector<DataArray> > mMomentumOnCPU;
+			std::vector<std::vector<DataArray> > mVelocityOnCPU;
+			std::map<layer::BaseLayer*, u32> mLayerOrderMapOnCPU;
+
+			f32 mBeta0;
+			f32 mBeta1;
+
+			u32 mIteration;
 		};
 	}
 }

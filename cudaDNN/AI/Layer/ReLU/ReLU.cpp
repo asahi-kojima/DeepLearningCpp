@@ -9,8 +9,7 @@ namespace Aoba::layer
 {
 	ReLU::ReLU()
 		:mBatchSize(0)
-		, mInputSize(0)
-		, mOutputSize(0)
+		, mDataSize(0)
 	{
 	}
 
@@ -20,8 +19,8 @@ namespace Aoba::layer
 	void ReLU::setupLayerInfo(u32 batchSize, DataShape& shape)
 	{
 		mBatchSize = batchSize;
-		mInputSize = shape.width;
-		mOutputSize = mInputSize;
+		mDataShape = shape;
+		mDataSize = mDataShape.getDataSize();
 	}
 
 
@@ -31,44 +30,36 @@ namespace Aoba::layer
 	//////////////////////////////////////
 	void ReLU::mallocOnCPU()
 	{
-		mMaskOnCPU.size = mBatchSize * mInputSize;;
-		mMaskOnCPU.address = new f32[mMaskOnCPU.size];
-		for (u32 i = 0; i < mMaskOnCPU.size; i++)
-		{
-			mMaskOnCPU.address[i] = 1.0f;
-		}
+		mMaskOnCPU.size = mBatchSize * mDataSize;
+		mallocCPUData(mMaskOnCPU);
+		initializeDataOnCPU_1(mMaskOnCPU);
 
 
-		mForwardResultOnCPU.size = mBatchSize * mOutputSize;
-		mBackwardResultOnCPU.size = mBatchSize * mInputSize;
-
-		mForwardResultOnCPU.address = new f32[mForwardResultOnCPU.size];
-		mBackwardResultOnCPU.address = new f32[mBackwardResultOnCPU.size];
-
-		for (u32 i = 0; i < mForwardResultOnCPU.size; i++)
-		{
-			mForwardResultOnCPU.address[i] = 1.0f;
-			mBackwardResultOnCPU.address[i] = 1.0f;
-		}
+		mForwardResultOnCPU.setSizeAs4D(mBatchSize, mDataShape);
+		mBackwardResultOnCPU.setSizeAs4D(mBatchSize, mDataShape);
+		mallocCPUData(mForwardResultOnCPU);
+		mallocCPUData(mBackwardResultOnCPU);
+		initializeDataOnCPU_0(mForwardResultOnCPU);
+		initializeDataOnCPU_0(mBackwardResultOnCPU);
 	}
 
 	void ReLU::forwardOnCPU()
 	{
 		for (u32 N = 0; N < mBatchSize; N++)
 		{
-			for (u32 i = 0; i < mInputSize; i++)
+			for (u32 i = 0; i < mDataSize; i++)
 			{
-				u32 index = N * mInputSize + i;
+				u32 index = N * mDataSize + i;
 				f32 input = mInputDataOnCPU->address[index];
 				if (input > 0)
 				{
 					mMaskOnCPU.address[index] = 1.0f;
-					mForwardResultOnCPU.address[index] = input;
+					mForwardResultOnCPU[index] = input;
 				}
 				else
 				{
 					mMaskOnCPU.address[index] = 1.0f;
-					mForwardResultOnCPU.address[index] = 0.0f;
+					mForwardResultOnCPU[index] = 0.0f;
 				}
 			}
 		}
@@ -78,10 +69,10 @@ namespace Aoba::layer
 	{
 		for (u32 N = 0; N < mBatchSize; N++)
 		{
-			for (u32 i = 0; i < mInputSize; i++)
+			for (u32 i = 0; i < mDataSize; i++)
 			{
-				u32 index = N * mInputSize + i;
-				mBackwardResultOnCPU.address[index] = mMaskOnCPU.address[index] * mDInputDataOnCPU->address[index];
+				u32 index = N * mDataSize + i;
+				mBackwardResultOnCPU.address[index] = mMaskOnCPU[index] * (*mDInputDataOnCPU)[index];
 			}
 		}
 	}

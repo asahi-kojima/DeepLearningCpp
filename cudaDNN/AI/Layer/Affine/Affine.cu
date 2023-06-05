@@ -2,7 +2,7 @@
 #include <cuda_runtime.h>
 #include <cassert>
 
-//このマクロはCUDAソースファイルがコンパイルされる時に定義される。
+//このマクロはCUDAファイルがコンパイルされる時に定義される。
 //インテリセンスのエラーを一時的に抑制するためにこの定義を置いている。
 #if !defined(__CUDACC__)
 #define __CUDACC__
@@ -67,15 +67,15 @@ namespace Aoba {
 			}
 
 
-			struct DataShape
-			{
-				u32 inputSize;
-				u32 outputSize;
-				u32 batchSize;
-				u32 blockSize;
-			};
+			//struct DataShape
+			//{
+			//	u32 inputSize;
+			//	u32 outputSize;
+			//	u32 batchSize;
+			//	u32 blockSize;
+			//};
 
-			__global__ void AffineForward_test(
+			__global__ void AffineForwardWithSM(
 				f32* y, f32* A,
 				f32* X, f32* b, u32 outputSize, u32 inputSize, u32 batchSize)
 			{
@@ -86,6 +86,9 @@ namespace Aoba {
 				const u32 BlockSize = blockDim.x;
 				const u32 subMatSize = BlockSize * BlockSize;
 
+				const u32 matASize = inputSize * outputSize;
+				const u32 matXSize = inputSize * batchSize;
+				const u32 subMatAXSize = inputSize * BlockSize;
 				const u32 startPointOfA = inputSize * (blockIdx.x * BlockSize);
 				const u32 startPointOfX = inputSize * (blockIdx.y * BlockSize);
 
@@ -94,61 +97,26 @@ namespace Aoba {
 				f32* subX = shareRegion + inputSize * BlockSize;
 
 				const u32 groupID = (threadIdx.y * blockDim.x + threadIdx.x);
+
 				for (u32 i = 0, loopSize = (inputSize * BlockSize + subMatSize - 1) / subMatSize; i < loopSize; i++)
 				{
-#if 0
-					u32 index = i * subMatSize + subMatID;
-					if (index >= inputSize * BlockSize)
-					{
-						continue;
-					}
-
-					u32 indexA = startPointOfA + index;
-					if (indexA >= inputSize * outputSize)
-					{
-						continue;
-					}
-					//#if _DEBUG
-					//					if (indexA >= inputSize * outputSize)
-					//					{
-					//						printf("out of range\n");
-					//						assert(0);
-					//					}
-					//#endif
-					subA[index] = A[indexA];
-
-					u32 indexX = startPointOfX + index;
-					if (indexX >= inputSize * batchSize)
-					{
-						continue;
-					}
-					//#if _DEBUG
-					//					if (indexX >= inputSize * batchSize)
-					//					{
-					//						printf("out of range\n");
-					//						assert(0);
-					//					}
-					//#endif
-					subX[index] = X[indexX];
-#else
 					u32 index = i + groupID * loopSize;
-					if (index >= inputSize * BlockSize)
+					if (index >= subMatAXSize)
 					{
 						continue;
 					}
 
 					u32 indexA = startPointOfA + index;
-					if (indexA < inputSize * outputSize)
+					if (indexA < matASize)
 					{
 						subA[index] = A[indexA];
 					}
 
 					u32 indexX = startPointOfX + index;
-					if (indexX < inputSize * batchSize)
+					if (indexX < matXSize)
 					{
 						subX[index] = X[indexX];
 					}
-#endif
 				}
 				__syncthreads();
 
@@ -262,19 +230,18 @@ namespace Aoba {
 		}
 		void Affine::mallocOnGPU()
 		{
-			pParametersOnGPU.resize(2);
-			pDParametersOnGPU.resize(2);
+			mParametersPtrOnGPU.resize(2);
+			mDParametersPtrOnGPU.resize(2);
 
 			//Affineパラメータ
-			paramMemory& affineParam = pParametersOnGPU[0];
-			paramMemory& affineDParam = pDParametersOnGPU[0];
+			DataArray& affineParam = mParametersPtrOnGPU[0];
+			DataArray& affineDParam = mDParametersPtrOnGPU[0];
 
 			affineParam.size = affineDParam.size = mOutputSize * mInputSize;
 
 			CHECK(cudaMalloc((void**)(&(affineParam.address)), affineParam.size * sizeof(f32)));
 			CHECK(cudaMalloc((void**)(&(affineDParam.address)), affineDParam.size * sizeof(f32)));
 
-			f32* tmpAffineParam = new f32[affineParam.size];
 			{
 				std::random_device seed_gen;
 				std::default_random_engine engine(seed_gen());
@@ -296,8 +263,8 @@ namespace Aoba {
 
 
 			//Biasパラメータ
-			paramMemory& biasParam = pParametersOnGPU[1];
-			paramMemory& biasDParam = pDParametersOnGPU[1];
+			DataArray& biasParam = mParametersPtrOnGPU[1];
+			DataArray& biasDParam = mDParametersPtrOnGPU[1];
 
 			biasParam.size = biasDParam.size = mOutputSize;
 
@@ -345,9 +312,10 @@ namespace Aoba {
 
 		void Affine::forwardOnGPU()
 		{
-			{
+//将来的にgroupSharedを利用したほうが早いと確定したらこの部分の後者で置き換える予定。
+//			{
 //				std::chrono::system_clock::time_point time = std::chrono::system_clock::now();
-//#if 1
+//#if 0
 //				dim3 block(16, 16);
 //				dim3 grid(
 //					(mOutputSize + block.x - 1) / block.x,
@@ -356,9 +324,9 @@ namespace Aoba {
 //
 //				AffineForward << <grid, block >> > (
 //					mForwardResultOnGPU.address,
-//					pParametersOnGPU[0].address,
+//					mParametersPtrOnGPU[0].address,
 //					mInputDataOnGPU->address,
-//					pParametersOnGPU[1].address,
+//					mParametersPtrOnGPU[1].address,
 //					mOutputSize,
 //					mInputSize,
 //					mBatchSize);
@@ -380,11 +348,11 @@ namespace Aoba {
 //				dim3 block(BlockSize, BlockSize);
 //				dim3 grid((mOutputSize + BlockSize - 1) / BlockSize, (mBatchSize + BlockSize - 1) / BlockSize);
 //
-//				AffineForward_test << <grid, block, 2 * mInputSize * BlockSize * sizeof(f32) >> > (
+//				AffineForwardWithSM << <grid, block, 2 * mInputSize * BlockSize * sizeof(f32) >> > (
 //					mForwardResultOnGPU.address,
-//					pParametersOnGPU[0].address,
+//					mParametersPtrOnGPU[0].address,
 //					mInputDataOnGPU->address,
-//					pParametersOnGPU[1].address,
+//					mParametersPtrOnGPU[1].address,
 //					mOutputSize,
 //					mInputSize,
 //					mBatchSize);
@@ -397,9 +365,7 @@ namespace Aoba {
 //				auto time2 = static_cast<f32>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - time).count() / 1000.0f);
 //				//std::cout << time2 << std::endl;
 //				return;
-		}
-
-
+//		}
 
 
 			std::chrono::system_clock::time_point time;
@@ -411,7 +377,7 @@ namespace Aoba {
 				{
 					time = std::chrono::system_clock::now();
 				}
-				dim3 block(16, 16);
+				dim3 block(32, 32);
 				dim3 grid(
 					(mOutputSize + block.x - 1) / block.x,
 					(mBatchSize + block.y - 1) / block.y);
@@ -419,9 +385,9 @@ namespace Aoba {
 
 				AffineForward << <grid, block >> > (
 					mForwardResultOnGPU.address,
-					pParametersOnGPU[0].address,
+					mParametersPtrOnGPU[0].address,
 					mInputDataOnGPU->address,
-					pParametersOnGPU[1].address,
+					mParametersPtrOnGPU[1].address,
 					mOutputSize,
 					mInputSize,
 					mBatchSize);
@@ -447,7 +413,6 @@ namespace Aoba {
 					time = std::chrono::system_clock::now();
 				}
 
-
 				u32 sharedMemorySize = 48000 / sizeof(f32);
 
 
@@ -460,11 +425,11 @@ namespace Aoba {
 				dim3 block(BlockSize, BlockSize);
 				dim3 grid((mOutputSize + BlockSize - 1) / BlockSize, (mBatchSize + BlockSize - 1) / BlockSize);
 
-				AffineForward_test << <grid, block, 2 * mInputSize * BlockSize * sizeof(f32) >> > (
+				AffineForwardWithSM << <grid, block, 2 * mInputSize * BlockSize * sizeof(f32) >> > (
 					mForwardResultOnGPU.address,
-					pParametersOnGPU[0].address,
+					mParametersPtrOnGPU[0].address,
 					mInputDataOnGPU->address,
-					pParametersOnGPU[1].address,
+					mParametersPtrOnGPU[1].address,
 					mOutputSize,
 					mInputSize,
 					mBatchSize);
@@ -508,7 +473,7 @@ namespace Aoba {
 					(mBatchSize + block.y - 1) / block.y);
 				doutBackward << <grid, block >> > (
 					mBackwardResultOnGPU.address,
-					pParametersOnGPU[0].address,
+					mParametersPtrOnGPU[0].address,
 					mDInputDataOnGPU->address,
 					mOutputSize,
 					mInputSize,
@@ -526,7 +491,7 @@ namespace Aoba {
 					(mOutputSize + block.y - 1) / block.y);
 
 				AffineBackward << <grid, block >> > (
-					pDParametersOnGPU[0].address,
+					mDParametersPtrOnGPU[0].address,
 					mDInputDataOnGPU->address,
 					mInputDataOnGPU->address,
 					mOutputSize,
@@ -544,7 +509,7 @@ namespace Aoba {
 				dim3 grid((mOutputSize + block.x - 1) / block.x);
 
 				biasBackward << <grid, block >> > (
-					pDParametersOnGPU[1].address,
+					mDParametersPtrOnGPU[1].address,
 					mDInputDataOnGPU->address,
 					mOutputSize,
 					mBatchSize);

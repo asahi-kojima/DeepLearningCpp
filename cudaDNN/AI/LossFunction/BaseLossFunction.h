@@ -25,12 +25,12 @@ namespace Aoba
 				}
 				mallocOnCPU();
 			}
-			void setInputOnCPU(DataMemory* pData, DataMemory* pCorrectData)
+			void setInputOnCPU(DataArray* pData, DataArray* pCorrectData)
 			{
 				mForwardResultOnCPU = pData;
 				mCorrectDataOnCPU = pCorrectData;
 			}
-			DataMemory* getDInputDataOnCPU()
+			DataArray* getDInputDataOnCPU()
 			{
 				return &mDInputDataOnCPU;
 			}
@@ -49,13 +49,13 @@ namespace Aoba
 				mallocOnGPU();
 			}
 			virtual f32 calcLossAndDInputOnGPU() = 0;
-			void setInputOnGPU(DataMemory* pData, DataMemory* pCorrectData)
+			void setInputOnGPU(DataArray* pData, DataArray* pCorrectData)
 			{
 				mForwardResultOnGPU = pData;
 				mCorrectDataOnGPU = pCorrectData;
 			}
 
-			DataMemory* getDInputDataOnGPU()
+			DataArray* getDInputDataOnGPU()
 			{
 				return &mDInputDataOnGPU;
 			}
@@ -72,20 +72,20 @@ namespace Aoba
 			//////////////////////////////////////////////////////////////////////
 			//CPUä÷åWÇÃïœêî
 			//////////////////////////////////////////////////////////////////////
-			DataMemory mLossTblOnCPU;
-			DataMemory mDInputDataOnCPU;
-			DataMemory* mForwardResultOnCPU;
-			DataMemory* mCorrectDataOnCPU;
+			DataArray mLossTblOnCPU;
+			DataArray mDInputDataOnCPU;
+			DataArray* mForwardResultOnCPU;
+			DataArray* mCorrectDataOnCPU;
 
 			virtual void mallocOnCPU() = 0;
 
 			//////////////////////////////////////////////////////////////////////
 			//GPUä÷åWÇÃïœêî
 			//////////////////////////////////////////////////////////////////////
-			DataMemory mLossTblOnGPU;
-			DataMemory mDInputDataOnGPU;
-			DataMemory* mForwardResultOnGPU;
-			DataMemory* mCorrectDataOnGPU;
+			DataArray mLossTblOnGPU;
+			DataArray mDInputDataOnGPU;
+			DataArray* mForwardResultOnGPU;
+			DataArray* mCorrectDataOnGPU;
 
 			virtual void mallocOnGPU() = 0;
 

@@ -5,6 +5,7 @@
 
 #include "../../common.h"
 #include "../AISetting.h"
+#include "../AIMacro.h"
 #include "../Optimizer/BaseOptimizer.h"
 
 namespace Aoba
@@ -19,23 +20,23 @@ namespace Aoba
 			BaseLayer() = default;
 			virtual ~BaseLayer() = default;
 
-			virtual void setInputDataOnCPU(DataMemory*& pInputData) final
+			virtual void setInputDataOnCPU(DataArray*& pInputData) final
 			{
 				mInputDataOnCPU = pInputData;
 				pInputData = &mForwardResultOnCPU;
 			}
-			virtual void setDInputDataOnCPU(DataMemory*& pDInputData) final
+			virtual void setDInputDataOnCPU(DataArray*& pDInputData) final
 			{
 				mDInputDataOnCPU = pDInputData;
 				pDInputData = &mBackwardResultOnCPU;
 			}
 
-			virtual void setInputDataOnGPU(DataMemory*& pInputData) final
+			virtual void setInputDataOnGPU(DataArray*& pInputData) final
 			{
 				mInputDataOnGPU = pInputData;
 				pInputData = &mForwardResultOnGPU;
 			}
-			virtual void setDInputDataOnGPU(DataMemory*& pDInputData) final
+			virtual void setDInputDataOnGPU(DataArray*& pDInputData) final
 			{
 				mDInputDataOnGPU = pDInputData;
 				pDInputData = &mBackwardResultOnGPU;
@@ -44,16 +45,16 @@ namespace Aoba
 			virtual void printLayerInfo()
 			{
 				printDoubleLine();
-				std::cout << "not implement" << std::endl;
+				std::cout << "No Infomation" << std::endl;
 			}
 
 			//CPU
-			std::vector<paramMemory> pParametersOnCPU;
-			std::vector<paramMemory> pDParametersOnCPU;
-			DataMemory mForwardResultOnCPU;
-			DataMemory mBackwardResultOnCPU;
-			DataMemory* mInputDataOnCPU;
-			DataMemory* mDInputDataOnCPU;
+			std::vector<DataArray> mParametersPtrOnCPU;
+			std::vector<DataArray> mDParametersPtrOnCPU;
+			DataArray mForwardResultOnCPU;
+			DataArray mBackwardResultOnCPU;
+			DataArray* mInputDataOnCPU;
+			DataArray* mDInputDataOnCPU;
 
 			virtual void initializeOnCPU(u32 batchSize, DataShape& shape) final
 			{
@@ -72,12 +73,12 @@ namespace Aoba
 
 
 			//GPU
-			std::vector<paramMemory> pParametersOnGPU;
-			std::vector<paramMemory> pDParametersOnGPU;
-			DataMemory mForwardResultOnGPU;
-			DataMemory mBackwardResultOnGPU;
-			DataMemory* mInputDataOnGPU;
-			DataMemory* mDInputDataOnGPU;
+			std::vector<DataArray> mParametersPtrOnGPU;
+			std::vector<DataArray> mDParametersPtrOnGPU;
+			DataArray mForwardResultOnGPU;
+			DataArray mBackwardResultOnGPU;
+			DataArray* mInputDataOnGPU;
+			DataArray* mDInputDataOnGPU;
 
 			virtual void initializeOnGPU(u32 batchSize, DataShape& shape) final
 			{

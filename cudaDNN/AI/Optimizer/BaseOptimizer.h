@@ -16,6 +16,9 @@ namespace Aoba
 		public:
 			BaseOptimizer(f32 learningRate = 0.001f) : mLearningRate(learningRate) {};
 			~BaseOptimizer() = default;
+
+			virtual void initializeOnCPU(std::vector<std::unique_ptr<layer::BaseLayer> >&) = 0;
+			virtual void initializeOnGPU(std::vector<std::unique_ptr<layer::BaseLayer> >&) = 0;
 			
 			virtual void optimizeOnCPU(std::unique_ptr<layer::BaseLayer>&) = 0;
 			virtual void optimizeOnGPU(std::unique_ptr<layer::BaseLayer>&) = 0;
@@ -24,11 +27,11 @@ namespace Aoba
 		protected:
 			f32 mLearningRate;
 
-			std::vector<paramMemory>& getLayerParamOnCPU(std::unique_ptr<layer::BaseLayer>&);
-			std::vector<paramMemory>& getLayerDParamOnCPU(std::unique_ptr<layer::BaseLayer>&);
+			std::vector<DataArray>& getLayerParamOnCPU(std::unique_ptr<layer::BaseLayer>&);
+			std::vector<DataArray>& getLayerDParamOnCPU(std::unique_ptr<layer::BaseLayer>&);
 
-			std::vector<paramMemory>& getLayerParamOnGPU(std::unique_ptr<layer::BaseLayer>&);
-			std::vector<paramMemory>& getLayerDParamOnGPU(std::unique_ptr<layer::BaseLayer>&);
+			std::vector<DataArray>& getLayerParamOnGPU(std::unique_ptr<layer::BaseLayer>&);
+			std::vector<DataArray>& getLayerDParamOnGPU(std::unique_ptr<layer::BaseLayer>&);
 		};
 	}
 }

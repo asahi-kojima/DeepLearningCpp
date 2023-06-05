@@ -34,17 +34,17 @@ namespace Aoba
 			{
 				printDoubleLine();
 				std::cout << "ReLU Layer" << std::endl;
-				std::cout << "	InputSize         = " << mInputSize << std::endl;
-				std::cout << "	OutputSize        = " << mOutputSize << std::endl;
+				std::cout << "	InputSize         = " << mDataSize << std::endl;
+				std::cout << "	OutputSize        = " << mDataSize << std::endl;
 			}
 
 		private:
-			u32 mOutputSize;
-			u32 mInputSize;
 			u32 mBatchSize;
+			DataShape mDataShape;
+			u32 mDataSize;
 
-			DataMemory mMaskOnCPU;
-			DataMemory mMaskOnGPU;
+			DataArray mMaskOnCPU;
+			DataArray mMaskOnGPU;
 		};
 
 	}

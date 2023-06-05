@@ -70,60 +70,31 @@ namespace Aoba {
 
 		void ReLU::mallocOnGPU()
 		{
-			mMaskOnGPU.size =  mBatchSize * mInputSize;
-			CHECK(cudaMalloc((void**)(&mMaskOnGPU.address), mMaskOnGPU.size * sizeof(f32)));
-			{
-				f32 * mask = new f32[mMaskOnGPU.size];
-				for (u32 i = 0; i < mMaskOnGPU.size; i++)
-				{
-					mask[i] = 1.0f;
-				}
-				CHECK(cudaMemcpy(mMaskOnGPU.address, mask, mMaskOnGPU.size * sizeof(f32), cudaMemcpyHostToDevice));
-
-			}
+			mMaskOnGPU.size =  mBatchSize * mDataSize;
+			MALLOC_ON_GPU(mMaskOnGPU);
+			INITIALIZE_GPU_DATA_1(mMaskOnGPU);
 
 			//ŒvŽZŒ‹‰Ê‚ðŠi”[‚·‚é‚½‚ß‚Ìƒƒ‚ƒŠŠm•Û
-			mForwardResultOnGPU.size = mBatchSize * mOutputSize;
-			mBackwardResultOnGPU.size = mBatchSize * mInputSize;
-			CHECK(cudaMalloc((void**)(&(mForwardResultOnGPU.address)),
-				mForwardResultOnGPU.size * sizeof(f32)));
-			CHECK(cudaMalloc((void**)(&(mBackwardResultOnGPU.address)),
-				mBackwardResultOnGPU.size * sizeof(f32)));
-			{
-				f32* tmp = new f32[mForwardResultOnGPU.size];
-				for (u32 idx = 0; idx < mForwardResultOnGPU.size; idx++)
-				{
-					tmp[idx] = 0.0f;
-				}
-				CHECK(cudaMemcpy(mForwardResultOnGPU.address, tmp,
-					mForwardResultOnGPU.size * sizeof(f32), cudaMemcpyHostToDevice));
-				delete[] tmp;
-
-
-				tmp = new f32[mBackwardResultOnGPU.size];
-				for (u32 idx = 0; idx < mBackwardResultOnGPU.size; idx++)
-				{
-					tmp[idx] = 0.0f;
-				}
-				CHECK(cudaMemcpy(mBackwardResultOnGPU.address, tmp,
-					mBackwardResultOnGPU.size * sizeof(f32), cudaMemcpyHostToDevice));
-				delete[] tmp;
-			}
+			mForwardResultOnGPU.size = mBackwardResultOnGPU.size = mBatchSize * mDataSize;
+			MALLOC_ON_GPU(mForwardResultOnGPU);
+			MALLOC_ON_GPU(mBackwardResultOnGPU);
+			INITIALIZE_GPU_DATA_0(mForwardResultOnGPU);
+			INITIALIZE_GPU_DATA_0(mBackwardResultOnGPU);
 		}
 
 		void ReLU::forwardOnGPU()
 		{
 			dim3 block(16, 16);
 			dim3 grid(
-				(mOutputSize + block.x - 1) / block.x,
+				(mDataSize + block.x - 1) / block.x,
 				(mBatchSize + block.y - 1) / block.y);
 
 			ReLUForward << <grid, block >> > (
 				mForwardResultOnGPU.address,
 				mInputDataOnGPU->address,
 				mMaskOnGPU.address,
-				mOutputSize,
-				mInputSize,
+				mDataSize,
+				mDataSize,
 				mBatchSize); 
 #if _DEBUG
 			CHECK(cudaDeviceSynchronize());
@@ -134,16 +105,16 @@ namespace Aoba {
 		{
 			dim3 block(16, 16);
 			dim3 grid(
-				(mInputSize + block.x - 1) / block.x,
+				(mDataSize + block.x - 1) / block.x,
 				(mBatchSize + block.y - 1) / block.y);
 
 			ReLUBackward << <grid, block >> > (
 				mBackwardResultOnGPU.address,
 				mDInputDataOnGPU->address,
 				mMaskOnGPU.address,
-				mOutputSize,
-				mInputSize,
-				mBatchSize);
+				mDataSize,
+				mDataSize,
+				mBatchSize); 
 		}
 
 		void ReLU::terminateOnGPU()

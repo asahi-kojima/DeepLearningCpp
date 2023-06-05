@@ -56,3 +56,4 @@ inline void printGpuDriverInfo()
                                                                                                                                 \
     elapsedTime = static_cast<f32>(chrono::duration_cast<chrono::microseconds>(end - start).count() / 1000.0);               \
 }
+

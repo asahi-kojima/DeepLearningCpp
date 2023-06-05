@@ -46,6 +46,9 @@
     <Filter Include="ソース ファイル\AI\LossFunction\L2Loss">
       <UniqueIdentifier>{d6736daf-d4dd-40a2-a02d-6641e3b876f3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\AI\Layer\Convolution">
+      <UniqueIdentifier>{58c6d8c7-46fb-4523-bb8c-57a2a901b0b2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="main.cpp">
@@ -74,6 +77,9 @@
     </CudaCompile>
     <CudaCompile Include="AI\LossFunction\L2Loss\L2Loss.cu">
       <Filter>ソース ファイル\AI\LossFunction\L2Loss</Filter>
+    </CudaCompile>
+    <CudaCompile Include="AI\Layer\Convolution\Convolution.cu">
+      <Filter>ソース ファイル\AI\Layer\Convolution</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
@@ -134,6 +140,9 @@
     <ClInclude Include="AI\LossFunction\L2Loss\L2Loss.h">
       <Filter>ソース ファイル\AI\LossFunction\L2Loss</Filter>
     </ClInclude>
+    <ClInclude Include="AI\Layer\Convolution\Convolution.h">
+      <Filter>ソース ファイル\AI\Layer\Convolution</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AI\Optimizer\BaseOptimizer.cpp">
@@ -159,6 +168,9 @@
     </ClCompile>
     <ClCompile Include="AI\LossFunction\L2Loss\L2Loss.cpp">
       <Filter>ソース ファイル\AI\LossFunction\L2Loss</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\Layer\Convolution\Convolution.cpp">
+      <Filter>ソース ファイル\AI\Layer\Convolution</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

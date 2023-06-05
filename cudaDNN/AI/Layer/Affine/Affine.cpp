@@ -14,7 +14,17 @@ namespace Aoba::layer
 		:mBatchSize(0)
 		,mInputSize(0)
 		,mOutputSize(outputSize)
+		,mOutputShape{1,1,outputSize}
 		,mAffineParamWeight(weight)
+	{
+	}
+
+	Affine::Affine(u32 outputC, u32 outputH, u32 outputW, f32 weight)
+		:mBatchSize(0)
+		, mInputSize(0)
+		, mOutputSize(outputC * outputH * outputW)
+		, mOutputShape{outputC, outputH, outputW}
+		, mAffineParamWeight(weight)
 	{
 	}
 
@@ -25,9 +35,11 @@ namespace Aoba::layer
 	void Affine::setupLayerInfo(u32 batchSize, DataShape& shape)
 	{
 		mBatchSize = batchSize;
-		mInputSize = shape.width;
 
-		shape.width = mOutputSize;
+		mInputShape = shape;
+		mInputSize = shape.getDataSize();
+
+		shape = mOutputShape;
 	}
 
 
@@ -39,91 +51,75 @@ namespace Aoba::layer
 	//////////////////////////////////////
 	void Affine::mallocOnCPU()
 	{
-		pParametersOnCPU.resize(2);
-		pDParametersOnCPU.resize(2);
+		mParametersPtrOnCPU.resize(2);
+		mDParametersPtrOnCPU.resize(2);
 
 		//Affine/dAffineパラメータ
 		//(1)参照
-		paramMemory& affineParam = pParametersOnCPU[0];
-		paramMemory& affineDParam = pDParametersOnCPU[0];
+		DataArray& affineParam = mParametersPtrOnCPU[0];
+		DataArray& affineDParam = mDParametersPtrOnCPU[0];
 		//(2)パラメータのサイズを設定
-		affineParam.size = mOutputSize * mInputSize;
-		affineDParam.size = mOutputSize * mInputSize;
-		//(3)パラメータ用の領域確保
-		affineParam.address = new f32[affineParam.size];
-		affineDParam.address = new f32[affineDParam.size];
-		//(4)初期化
-		{
-			std::random_device seed_gen;
-			std::default_random_engine engine(seed_gen());
-			std::normal_distribution<> dist(0.0, std::sqrt(2.0 / mInputSize));
-			for (u32 idx = 0; idx < affineParam.size; idx++)
-			{
-				affineParam.address[idx] = mAffineParamWeight * static_cast<f32>(dist(engine));
-			}
+		affineParam.setSizeAs2D(mOutputSize, mInputSize);
+		affineDParam.setSizeAs2D(mOutputSize, mInputSize);
+		//(3)パラメータ用の領域確保と初期化
+		MALLOC_AND_INITIALIZE_NORMAL_ON_CPU(affineParam, mInputSize, mAffineParamWeight);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(affineDParam);
 
-			for (u32 idx = 0; idx < affineDParam.size; idx++)
-			{
-				affineDParam.address[idx] = 0.0f;
-			}
-		}
 		//Biasパラメータ
 		//(1)参照
-		paramMemory& biasParam = pParametersOnCPU[1];
-		paramMemory& biasDParam = pDParametersOnCPU[1];
+		DataArray& biasParam = mParametersPtrOnCPU[1];
+		DataArray& biasDParam = mDParametersPtrOnCPU[1];
 		//(2)パラメータのサイズを設定
-		biasParam.size = mOutputSize;
-		biasDParam.size = mOutputSize;
-		//(3)パラメータ用の領域確保
-		biasParam.address = new f32[biasParam.size];
-		biasDParam.address = new f32[biasDParam.size];
-		//(4)初期化
-		{
-			for (u32 idx = 0; idx < biasParam.size; idx++)
-			{
-				biasParam.address[idx] = 0.0f;
-			}
+		biasParam.size = biasDParam.size = mOutputSize;
+		//(3)パラメータ用の領域確保と初期化
+		MALLOC_AND_INITIALIZE_0_ON_CPU(biasParam);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(biasDParam);
 
-			for (u32 idx = 0; idx < biasDParam.size; idx++)
-			{
-				biasDParam.address[idx] = 0.0f;
-			}
-		}
 
-		mForwardResultOnCPU.size = mBatchSize * mOutputSize;
-		mBackwardResultOnCPU.size = mBatchSize * mInputSize;
+		//伝搬用変数
+		mForwardResultOnCPU.setSizeAs2D(mBatchSize, mOutputSize);
+		mBackwardResultOnCPU.setSizeAs4D(mBatchSize, mInputShape);
 
-		mForwardResultOnCPU.address = new f32[mForwardResultOnCPU.size];
-		mBackwardResultOnCPU.address = new f32[mBackwardResultOnCPU.size];
+		MALLOC_AND_INITIALIZE_0_ON_CPU(mForwardResultOnCPU);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(mBackwardResultOnCPU);
 	}
 
 	void Affine::forwardOnCPU()
 	{
+		auto& I = *mInputDataOnCPU;
+		auto& A = mParametersPtrOnCPU[0];
+		auto& b = mParametersPtrOnCPU[1];
 		for (u32 N = 0; N < mBatchSize; N++)
 		{
 			for (u32 o = 0; o < mOutputSize; o++)
 			{
-				u32 index = N * mOutputSize + o;
 				f32 result = 0.0f;
 				for (u32 i = 0; i < mInputSize; i++)
 				{
 #if _DEBUG
-					assert(pParametersOnCPU[0].size > o * mInputSize + i);
-					assert(mInputDataOnCPU->size > N * mInputSize + i);
+					assert(A.size > o * mInputSize + i);
+					assert(I.size > N * mInputSize + i);
 #endif
-					result += pParametersOnCPU[0].address[o * mInputSize + i] * mInputDataOnCPU->address[N * mInputSize + i];
+					result += A(o, i) * I(N, i);
 				}
 #if _DEBUG
-				assert(mForwardResultOnCPU.size > index);
-				assert(pParametersOnCPU[1].size > o);
+				assert(mForwardResultOnCPU.size > N * mOutputSize + o);
+				assert(b.size > o);
 #endif
-				mForwardResultOnCPU.address[index] = result + pParametersOnCPU[1].address[o];
+				mForwardResultOnCPU(N, o) = result + b[o];
 			}
 		}
 	}
 
 	void Affine::backwardOnCPU()
 	{
+		auto& I = *mInputDataOnCPU;
+		auto& dI = *mDInputDataOnCPU;
+
+		auto& A = mParametersPtrOnCPU[0];
+		auto& dA = mDParametersPtrOnCPU[0];
+		auto& db = mDParametersPtrOnCPU[1];
+
 		for (u32 o = 0; o < mOutputSize; o++)
 		{
 			for (u32 i = 0; i < mInputSize; i++)
@@ -135,26 +131,26 @@ namespace Aoba::layer
 					assert(mInputDataOnCPU->size > N * mInputSize + i);
 					assert(mDInputDataOnCPU->size > N * mOutputSize + o);
 #endif
-					result += mInputDataOnCPU->address[N * mInputSize + i] * mDInputDataOnCPU->address[N * mOutputSize + o];
+					result += I(N, i) * dI(N, o);
 				}
 #if _DEBUG
-				assert(pDParametersOnCPU[0].size > o * mInputSize + i);
+				assert(dA.size > o * mInputSize + i);
 #endif
-				pDParametersOnCPU[0].address[o * mInputSize + i] = result;
+				dA(o, i) = result;
 			}
 
 			f32 result = 0.0f;
 			for (u32 N = 0; N < mBatchSize; N++)
 			{
 #if _DEBUG
-				assert(mDInputDataOnCPU->size > N * mOutputSize + o);
+				assert(dI.size > N * mOutputSize + o);
 #endif
-				result += mDInputDataOnCPU->address[N * mOutputSize + o];
+				result += dI(N, o);
 			}
 #if _DEBUG
-			assert(pDParametersOnCPU[1].size > o);
+			assert(db.size > o);
 #endif
-			pDParametersOnCPU[1].address[o] = result;
+			db[o] = result;
 		}
 
 		for (u32 N = 0; N < mBatchSize; N++)
@@ -165,28 +161,25 @@ namespace Aoba::layer
 				for (u32 o = 0; o < mOutputSize; o++)
 				{
 #if _DEBUG
-					assert(pParametersOnCPU[0].size > o * mInputSize + i);
+					assert(mParametersPtrOnCPU[0].size > o * mInputSize + i);
 					assert(mDInputDataOnCPU->size > N * mOutputSize + o);
 #endif
-					result += pParametersOnCPU[0].address[o * mInputSize + i] * mDInputDataOnCPU->address[N * mOutputSize + o];
+					result += A(o, i) * dI(N, o);
 				}
 #if _DEBUG
 				assert(mBackwardResultOnCPU.size > N * mInputSize + i);
 #endif
-				mBackwardResultOnCPU.address[N * mInputSize + i] = result;
+				mBackwardResultOnCPU(N, i) = result;
 			}
 		}
 	}
 
 	void Affine::terminateOnCPU()
 	{
-		delete[] pParametersOnCPU[0].address;
-		delete[] pParametersOnCPU[1].address;
+		delete[] mParametersPtrOnCPU[0].address;
+		delete[] mParametersPtrOnCPU[1].address;
 
-		delete[] pDParametersOnCPU[0].address;
-		delete[] pDParametersOnCPU[1].address;
+		delete[] mDParametersPtrOnCPU[0].address;
+		delete[] mDParametersPtrOnCPU[1].address;
 	}
-} 
-
-#if _DEBUG
-#endif
+}

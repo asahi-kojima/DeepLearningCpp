@@ -7,17 +7,17 @@ namespace Aoba
 	{
 		void CrossEntropyWithSM::mallocOnCPU()
 		{
-			mDInputDataOnCPU.size = mBatchSize * mTrainingDataShape.channel * mTrainingDataShape.height * mTrainingDataShape.width;
-			mDInputDataOnCPU.address = new f32[mDInputDataOnCPU.size];
+			mDInputDataOnCPU.setSizeAs4D(mBatchSize , mTrainingDataShape.channel , mTrainingDataShape.height , mTrainingDataShape.width);
+			MALLOC_AND_INITIALIZE_0_ON_CPU(mDInputDataOnCPU);
 
 			mLossTblOnCPU.size = mBatchSize;
-			mLossTblOnCPU.address = new f32[mLossTblOnCPU.size];
+			MALLOC_AND_INITIALIZE_0_ON_CPU(mLossTblOnCPU);
 		}
 
 		f32 CrossEntropyWithSM::calcLossAndDInputOnCPU()
 		{
-			DataMemory& input = *mForwardResultOnCPU;
-			DataMemory& correctData = *mCorrectDataOnCPU;
+			DataArray& input = *mForwardResultOnCPU;
+			DataArray& correctData = *mCorrectDataOnCPU;
 
 #if _DEBUG
 			assert(mBatchSize != 0);

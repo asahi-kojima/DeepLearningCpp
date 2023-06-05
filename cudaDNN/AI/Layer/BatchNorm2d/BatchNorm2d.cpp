@@ -23,76 +23,46 @@ namespace Aoba::layer
 	//////////////////////////////////////
 	void BatchNorm2d::mallocOnCPU()
 	{
-		pParametersOnCPU.resize(2);
-		pDParametersOnCPU.resize(2);
+		mParametersPtrOnCPU.resize(2);
+		mDParametersPtrOnCPU.resize(2);
 
 
 		//------------------------------------------------------------------
 		//Gamma
 		//------------------------------------------------------------------
-		paramMemory& gammaParam = pParametersOnCPU[0];
-		paramMemory& gammaDParam = pDParametersOnCPU[0];
+		DataArray& gammaParam = mParametersPtrOnCPU[0];
+		DataArray& gammaDParam = mDParametersPtrOnCPU[0];
 
-		gammaParam.size = mDataShape.channel;
-		gammaDParam.size = gammaParam.size;
-
-		gammaParam.address = new f32[gammaParam.size];
-		gammaDParam.address = new f32[gammaDParam.size];
-
-		for (u32 i = 0; i < gammaParam.size; i++)
-		{
-			gammaParam.address[i] = 1.0f;
-			gammaDParam.address[i] = 1.0f;
-		}
+		gammaParam.size = gammaDParam.size = mDataShape.channel;
+		MALLOC_AND_INITIALIZE_1_ON_CPU(gammaParam);
+		MALLOC_AND_INITIALIZE_1_ON_CPU(gammaDParam);
 
 		//------------------------------------------------------------------
 		//Beta
 		//------------------------------------------------------------------
-		paramMemory& betaParam = pParametersOnCPU[1];
-		paramMemory& betaDParam = pDParametersOnCPU[1];
+		DataArray& betaParam = mParametersPtrOnCPU[1];
+		DataArray& betaDParam = mDParametersPtrOnCPU[1];
 
-		betaParam.size = mDataShape.channel;
-		betaDParam.size = betaParam.size;
-
-		betaParam.address = new f32[betaParam.size];
-		betaDParam.address = new f32[betaDParam.size];
-
-		for (u32 i = 0; i < betaParam.size; i++)
-		{
-			betaParam.address[i] = 0.0f;
-			betaDParam.address[i] = 0.0f;
-		}
+		betaParam.size = betaDParam.size = mDataShape.channel;
+		MALLOC_AND_INITIALIZE_0_ON_CPU(betaParam);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(betaDParam);
 
 		//------------------------------------------------------------------
 		//Sigma
 		//------------------------------------------------------------------
 		mSigmaOnCPU.size = mDataShape.channel;
 		mSigmaOnCPU.byteSize = mSigmaOnCPU.size * sizeof(f32);
-
-		mSigmaOnCPU.address = new f32[mSigmaOnCPU.size];
-		for (u32 i = 0; i < mSigmaOnCPU.size; i++)
-		{
-			mSigmaOnCPU.address[i] = 0.0f;
-		}
+		MALLOC_AND_INITIALIZE_0_ON_CPU(mSigmaOnCPU);
 
 		//------------------------------------------------------------------
 		//“`”À—p
 		//------------------------------------------------------------------
-		mForwardResultOnCPU.size = mBatchSize * mDataShape.getDataSize();
-		mBackwardResultOnCPU.size = mForwardResultOnCPU.size;
-		mIntermediateResultOnCPU.size = mForwardResultOnCPU.size;
-
-		mForwardResultOnCPU.address = new f32[mForwardResultOnCPU.size];
-		mBackwardResultOnCPU.address = new f32[mBackwardResultOnCPU.size];
-		mIntermediateResultOnCPU.address = new f32[mIntermediateResultOnCPU.size];
-
-
-		for (u32 i = 0; i < mForwardResultOnCPU.size; i++)
-		{
-			mForwardResultOnCPU.address[i] = 0.0f;
-			mBackwardResultOnCPU.address[i] = 0.0f;
-			mIntermediateResultOnCPU.address[i] = 0.0f;
-		}
+		mForwardResultOnCPU.setSizeAs4D(mBatchSize, mDataShape);
+		mBackwardResultOnCPU.setSizeAs4D(mBatchSize, mDataShape);
+		mIntermediateResultOnCPU.setSizeAs4D(mBatchSize, mDataShape);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(mForwardResultOnCPU);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(mBackwardResultOnCPU);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(mIntermediateResultOnCPU);
 	}
 
 	void BatchNorm2d::forwardOnCPU()
@@ -134,8 +104,8 @@ namespace Aoba::layer
 			//------------------------------------------------------------------
 			//•W€‰»
 			//------------------------------------------------------------------
-			f32 gamma = pParametersOnCPU[0].address[c];
-			f32 beta = pParametersOnCPU[1].address[c];
+			f32 gamma = mParametersPtrOnCPU[0].address[c];
+			f32 beta = mParametersPtrOnCPU[1].address[c];
 			for (u32 N = 0; N < mBatchSize; N++)
 			{
 				for (u32 hw = 0; hw < hXw; hw++)
@@ -169,8 +139,8 @@ namespace Aoba::layer
 					dBeta += dO;
 				}
 			}
-			pDParametersOnCPU[0][c] = dGamma;
-			pDParametersOnCPU[1][c] = dBeta;
+			mDParametersPtrOnCPU[0][c] = dGamma;
+			mDParametersPtrOnCPU[1][c] = dBeta;
 			
 			
 			
@@ -193,7 +163,7 @@ namespace Aoba::layer
 				for (u32 hw = 0; hw < hXw; hw++)
 				{
 					u32 index = N * mDataShape.getDataSize() + c * hXw + hw;
-					mBackwardResultOnCPU[index] = (pParametersOnCPU[0][c] / (mSigmaOnCPU[c] + 1e-7)) * (dout[index] - dMean - mIntermediateResultOnCPU[index] * diMean);
+					mBackwardResultOnCPU[index] = (mParametersPtrOnCPU[0][c] / (mSigmaOnCPU[c] + 1e-7)) * (dout[index] - dMean - mIntermediateResultOnCPU[index] * diMean);
 				}
 			}
 		}

@@ -7,17 +7,17 @@ namespace Aoba
 	{
 		void L2Loss::mallocOnCPU()
 		{
-			mDInputDataOnCPU.size = mBatchSize * mTrainingDataShape.getDataSize();
-			mDInputDataOnCPU.address = new f32[mDInputDataOnCPU.size];
+			mDInputDataOnCPU.setSizeAs4D(mBatchSize, mTrainingDataShape);
+			MALLOC_AND_INITIALIZE_0_ON_CPU(mDInputDataOnCPU);
 
 			mLossTblOnCPU.size = mBatchSize;
-			mLossTblOnCPU.address = new f32[mLossTblOnCPU.size];
+			MALLOC_AND_INITIALIZE_0_ON_CPU(mLossTblOnCPU);
 		}
 
 		f32 L2Loss::calcLossAndDInputOnCPU()
 		{
-			DataMemory& input = *mForwardResultOnCPU;
-			DataMemory& correctData = *mCorrectDataOnCPU;
+			DataArray& input = *mForwardResultOnCPU;
+			DataArray& correctData = *mCorrectDataOnCPU;
 
 			u32 dataSize = input.size / mBatchSize;
 

@@ -6,47 +6,15 @@ namespace Aoba
 {
 	using cf32 = const f32;
 
-	struct DataMemory
-	{
-		f32* address;
-		u32 size;
-		u32 byteSize;
-
-		f32& operator[](u32 index)
-		{
-#if _DEBUG
-			if (index >= size)
-			{
-				assert(0);
-			}
-#endif
-			return this->address[index];
-		}
-	};
-
-	struct paramMemory
-	{
-		f32* address;
-		u32 size;
-		u32 byteSize;
-
-		f32& operator[](u32 index)
-		{
-#if _DEBUG
-			if (index >= size)
-			{
-				assert(0);
-			}
-#endif
-			return this->address[index];
-		}
-	};
 
 	struct DataShape
 	{
 		u32 channel;
 		u32 height;
 		u32 width;
+
+		//DataShape(u32 c, u32 h, u32 w) :channel(c), height(h), width(w)
+		//{}
 
 		u32 getDataSize() const
 		{
@@ -65,6 +33,263 @@ namespace Aoba
 			return !((*this) == comp);
 		}
 	};
+
+
+	struct DataArray
+	{
+		f32* address;
+		u32 size;
+		u32 byteSize;
+
+		f32& operator[](u32 index)
+		{
+#if _DEBUG
+			if (index >= size)
+			{
+				assert(0);
+			}
+#endif
+			return this->address[index];
+		}
+
+
+
+		//4D‚Ì”z—ñ‚Æ‚µ‚ÄŽg‚¤‚½‚ß‚Ì
+	private:
+		u32 mBatchSize;
+		u32 mChannel;
+		u32 mHeight;
+		u32 mWidth;
+
+		u32 mCHW;
+		u32 mHW;
+
+		bool mIsSetSize = false;
+
+		/////////////////////////////////////////////////////////////////
+		// 4D
+		/////////////////////////////////////////////////////////////////
+	private:
+		bool mIs4DArray = false;
+	public:
+		bool is4DArray() { return mIs4DArray; }
+		void setSizeAs4D(u32 batch, u32 c, u32 h, u32 w)
+		{
+			if (mIsSetSize)
+			{
+				assert(0);
+			}
+			mIsSetSize = true;
+
+
+			mIs4DArray = true;
+
+
+			mBatchSize = batch;
+			mChannel = c;
+			mHeight = h;
+			mWidth = w;
+
+
+			mHW = mHeight * mWidth;
+			mCHW = mChannel * mHW;
+
+
+			size = mBatchSize * mChannel * mHeight * mWidth;
+			byteSize = sizeof(f32) * size;
+		}
+
+		void setSizeAs4D(u32 batch, const DataShape& dataShape)
+		{
+			setSizeAs4D(batch, dataShape.channel, dataShape.height, dataShape.width);
+		}
+
+
+
+
+
+
+		/////////////////////////////////////////////////////////////////
+		// 3D
+		/////////////////////////////////////////////////////////////////
+	private:
+		bool mIs3DArray = false;
+	public:
+		void setSizeAs3D(u32 batchSize, u32 h, u32 w)
+		{
+			if (mIsSetSize)
+			{
+				assert(0);
+			}
+			mIsSetSize = true;
+
+
+			mIs3DArray = true;
+
+
+			mBatchSize = batchSize;
+			mChannel = 0;
+			mHeight = h;
+			mWidth = w;
+
+
+			mHW = mHeight * mWidth;
+			mCHW = mChannel * mHW;
+
+
+			size = mBatchSize * mHeight * mWidth;
+			byteSize = sizeof(f32) * size;
+		}
+
+
+
+		/////////////////////////////////////////////////////////////////
+		// 2D
+		/////////////////////////////////////////////////////////////////
+	private:
+		bool mIs2DArray = false;
+	public:
+		void setSizeAs2D(u32 batchSize, u32 eachSize)
+		{
+			if (mIsSetSize)
+			{
+				assert(0);
+			}
+			mIsSetSize = true;
+
+
+			mIs2DArray = true;
+
+
+			mBatchSize = batchSize;
+			mChannel = 0;
+			mHeight = 0;
+			mWidth = eachSize;
+
+			size = mBatchSize * mWidth;
+			byteSize = sizeof(f32) * size;
+		}
+
+
+
+
+		////////////////////////////////////////////////
+		f32& operator()(u32 N, u32 C, u32 H, u32 W)
+		{
+			u32 index = N * mCHW + C * mHW + H * mWidth + W;
+#if _DEBUG
+			if (!mIs4DArray)
+			{
+				assert(0);
+			}
+			if (N >= mBatchSize || C >= mChannel || H >= mHeight || W >= mWidth)
+			{
+				assert(0);
+			}
+			if (index >= size)
+			{
+				assert(0);
+			}
+#endif
+			return this->address[index];
+		}
+
+
+		f32& operator()(u32 N, u32 H, u32 W)
+		{
+			if (mIs4DArray)
+			{
+				u32 c = H;
+				u32 hw = W;
+				u32 index = N * mCHW + c * mHW + hw;
+#if _DEBUG
+				if (N >= mBatchSize || c >= mChannel || hw >= mHW)
+				{
+					assert(0);
+				}
+				if (index >= size)
+				{
+					assert(0);
+				}
+#endif
+				return this->address[index];
+			}
+
+			if (mIs3DArray)
+			{
+				u32 index = N * mHW + H * mWidth + W;
+#if _DEBUG
+				if (N >= mBatchSize || H >= mHeight || W >= mWidth)
+				{
+					assert(0);
+				}
+				if (index >= size)
+				{
+					assert(0);
+				}
+#endif
+				return this->address[index];
+			}
+
+			assert(0);
+		}
+
+		f32& operator()(u32 N, u32 W)
+		{
+			if (mIs4DArray)
+			{
+				u32 index = N * mCHW + W;
+#if _DEBUG
+				if (N >= mBatchSize || W >= mCHW)
+				{
+					assert(0);
+				}
+				if (index >= size)
+				{
+					assert(0);
+				}
+#endif
+				return this->address[index];
+			}
+
+			if (mIs3DArray)
+			{
+				u32 index = N * mHW + W;
+#if _DEBUG
+				if (N >= mBatchSize || W >= mHW)
+				{
+					assert(0);
+				}
+				if (index >= size)
+				{
+					assert(0);
+				}
+#endif
+				return this->address[index];
+			}
+
+			if (mIs2DArray)
+			{
+
+				u32 index = N * mWidth + W;
+#if _DEBUG
+				if (N >= mBatchSize || W >= mWidth)
+				{
+					assert(0);
+				}
+				if (index >= size)
+				{
+					assert(0);
+				}
+#endif
+				return this->address[index];
+			}
+		}
+	};
+
+
+
+
 
 	struct DataFormat4DeepLearning
 	{

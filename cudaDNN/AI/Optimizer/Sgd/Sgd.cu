@@ -26,13 +26,13 @@ namespace Aoba
 	{
 		void Sgd::optimizeOnGPU(std::unique_ptr<layer::BaseLayer>& pLayer)
 		{
-			std::vector<paramMemory>& params = getLayerParamOnGPU(pLayer);
-			std::vector<paramMemory>& dParams = getLayerDParamOnGPU(pLayer);
+			std::vector<DataArray>& params = getLayerParamOnGPU(pLayer);
+			std::vector<DataArray>& dParams = getLayerDParamOnGPU(pLayer);
 
 			for (u32 idx = 0; idx < params.size(); idx++)
 			{
-				paramMemory& param = params[idx];
-				paramMemory& dParam = dParams[idx];
+				DataArray& param = params[idx];
+				DataArray& dParam = dParams[idx];
 
 				dim3 block(32);
 				dim3 grid((param.size + block.x - 1) / block.x);

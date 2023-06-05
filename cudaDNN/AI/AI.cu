@@ -65,7 +65,11 @@ namespace Aoba
 		//------------------------------------------------------------------
 		initializeLayer();
 
-
+		//------------------------------------------------------------------
+		//optimizerの初期化
+		//------------------------------------------------------------------
+		initializeOptimizer();
+		
 		//------------------------------------------------------------------
 		//層の情報を表示
 		//------------------------------------------------------------------
@@ -129,7 +133,7 @@ namespace Aoba
 		informationFormat("Deep Learning Start");
 		u32 loopTime = mDataFormat4DeepLearning.dataNum / mDataFormat4DeepLearning.batchSize;
 		u32 batch = mDataFormat4DeepLearning.batchSize;
-		auto progressBar = [](u32 currentLoop, u32 totalLoop, u32 length = 20)
+		auto progressBar = [](u32 currentLoop, u32 totalLoop, u32 length = 100)
 		{
 			u32 grid = totalLoop / length;
 			std::string s = "\r";
@@ -202,14 +206,14 @@ namespace Aoba
 	}
 
 
-	DataMemory AI::operator()(f32* inputData)
+	DataArray AI::operator()(f32* inputData)
 	{
 		if (!mAlreadyBuild)
 		{
 			std::cout << "AI build not yet done!!";
 			assert(0);
 		}
-		return DataMemory();
+		return DataArray();
 	}
 
 #pragma endregion
@@ -291,7 +295,7 @@ namespace Aoba
 		std::cout << "\n" << std::endl;
 		std::cout << "this time AI use deviceID = " << maxDeviceId << std::endl;
 		cudaSetDevice(maxDeviceId);
-		mIsGpuAvailable = true;
+		mIsGpuAvailable = false;
 		std::cout << std::endl;
 	}
 
@@ -312,6 +316,18 @@ namespace Aoba
 		}
 	}
 
+
+	void AI::initializeOptimizer()
+	{
+		if (mIsGpuAvailable)
+		{
+			mOptimizer->initializeOnGPU(mLayerList);
+		}
+		else
+		{
+			mOptimizer->initializeOnCPU(mLayerList);
+		}
+	}
 
 	/// <summary>
 	/// AIクラス利用者が指定してきたデータをデータフォーマットに応じ、
@@ -340,9 +356,9 @@ namespace Aoba
 		}
 		else
 		{
-			mInputTrainingDataOnCPU.size = batch * mDataFormat4DeepLearning.eachTrainingDataSize;
+			mInputTrainingDataOnCPU.setSizeAs4D(batch, mDataFormat4DeepLearning.trainingDataShape);
 			mInputTrainingDataOnCPU.byteSize = mInputTrainingDataOnCPU.size * sizeof(f32);
-			mInputCorrectDataOnCPU.size = batch * mDataFormat4DeepLearning.eachCorrectDataSize;
+			mInputCorrectDataOnCPU.setSizeAs4D(batch, mDataFormat4DeepLearning.correctDataShape);
 			mInputCorrectDataOnCPU.byteSize = mInputCorrectDataOnCPU.size * sizeof(f32);
 		}
 	}

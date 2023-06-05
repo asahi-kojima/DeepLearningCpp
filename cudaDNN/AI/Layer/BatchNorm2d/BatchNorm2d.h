@@ -43,11 +43,11 @@ namespace Aoba
 			u32 mBatchSize;
 			DataShape mDataShape;
 
-			DataMemory mIntermediateResultOnCPU;
-			DataMemory mSigmaOnCPU;
+			DataArray mIntermediateResultOnCPU;
+			DataArray mSigmaOnCPU;
 			
-			DataMemory mIntermediateResultOnGPU;
-			DataMemory mSigmaOnGPU;
+			DataArray mIntermediateResultOnGPU;
+			DataArray mSigmaOnGPU;
 		};
 
 	}

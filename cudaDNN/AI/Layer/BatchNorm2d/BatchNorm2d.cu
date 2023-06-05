@@ -228,15 +228,15 @@ namespace Aoba {
 
 		void BatchNorm2d::mallocOnGPU()
 		{
-			pParametersOnGPU.resize(2);
-			pDParametersOnGPU.resize(2);
+			mParametersPtrOnGPU.resize(2);
+			mDParametersPtrOnGPU.resize(2);
 
 
 			//------------------------------------------------------------------
 			//Gamma
 			//------------------------------------------------------------------
-			paramMemory& gammaParam = pParametersOnGPU[0];
-			paramMemory& gammaDParam = pDParametersOnGPU[0];
+			DataArray& gammaParam = mParametersPtrOnGPU[0];
+			DataArray& gammaDParam = mDParametersPtrOnGPU[0];
 
 			gammaParam.size = mDataShape.channel;
 			gammaDParam.size = gammaParam.size;
@@ -258,8 +258,8 @@ namespace Aoba {
 			//------------------------------------------------------------------
 			//Beta
 			//------------------------------------------------------------------
-			paramMemory& betaParam = pParametersOnGPU[1];
-			paramMemory& betaDParam = pDParametersOnGPU[1];
+			DataArray& betaParam = mParametersPtrOnGPU[1];
+			DataArray& betaDParam = mDParametersPtrOnGPU[1];
 
 			betaParam.size = mDataShape.channel;
 			betaDParam.size = betaParam.size;
@@ -332,8 +332,8 @@ namespace Aoba {
 				mInputDataOnGPU->address,
 				mIntermediateResultOnGPU.address,
 				mForwardResultOnGPU.address,
-				pParametersOnGPU[0].address,
-				pParametersOnGPU[1].address,
+				mParametersPtrOnGPU[0].address,
+				mParametersPtrOnGPU[1].address,
 				mSigmaOnGPU.address,
 				mBatchSize,
 				mDataShape.channel,
@@ -354,9 +354,9 @@ namespace Aoba {
 				mDInputDataOnGPU->address,
 				mIntermediateResultOnGPU.address,
 				mBackwardResultOnGPU.address,
-				pParametersOnGPU[0].address,
-				pDParametersOnGPU[0].address,
-				pDParametersOnGPU[1].address,
+				mParametersPtrOnGPU[0].address,
+				mDParametersPtrOnGPU[0].address,
+				mDParametersPtrOnGPU[1].address,
 				mSigmaOnGPU.address,
 				mBatchSize,
 				mDataShape.channel,

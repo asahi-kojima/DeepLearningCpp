@@ -44,7 +44,7 @@ namespace Aoba
 		void build(DataFormat4DeepLearning&);
 
 		void deepLearning(f32*, f32*, u32 epochs = 50);
-		DataMemory operator()(f32*);//未実装
+		DataArray operator()(f32*);//未実装
 		f32 getLoss()
 		{
 			if (mIsGpuAvailable)
@@ -57,6 +57,7 @@ namespace Aoba
 	private:
 		void checkGpuIsAvailable();
 		void initializeLayer();
+		void initializeOptimizer();
 
 		void dataSetup(f32*, f32*);
 
@@ -89,10 +90,10 @@ namespace Aoba
 		f32* mInputTrainingDataStartAddressOnCPU;
 		f32* mInputCorrectDataStartAddressOnCPU;
 		//入力データを置く場所
-		DataMemory mInputTrainingDataOnCPU;
-		DataMemory mInputCorrectDataOnCPU;
+		DataArray mInputTrainingDataOnCPU;
+		DataArray mInputCorrectDataOnCPU;
 		//順伝搬の結果がある場所
-		DataMemory* mForwardResultOnCPU;
+		DataArray* mForwardResultOnCPU;
 
 		f32 mLossOnCPU = 0.0f;
 
@@ -105,10 +106,10 @@ namespace Aoba
 		f32* mInputTrainingDataStartAddressOnGPU;
 		f32* mInputCorrectDataStartAddressOnGPU;
 		//入力データを置く場所
-		DataMemory mInputTrainingDataOnGPU;
-		DataMemory mInputCorrectDataOnGPU;
+		DataArray mInputTrainingDataOnGPU;
+		DataArray mInputCorrectDataOnGPU;
 		//順伝搬の結果がある場所
-		DataMemory* mForwardResultOnGPU;
+		DataArray* mForwardResultOnGPU;
 
 		f32 mLossOnGPU = 0.0f;
 

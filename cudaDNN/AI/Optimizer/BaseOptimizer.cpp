@@ -4,22 +4,22 @@
 
 namespace Aoba
 {
-	std::vector<paramMemory>& Aoba::optimizer::BaseOptimizer::getLayerParamOnCPU(std::unique_ptr<Aoba::layer::BaseLayer>& pLayer)
+	std::vector<DataArray>& Aoba::optimizer::BaseOptimizer::getLayerParamOnCPU(std::unique_ptr<Aoba::layer::BaseLayer>& pLayer)
 	{
-		return	pLayer->pParametersOnCPU;
+		return	pLayer->mParametersPtrOnCPU;
 	}
-	std::vector<paramMemory>& Aoba::optimizer::BaseOptimizer::getLayerDParamOnCPU(std::unique_ptr<Aoba::layer::BaseLayer>& pLayer)
+	std::vector<DataArray>& Aoba::optimizer::BaseOptimizer::getLayerDParamOnCPU(std::unique_ptr<Aoba::layer::BaseLayer>& pLayer)
 	{
-		return	pLayer->pDParametersOnCPU;
+		return	pLayer->mDParametersPtrOnCPU;
 	}
 
-	std::vector<paramMemory>& Aoba::optimizer::BaseOptimizer::getLayerParamOnGPU(std::unique_ptr<Aoba::layer::BaseLayer>& pLayer)
+	std::vector<DataArray>& Aoba::optimizer::BaseOptimizer::getLayerParamOnGPU(std::unique_ptr<Aoba::layer::BaseLayer>& pLayer)
 	{
-		return	pLayer->pParametersOnGPU;
+		return	pLayer->mParametersPtrOnGPU;
 	}
-	std::vector<paramMemory>& Aoba::optimizer::BaseOptimizer::getLayerDParamOnGPU(std::unique_ptr<Aoba::layer::BaseLayer>& pLayer)
+	std::vector<DataArray>& Aoba::optimizer::BaseOptimizer::getLayerDParamOnGPU(std::unique_ptr<Aoba::layer::BaseLayer>& pLayer)
 	{
-		return	pLayer->pDParametersOnGPU;
+		return	pLayer->mDParametersPtrOnGPU;
 	}
 
 }

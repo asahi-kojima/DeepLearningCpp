@@ -11,6 +11,7 @@ namespace Aoba
 		{
 		public:
 			Affine(u32, f32 weight = 0.01f);
+			Affine(u32, u32, u32, f32 weight = 0.01f);
 			~Affine();
 			
 		private:
@@ -37,9 +38,11 @@ namespace Aoba
 			}
 
 		private:
-			u32 mOutputSize;
-			u32 mInputSize;
 			u32 mBatchSize;
+			u32 mOutputSize;
+			DataShape mOutputShape;
+			u32 mInputSize;
+			DataShape mInputShape;
 			f32 mAffineParamWeight = 0.01f;
 
 

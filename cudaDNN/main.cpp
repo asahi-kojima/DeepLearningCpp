@@ -9,6 +9,9 @@
 
 #include "commonOnlyGPU.cuh"
 
+#if 1
+#include <random>
+#endif
 
 void loadMnistFromBin(std::string filePath, std::vector<f32>& data, u32 loadByteSize)
 {
@@ -84,7 +87,7 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 }
 
 
-#if 0
+#if 1
 int main()
 {
 	using namespace Aoba;
@@ -92,15 +95,25 @@ int main()
 	//データの準備
 	//////////////////////////////////////////
 	constexpr u32 dataSize = 784;
-	constexpr u32 trainingDataNum = 60000;
+	constexpr u32 trainingDataNum = 6000;
 	constexpr u32 testDataNum = 10000;
 	std::vector<f32> trainingData, trainingLabel, testData, testLabel;
 	setupMnistData(trainingData, trainingLabel, testData, testLabel);
 
+	//{
+	//	std::random_device seed_gen;                                              
+	//		std::default_random_engine engine(seed_gen());                        
+	//		std::normal_distribution<> dist(0.0, std::sqrt(2.0 / 1));
+	//	for (auto& i : trainingData)
+	//	{
+	//		i = static_cast<f32>(dist(engine));
+	//	}
+	//}
+
 
 	//データ形状は自分の手で決める。
-	DataShape inputTrainingDataShape = { 1, 1, 28 * 28 };
-	DataShape inputCorrectDataShape = { 1, 1,  28 * 28 };
+	DataShape inputTrainingDataShape = { 1,  28 , 28 };
+	DataShape inputCorrectDataShape = { 1,   28 , 28 };
 	//訓練データと教師データの形状についてAIに教える
 	DataFormat4DeepLearning format(trainingDataNum, 100, inputTrainingDataShape, inputCorrectDataShape);
 
@@ -110,12 +123,22 @@ int main()
 
 
 	AI Aira{};
-	Aira.addLayer<layer::Affine>(50, 0.001f);
-	Aira.addLayer<layer::BatchNorm2d>();
+	//Aira.addLayer<layer::Affine>(50, 0.001f);
+	//Aira.addLayer<layer::BatchNorm2d>();
+	//Aira.addLayer<layer::ReLU>();
+	//Aira.addLayer<layer::Affine>(784, 0.001f);
+	//Aira.addLayer<layer::BatchNorm2d>();
+	//Aira.setOptimizer<optimizer::Sgd>(0.0001f);
+	//Aira.setLossFunction<lossFunction::L2Loss>();
+	//Aira.addLayer<layer::Convolution>(10u, 3u, 3u, 1u, 1u);
+	//Aira.addLayer<layer::BatchNorm2d>();
+	//Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Convolution>(1u, 3u, 3u, 1u, 1u, 10.0f);
 	Aira.addLayer<layer::ReLU>();
-	Aira.addLayer<layer::Affine>(784, 0.001f);
-	Aira.addLayer<layer::BatchNorm2d>();
-	Aira.setOptimizer<optimizer::Sgd>(0.0001f);
+	Aira.addLayer<layer::Convolution>(1u, 3u, 3u, 1u, 1u, 10.0f);
+	//Aira.addLayer<layer::Affine>(1, 28, 28, 0.01f);
+	//Aira.addLayer<layer::BatchNorm2d>();
+	Aira.setOptimizer<optimizer::Adam>(0.001f);
 	Aira.setLossFunction<lossFunction::L2Loss>();
 
 	Aira.build(format);
@@ -144,7 +167,8 @@ int main()
 
 
 	//データ形状は自分の手で決める。
-	DataShape inputTrainingDataShape = {1, 1, 28 * 28 };
+	//DataShape inputTrainingDataShape = { 1, 1, 28 * 28 };
+	DataShape inputTrainingDataShape = { 1,  28 , 28 };
 	DataShape inputCorrectDataShape = { 1, 1, 1 };
 	//訓練データと教師データの形状についてAIに教える
 	DataFormat4DeepLearning format(trainingDataNum, 100, inputTrainingDataShape, inputCorrectDataShape);
@@ -155,14 +179,18 @@ int main()
 
 
 	AI Aira{};
-	Aira.addLayer<layer::Affine>(300, 0.001f);
-	Aira.addLayer<layer::ReLU>();
-	Aira.addLayer<layer::Affine>(100, 0.001f);
-	Aira.addLayer<layer::ReLU>();
+	//Aira.addLayer<layer::Convolution>(10u, 5u, 5u, 2u, 1u);
+	/*Aira.addLayer<layer::Affine>(300, 0.001f);
+	Aira.addLayer<layer::ReLU>();*/
+	/*Aira.addLayer<layer::Affine>(100, 0.001f);
+	Aira.addLayer<layer::ReLU>();*/
 	Aira.addLayer<layer::Affine>(50, 0.001f);
+	//Aira.addLayer<layer::Convolution>(1u, 4u, 4u, 2u, 2u, 10.0f);
+	//Aira.addLayer<layer::ReLU>();
+	//Aira.addLayer<layer::Convolution>(1u, 4u, 4u, 2u, 2u, 10.0f);
 	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Affine>(10, 0.001f);
-	Aira.setOptimizer<optimizer::Sgd>(0.001f);
+	Aira.setOptimizer<optimizer::Adam>(0.0001f);
 	Aira.setLossFunction<lossFunction::CrossEntropyWithSM>();
 	//Aira.setLossFunction<lossFunction::L2Loss>();
 
