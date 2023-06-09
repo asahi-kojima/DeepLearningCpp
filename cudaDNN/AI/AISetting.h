@@ -2,6 +2,16 @@
 
 #include "../setting.h"
 #include <cassert>
+
+#define TIME_DEBUG (0 & _DEBUG)
+#if TIME_DEBUG
+#include <map>
+#include <string>
+extern std::map<std::string, f32> timers;
+#endif
+
+#define INDEX_DEBUG (0 & _DEBUG)
+
 namespace Aoba
 {
 	using cf32 = const f32;
@@ -43,7 +53,7 @@ namespace Aoba
 
 		f32& operator[](u32 index)
 		{
-#if _DEBUG
+#if INDEX_DEBUG
 			if (index >= size)
 			{
 				assert(0);
@@ -177,7 +187,7 @@ namespace Aoba
 		f32& operator()(u32 N, u32 C, u32 H, u32 W)
 		{
 			u32 index = N * mCHW + C * mHW + H * mWidth + W;
-#if _DEBUG
+#if INDEX_DEBUG
 			if (!mIs4DArray)
 			{
 				assert(0);
@@ -202,7 +212,7 @@ namespace Aoba
 				u32 c = H;
 				u32 hw = W;
 				u32 index = N * mCHW + c * mHW + hw;
-#if _DEBUG
+#if INDEX_DEBUG
 				if (N >= mBatchSize || c >= mChannel || hw >= mHW)
 				{
 					assert(0);
@@ -218,7 +228,7 @@ namespace Aoba
 			if (mIs3DArray)
 			{
 				u32 index = N * mHW + H * mWidth + W;
-#if _DEBUG
+#if INDEX_DEBUG
 				if (N >= mBatchSize || H >= mHeight || W >= mWidth)
 				{
 					assert(0);
@@ -239,7 +249,7 @@ namespace Aoba
 			if (mIs4DArray)
 			{
 				u32 index = N * mCHW + W;
-#if _DEBUG
+#if INDEX_DEBUG
 				if (N >= mBatchSize || W >= mCHW)
 				{
 					assert(0);
@@ -255,7 +265,7 @@ namespace Aoba
 			if (mIs3DArray)
 			{
 				u32 index = N * mHW + W;
-#if _DEBUG
+#if INDEX_DEBUG
 				if (N >= mBatchSize || W >= mHW)
 				{
 					assert(0);
@@ -272,7 +282,7 @@ namespace Aoba
 			{
 
 				u32 index = N * mWidth + W;
-#if _DEBUG
+#if INDEX_DEBUG
 				if (N >= mBatchSize || W >= mWidth)
 				{
 					assert(0);

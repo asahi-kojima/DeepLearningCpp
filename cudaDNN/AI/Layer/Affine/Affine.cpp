@@ -2,7 +2,8 @@
 #include <cuda_runtime.h>
 #include <iostream>
 #include <cassert>
-
+#include <thread>
+#include <chrono>
 #include "Affine.h"
 #include "../../../common.h"
 
@@ -12,18 +13,18 @@ namespace Aoba::layer
 
 	Affine::Affine(u32 outputSize, f32 weight)
 		:mBatchSize(0)
-		,mInputSize(0)
-		,mOutputSize(outputSize)
-		,mOutputShape{1,1,outputSize}
-		,mAffineParamWeight(weight)
+		, mInputSize(0)
+		, mOutputSize(outputSize)
+		, mOutputShape{ 1,1,outputSize }
+		, mAffineParamWeight(weight)
 	{
 	}
 
 	Affine::Affine(u32 outputC, u32 outputH, u32 outputW, f32 weight)
 		:mBatchSize(0)
 		, mInputSize(0)
-		, mOutputSize(outputC * outputH * outputW)
-		, mOutputShape{outputC, outputH, outputW}
+		, mOutputSize(outputC* outputH* outputW)
+		, mOutputShape{ outputC, outputH, outputW }
 		, mAffineParamWeight(weight)
 	{
 	}
@@ -89,26 +90,30 @@ namespace Aoba::layer
 		auto& I = *mInputDataOnCPU;
 		auto& A = mParametersPtrOnCPU[0];
 		auto& b = mParametersPtrOnCPU[1];
-		for (u32 N = 0; N < mBatchSize; N++)
+#if TIME_DEBUG
 		{
-			for (u32 o = 0; o < mOutputSize; o++)
+			std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+
+			for (u32 N = 0; N < mBatchSize; N++)
 			{
-				f32 result = 0.0f;
-				for (u32 i = 0; i < mInputSize; i++)
+				for (u32 o = 0; o < mOutputSize; o++)
 				{
-#if _DEBUG
-					assert(A.size > o * mInputSize + i);
-					assert(I.size > N * mInputSize + i);
-#endif
-					result += A(o, i) * I(N, i);
+					f32 result = 0.0f;
+					for (u32 i = 0; i < mInputSize; i++)
+					{
+						result += A(o, i) * I(N, i);
+					}
+					mForwardResultOnCPU(N, o) = result + b[o];
 				}
-#if _DEBUG
-				assert(mForwardResultOnCPU.size > N * mOutputSize + o);
-				assert(b.size > o);
-#endif
-				mForwardResultOnCPU(N, o) = result + b[o];
 			}
+#if TIME_DEBUG
+			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+			std::string name = "";
+			(name += __FUNCTION__) += " : forward";
+			timers[name] = elapsedTime;
 		}
+#endif
 	}
 
 	void Affine::backwardOnCPU()
@@ -119,59 +124,63 @@ namespace Aoba::layer
 		auto& A = mParametersPtrOnCPU[0];
 		auto& dA = mDParametersPtrOnCPU[0];
 		auto& db = mDParametersPtrOnCPU[1];
-
-		for (u32 o = 0; o < mOutputSize; o++)
+#if TIME_DEBUG
 		{
-			for (u32 i = 0; i < mInputSize; i++)
+			std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+			for (u32 o = 0; o < mOutputSize; o++)
 			{
+				for (u32 i = 0; i < mInputSize; i++)
+				{
+					f32 result = 0.0f;
+					for (u32 N = 0; N < mBatchSize; N++)
+					{
+
+						result += I(N, i) * dI(N, o);
+					}
+
+					dA(o, i) = result;
+				}
+
 				f32 result = 0.0f;
 				for (u32 N = 0; N < mBatchSize; N++)
 				{
-#if _DEBUG
-					assert(mInputDataOnCPU->size > N * mInputSize + i);
-					assert(mDInputDataOnCPU->size > N * mOutputSize + o);
-#endif
-					result += I(N, i) * dI(N, o);
+					result += dI(N, o);
 				}
-#if _DEBUG
-				assert(dA.size > o * mInputSize + i);
-#endif
-				dA(o, i) = result;
-			}
 
-			f32 result = 0.0f;
+				db[o] = result;
+			}
+#if TIME_DEBUG
+			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+			std::string name = "";
+			(name += __FUNCTION__) += " : backward dA db";
+			timers[name] = elapsedTime;
+		}
+#endif
+
+#if TIME_DEBUG
+		{
+			std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
 			for (u32 N = 0; N < mBatchSize; N++)
 			{
-#if _DEBUG
-				assert(dI.size > N * mOutputSize + o);
-#endif
-				result += dI(N, o);
-			}
-#if _DEBUG
-			assert(db.size > o);
-#endif
-			db[o] = result;
-		}
-
-		for (u32 N = 0; N < mBatchSize; N++)
-		{
-			for (u32 i = 0; i < mInputSize; i++)
-			{
-				f32 result = 0.0f;
-				for (u32 o = 0; o < mOutputSize; o++)
+				for (u32 i = 0; i < mInputSize; i++)
 				{
-#if _DEBUG
-					assert(mParametersPtrOnCPU[0].size > o * mInputSize + i);
-					assert(mDInputDataOnCPU->size > N * mOutputSize + o);
-#endif
-					result += A(o, i) * dI(N, o);
+					f32 result = 0.0f;
+					for (u32 o = 0; o < mOutputSize; o++)
+					{
+						result += A(o, i) * dI(N, o);
+					}
+					mBackwardResultOnCPU(N, i) = result;
 				}
-#if _DEBUG
-				assert(mBackwardResultOnCPU.size > N * mInputSize + i);
-#endif
-				mBackwardResultOnCPU(N, i) = result;
 			}
+#if TIME_DEBUG
+			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+			std::string name = "";
+			(name += __FUNCTION__) += " : backward dout";
+			timers[name] = elapsedTime;
 		}
+#endif
 	}
 
 	void Affine::terminateOnCPU()

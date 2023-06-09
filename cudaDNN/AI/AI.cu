@@ -13,6 +13,7 @@
 #include "../commonOnlyGPU.cuh"
 
 
+std::map<std::string, f32> timers;
 
 namespace Aoba
 {
@@ -58,6 +59,7 @@ namespace Aoba
 		//データフォーマットを保存
 		//------------------------------------------------------------------
 		mDataFormat4DeepLearning = format;
+		assert(format.batchSize != 0);
 
 		//------------------------------------------------------------------
 		// 各層における入力データの形状登録
@@ -69,7 +71,7 @@ namespace Aoba
 		//optimizerの初期化
 		//------------------------------------------------------------------
 		initializeOptimizer();
-		
+
 		//------------------------------------------------------------------
 		//層の情報を表示
 		//------------------------------------------------------------------
@@ -81,9 +83,9 @@ namespace Aoba
 			index++;
 		}
 		std::cout << std::endl;
-		
-		
-		
+
+
+
 		mAlreadyBuild = true;
 	}
 
@@ -133,21 +135,21 @@ namespace Aoba
 		informationFormat("Deep Learning Start");
 		u32 loopTime = mDataFormat4DeepLearning.dataNum / mDataFormat4DeepLearning.batchSize;
 		u32 batch = mDataFormat4DeepLearning.batchSize;
-		auto progressBar = [](u32 currentLoop, u32 totalLoop, u32 length = 100)
+		auto progressBar = [](u32 currentLoop, u32 totalLoop, f32 loss, u32 length = 80)
 		{
-			u32 grid = totalLoop / length;
+			const u32 grid = totalLoop / length;
 			std::string s = "\r";
 			for (u32 i = 0; i < static_cast<u32>((static_cast<f32>(length) * currentLoop) / totalLoop); i++)
 			{
 				s += "=";
 			}
 			s += ">";
-			s32 spaceLength = static_cast<s32>(length - s.length() + 2);
+			const s32 spaceLength = static_cast<s32>(length - s.length() + 2);
 			for (s32 i = 0; i < spaceLength; i++)
 			{
 				s += " ";
 			}
-			s += " " + std::to_string(static_cast<u32>(static_cast<f32>(currentLoop * 100) / totalLoop)) + "/100";
+			s += " " + std::to_string(static_cast<u32>(static_cast<f32>(currentLoop * 100) / totalLoop)) + "/100  :  " + std::to_string( loss);
 			printf(s.c_str());
 		};
 
@@ -158,7 +160,7 @@ namespace Aoba
 			std::cout << "deep learning now" << std::endl;
 			for (u32 loop = 0; loop < loopTime; loop++)
 			{
-				progressBar(loop + 1, loopTime);
+				progressBar(loop + 1, loopTime, mLossOnCPU);
 				u32 offsetForTrainingData = (batch * mDataFormat4DeepLearning.eachTrainingDataSize) * loop;
 				u32 offsetForCorrectData = (batch * mDataFormat4DeepLearning.eachCorrectDataSize) * loop;
 				if (mIsGpuAvailable)
@@ -172,28 +174,69 @@ namespace Aoba
 					mInputCorrectDataOnCPU.address = mInputCorrectDataStartAddressOnCPU + offsetForCorrectData;
 				}
 
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					forward();
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(name += __FUNCTION__) += " : forward";
+					timers[name] = elapsedTime;
+				}
+#endif
 
-				forward();
-#if _DEBUG
+
 				//------------------------------------------------------------------
 				//ここで整合性チェック
 				//------------------------------------------------------------------
+
+
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					backward();
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(name += __FUNCTION__) += " : backward";
+					timers[name] = elapsedTime;
+				}
 #endif
 
-				backward();
-#if _DEBUG
+
 				//------------------------------------------------------------------
 				//ここで整合性チェック
 				//------------------------------------------------------------------
-#endif
 
-				optimize();
-#if _DEBUG
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					optimize();
+#if TIME_DEBUG
+					f32 elapsedTime = static_cast<f32>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f);
+					std::string name = "";
+					(name += __FUNCTION__) += " : optimize";
+					timers[name] = elapsedTime;
+				}
+#endif
 				//------------------------------------------------------------------
 				//ここで整合性チェック
 				//------------------------------------------------------------------
-#endif
 
+#if TIME_DEBUG
+
+				auto cmp = [](const auto& a, const auto& b) {return a.second < b.second; };
+				std::vector<std::pair<std::string, f32> > sortedTimes;
+				for (const auto& item : timers)
+				{
+					sortedTimes.emplace_back(item);
+				}
+				std::sort(sortedTimes.begin(), sortedTimes.end(), cmp);
+#endif
 
 				if (mIsGpuAvailable)
 					loss += mLossOnGPU;
@@ -274,14 +317,14 @@ namespace Aoba
 			std::cout << formater("CUDA Capability Major/Minor version number") << deviceProp.major << "." << deviceProp.minor << std::endl;
 
 			std::cout << formater("VRAM") << static_cast<f32>(deviceProp.totalGlobalMem / pow(1024.0, 3)) << "GB (" << deviceProp.totalGlobalMem << "Bytes)" << std::endl;
-			std::cout << formater("Total amount of shared memory per block") <<  deviceProp.sharedMemPerBlock << "Bytes" << std::endl;
+			std::cout << formater("Total amount of shared memory per block") << deviceProp.sharedMemPerBlock << "Bytes" << std::endl;
 			std::cout << formater("Max Texture Dimension Size of 1D") << "(" << deviceProp.maxTexture1D << ")" << std::endl;
 			std::cout << formater("Max Texture Dimension Size of 2D") << "(" << deviceProp.maxTexture2D[0] << ", " << deviceProp.maxTexture2D[1] << ")" << std::endl;
 			std::cout << formater("Max Texture Dimension Size of 3D") << "(" << deviceProp.maxTexture3D[0] << ", " << deviceProp.maxTexture3D[1] << ", " << deviceProp.maxTexture3D[2] << ")" << std::endl;
-			std::cout << formater("Maximum sizes of threads per block") << deviceProp.maxThreadsPerBlock  << std::endl;
+			std::cout << formater("Maximum sizes of threads per block") << deviceProp.maxThreadsPerBlock << std::endl;
 			std::cout << formater("Maximum sizes of each dimension of a block") << "(" << deviceProp.maxThreadsDim[0] << ", " << deviceProp.maxThreadsDim[1] << ", " << deviceProp.maxThreadsDim[2] << ")" << std::endl;
 			std::cout << formater("Maximum sizes of each dimension of a grid") << "(" << deviceProp.maxGridSize[0] << ", " << deviceProp.maxGridSize[1] << ", " << deviceProp.maxGridSize[2] << ")" << std::endl;
-			
+
 
 
 			if (deviceProp.multiProcessorCount > maxMultiProcessorCount)

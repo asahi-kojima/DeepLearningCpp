@@ -9,18 +9,6 @@
 
 #define LINE_WIDTH 100
 
-#if _DEBUG
-using TimeType = std::chrono::system_clock::time_point;
-#define TIME_MEASUREMENT(call, elapedTime)																	\
-{																								\
-	{																							\
-		std::chrono::system_clock::time_point initTime = std::chrono::system_clock::now();		\
-		call;																					\
-		elapedTime = std::chrono::system_clock::now() - initTime;								\
-	}																							\
-}
-#endif
-
 namespace Aoba
 {
 	inline void printLine()

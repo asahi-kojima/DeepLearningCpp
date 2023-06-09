@@ -17,6 +17,7 @@ namespace Aoba::optimizer
 			DataArray& dParam = dParams[idx];
 			for (u32 i = 0; i < param.size; i++)
 			{
+				auto mp = mLearningRate * dParam.address[i];
 				param.address[i] -= mLearningRate * dParam.address[i];
 			}
 		}

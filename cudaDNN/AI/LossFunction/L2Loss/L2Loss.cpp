@@ -19,7 +19,7 @@ namespace Aoba
 			DataArray& input = *mForwardResultOnCPU;
 			DataArray& correctData = *mCorrectDataOnCPU;
 
-			u32 dataSize = input.size / mBatchSize;
+			const u32 dataSize = input.size / mBatchSize;
 
 			f32 loss = 0.0f;
 
@@ -31,24 +31,31 @@ namespace Aoba
 
 			for (u32 batchID = 0; batchID < mBatchSize; batchID++)
 			{
-				u32 offset = batchID * dataSize;
+				const u32 offset = batchID * dataSize;
 
 				f32 result = 0.0f;
 				for (u32 index = 0; index < dataSize; index++)
 				{
-					f32 sub = input.address[offset + index] - correctData.address[offset + index];
-					result += 0.5 * sub * sub;
+					const f32 diff = input[offset + index] - correctData[offset + index];
+					result += 0.5 * diff * diff;
 
-					mDInputDataOnCPU.address[offset + index] = sub / mBatchSize;
+					mDInputDataOnCPU[offset + index] = diff;// / mBatchSize;
 				}
+				//ƒeƒXƒgŽÀ‘•
+				//constexpr f32 ep = 1e-7;
+				//for (u32 index = 0; index < dataSize; index++)
+				//{
+				//	const f32 correct = correctData[offset + index] - ep;
+				//	const f32 diff = (input[offset + index] - correct) / correct;
+				//	result += 0.5 * diff * diff;
 
+				//	mDInputDataOnCPU[offset + index] = diff;// / mBatchSize;
+				//}
 
-				loss += mLossTblOnCPU.address[batchID] = result;
+				loss += mLossTblOnCPU[batchID] = result;
 			}
 
-#if _DEBUG
-			assert(mBatchSize != 0);
-#endif
+
 			return loss / mBatchSize;
 		}
 	}

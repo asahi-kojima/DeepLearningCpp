@@ -113,7 +113,5 @@ namespace Aoba
 
 		f32 mLossOnGPU = 0.0f;
 
-
-
 	};
 }

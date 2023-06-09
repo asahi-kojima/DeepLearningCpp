@@ -87,7 +87,7 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 }
 
 
-#if 1
+#if 0
 int main()
 {
 	using namespace Aoba;
@@ -95,7 +95,7 @@ int main()
 	//ÉfÅ[É^ÇÃèÄîı
 	//////////////////////////////////////////
 	constexpr u32 dataSize = 784;
-	constexpr u32 trainingDataNum = 6000;
+	constexpr u32 trainingDataNum = 60000;
 	constexpr u32 testDataNum = 10000;
 	std::vector<f32> trainingData, trainingLabel, testData, testLabel;
 	setupMnistData(trainingData, trainingLabel, testData, testLabel);
@@ -133,12 +133,11 @@ int main()
 	//Aira.addLayer<layer::Convolution>(10u, 3u, 3u, 1u, 1u);
 	//Aira.addLayer<layer::BatchNorm2d>();
 	//Aira.addLayer<layer::ReLU>();
-	Aira.addLayer<layer::Convolution>(1u, 3u, 3u, 1u, 1u, 10.0f);
-	Aira.addLayer<layer::ReLU>();
-	Aira.addLayer<layer::Convolution>(1u, 3u, 3u, 1u, 1u, 10.0f);
+	Aira.addLayer<layer::Convolution>(1u, 3u, 3u, 1u, 1u, 1.0f);  Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Convolution>(1u, 3u, 3u, 1u, 1u, 1.0f);
 	//Aira.addLayer<layer::Affine>(1, 28, 28, 0.01f);
 	//Aira.addLayer<layer::BatchNorm2d>();
-	Aira.setOptimizer<optimizer::Adam>(0.001f);
+	Aira.setOptimizer<optimizer::Adam>(0.0001f);
 	Aira.setLossFunction<lossFunction::L2Loss>();
 
 	Aira.build(format);
@@ -184,13 +183,15 @@ int main()
 	Aira.addLayer<layer::ReLU>();*/
 	/*Aira.addLayer<layer::Affine>(100, 0.001f);
 	Aira.addLayer<layer::ReLU>();*/
-	Aira.addLayer<layer::Affine>(50, 0.001f);
-	//Aira.addLayer<layer::Convolution>(1u, 4u, 4u, 2u, 2u, 10.0f);
-	//Aira.addLayer<layer::ReLU>();
-	//Aira.addLayer<layer::Convolution>(1u, 4u, 4u, 2u, 2u, 10.0f);
+	//Aira.addLayer<layer::Affine>(50, 0.1f);
+	Aira.addLayer<layer::Convolution>(1u, 4u, 4u, 2u, 2u, 1.0f);
 	Aira.addLayer<layer::ReLU>();
-	Aira.addLayer<layer::Affine>(10, 0.001f);
-	Aira.setOptimizer<optimizer::Adam>(0.0001f);
+	Aira.addLayer<layer::Convolution>(3u, 4u, 4u, 2u, 2u, 1.0f);
+	Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Convolution>(9u, 4u, 4u, 2u, 2u, 1.0f);
+	Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Affine>(10, 0.1f);
+	Aira.setOptimizer<optimizer::Adam>(0.001f);
 	Aira.setLossFunction<lossFunction::CrossEntropyWithSM>();
 	//Aira.setLossFunction<lossFunction::L2Loss>();
 

@@ -43,7 +43,7 @@ namespace Aoba
 
 			for (u32 i = 0; i < dataSize; i++)
 			{
-				dInput[offset + i] = ((exp(forwardResult[offset + i] - max) / sum) - (correct == i ? 1 : 0)) / batchSize;
+				dInput[offset + i] = ((exp(forwardResult[offset + i] - max) / sum) - (correct == i ? 1 : 0));
 			}
 
 			loss[batchID] = -log(exp(forwardResult[offset + correct] - max) / sum + 1e-7);

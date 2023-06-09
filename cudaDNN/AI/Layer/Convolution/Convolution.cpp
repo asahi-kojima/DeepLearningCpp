@@ -155,44 +155,55 @@ namespace Aoba::layer
 		DataArray& convMatrix = mParametersPtrOnCPU[0];
 		DataArray& convBias = mParametersPtrOnCPU[1];
 
-		for (u32 N = 0; N < mBatchSize; N++)
+#if TIME_DEBUG
 		{
-			for (u32 i = 0, end = mReshapedInputDataOnCPU.size / mBatchSize; i < end; i++)
+			std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+			for (u32 N = 0; N < mBatchSize; N++)
 			{
-				u32 V = i / mIcFhFw;
-				u32 H = i - V * mIcFhFw;
-
-				u32 Fh = V / mOw;
-				u32 Fw = V - Fh * mOw;
-
-				u32 c = H / mFhFw;
-				u32 h = (H - c * mFhFw) / mFilterWidth;
-				u32 w = H % mFilterWidth;
-
-				u32 indexH = mFilterHeight * mStrideHeight + (h - mPaddingHeight);
-				u32 indexW = mFilterWidth * mStrideWidth + (w - mPaddingWidth);
-				bool isValid = !(indexH < 0 || indexH >= mIh || indexW < 0 || indexW >= mIw);
-				mReshapedInputDataOnCPU(N, i) =
-					isValid ?
-					input(N, c, indexH, indexW) :
-					//input(N, c, mFilterHeight * mStrideHeight + (h - mPaddingHeight), mFilterWidth * mStrideWidth + (w - mPaddingWidth)) :
-					0.0f;
-				//std::vector<f32> v(mInputDataOnCPU->address, mInputDataOnCPU->address + mInputDataOnCPU->size);
-			}
-
-			for (u32 OcOhOw = 0, end = mForwardResultOnCPU.size / mBatchSize; OcOhOw < end; OcOhOw++)
-			{
-				f32 tmp = 0.0f;
-				u32 Fc = OcOhOw / mOhOw;
-				u32 OhOw = OcOhOw - Fc * mOhOw;
-
-				for (u32 IcFhFw = 0; IcFhFw < mIcFhFw; IcFhFw++)
+				for (u32 i = 0, end = mReshapedInputDataOnCPU.size / mBatchSize; i < end; i++)
 				{
-					tmp += convMatrix(Fc, IcFhFw) * mReshapedInputDataOnCPU(N, OhOw, IcFhFw);
+					u32 V = i / mIcFhFw;
+					u32 H = i - V * mIcFhFw;
+
+					u32 Fh = V / mOw;
+					u32 Fw = V - Fh * mOw;
+
+					u32 c = H / mFhFw;
+					u32 h = (H - c * mFhFw) / mFilterWidth;
+					u32 w = H % mFilterWidth;
+
+					u32 indexH = Fh * mStrideHeight + (h - mPaddingHeight);
+					u32 indexW = Fw * mStrideWidth + (w - mPaddingWidth);
+					bool isValid = !(indexH < 0 || indexH >= mIh || indexW < 0 || indexW >= mIw);
+					mReshapedInputDataOnCPU(N, i) =
+						isValid ?
+						input(N, c, indexH, indexW) :
+						//input(N, c, mFilterHeight * mStrideHeight + (h - mPaddingHeight), mFilterWidth * mStrideWidth + (w - mPaddingWidth)) :
+						0.0f;
 				}
-				mForwardResultOnCPU(N, OcOhOw) = tmp + convBias[OcOhOw / mOhOw];
+
+				for (u32 OcOhOw = 0, end = mForwardResultOnCPU.size / mBatchSize; OcOhOw < end; OcOhOw++)
+				{
+					f32 tmp = 0.0f;
+					const u32 Fc = OcOhOw / mOhOw;
+					const u32 OhOw = OcOhOw - Fc * mOhOw;
+
+					for (u32 IcFhFw = 0; IcFhFw < mIcFhFw; IcFhFw++)
+					{
+						tmp += convMatrix(Fc, IcFhFw) * mReshapedInputDataOnCPU(N, OhOw, IcFhFw);
+					}
+					mForwardResultOnCPU(N, OcOhOw) = tmp + convBias[Fc];
+				}
 			}
+
+#if TIME_DEBUG
+			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+			std::string name = "";
+			(name += __FUNCTION__) += " : forward";
+			timers[name] = elapsedTime;
 		}
+#endif
 	}
 
 	void Convolution::backwardOnCPU()
@@ -231,76 +242,98 @@ namespace Aoba::layer
 		//	}
 		//	dConvBias[c] = tmp;
 		//}
-		for (u32 c = 0; c < mOc; c++)
+#if TIME_DEBUG
 		{
-			//フィルター行列の逆伝搬
+			std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+			for (u32 c = 0; c < mOc; c++)
 			{
-				for (u32 icfhfw = 0; icfhfw < mIcFhFw; icfhfw++)
+				//フィルター行列の逆伝搬
 				{
-					f32 tmp = 0;
+					for (u32 icfhfw = 0; icfhfw < mIcFhFw; icfhfw++)
+					{
+						f32 tmp = 0;
 
+						for (u32 N = 0; N < mBatchSize; N++)
+						{
+							for (u32 hw = 0; hw < mOhOw; hw++)
+							{
+								tmp += dout(N, c, hw) * mReshapedInputDataOnCPU(N, hw, icfhfw);
+							}
+						}
+						dConvMatrix(c, icfhfw) = tmp;
+					}
+				}
+
+				//バイアスの逆伝搬
+				{
+					f32 tmp = 0.0f;
 					for (u32 N = 0; N < mBatchSize; N++)
 					{
 						for (u32 hw = 0; hw < mOhOw; hw++)
 						{
-							tmp += dout(N, c, hw) * mReshapedInputDataOnCPU(N, hw, icfhfw);
+							tmp += dout(N, c, hw);
 						}
 					}
-					dConvMatrix[icfhfw] = tmp;
+					dConvBias[c] = tmp;
 				}
 			}
-
-			//バイアスの逆伝搬
-			{
-				f32 tmp = 0.0f;
-				for (u32 N = 0; N < mBatchSize; N++)
-				{
-					for (u32 hw = 0; hw < mOhOw; hw++)
-					{
-						tmp += dout(N, c, hw);
-					}
-				}
-				dConvBias[c] = tmp;
-			}
+#if TIME_DEBUG
+			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+			std::string name = "";
+			(name += __FUNCTION__) += " : backward dF db";
+			timers[name] = elapsedTime;
 		}
+#endif
 
 
-		for (u32 N = 0; N < mBatchSize; N++)
+#if TIME_DEBUG
 		{
-			for (u32 IcIhIw = 0; IcIhIw < mIcIhIw; IcIhIw++)
+			std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+			for (u32 N = 0; N < mBatchSize; N++)
 			{
-				mBackwardResultOnCPU[N * mIcIhIw + IcIhIw] = 0.0f;
-			}
-
-			for (u32 i = 0, end = mReshapedInputDataOnCPU.size / mBatchSize; i < end; i++)
-			{
-				f32 tmp = 0.0f;
-				for (u32 j = 0; j < mFilterNum; j++)
+				for (u32 IcIhIw = 0; IcIhIw < mIcIhIw; IcIhIw++)
 				{
+					mBackwardResultOnCPU[N * mIcIhIw + IcIhIw] = 0.0f;
+				}
+
+				for (u32 i = 0, end = mReshapedInputDataOnCPU.size / mBatchSize; i < end; i++)
+				{
+					f32 tmp = 0.0f;
+					for (u32 j = 0; j < mFilterNum; j++)
+					{
+						u32 OhOw = i / mIcFhFw;
+						u32 IcFhFw = i - OhOw * mIcFhFw;
+
+						tmp += dout[N * mOcOhOw + j * mOhOw + OhOw] * convMatrix[j * mIcFhFw + IcFhFw];
+					}
+
 					u32 OhOw = i / mIcFhFw;
-					u32 IcFhFw = i - OhOw * mIcFhFw;
+					u32 fCol = OhOw / mOw;
+					u32 fRow = OhOw - fCol * mOw;
 
-					tmp += dout[N * mOcOhOw + j * mOhOw + OhOw] * convMatrix[j * mIcFhFw + IcFhFw];
+					u32 iRes = i - mIcFhFw * OhOw;
+					u32 c = iRes / mFhFw;
+					u32 h = (iRes - c * mFhFw) / mFilterWidth;
+					u32 w = iRes % mFilterWidth;
+
+					u32 heightIndex = fCol * mStrideHeight + (h - mPaddingHeight);
+					u32 widthIndex = fRow * mStrideWidth + (w - mPaddingWidth);
+					if (heightIndex < 0 || heightIndex >= mInputDataShape.height || widthIndex < 0 || widthIndex >= mInputDataShape.width)
+					{
+						continue;
+					}
+					mBackwardResultOnCPU(N, c, heightIndex, widthIndex) += tmp;
 				}
-
-				u32 OhOw = i / mIcFhFw;
-				u32 fCol = OhOw / mOw;
-				u32 fRow = OhOw - fCol * mOw;
-
-				u32 iRes = i - mIcFhFw * OhOw;
-				u32 c = iRes / mFhFw;
-				u32 h = (iRes - c * mFhFw) / mFilterWidth;
-				u32 w = iRes % mFilterWidth;
-
-				u32 heightIndex = fCol * mStrideHeight + (h - mPaddingHeight);
-				u32 widthIndex = fRow * mStrideWidth + (w - mPaddingWidth);
-				if (heightIndex < 0 || heightIndex >= mInputDataShape.height || widthIndex < 0 || widthIndex >= mInputDataShape.width)
-				{
-					continue;
-				}
-				mBackwardResultOnCPU(N, c, heightIndex, widthIndex) += tmp;
 			}
+#if TIME_DEBUG
+			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+			std::string name = "";
+			(name += __FUNCTION__) += " : backward dout";
+			timers[name] = elapsedTime;
 		}
+#endif
 	}
 
 	void Convolution::terminateOnCPU()
