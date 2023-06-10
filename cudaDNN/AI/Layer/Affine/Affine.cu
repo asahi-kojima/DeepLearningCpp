@@ -12,7 +12,6 @@
 
 
 #include "Affine.h"
-#include "../../../commonOnlyGPU.cuh"
 #include "../../../common.h"
 
 

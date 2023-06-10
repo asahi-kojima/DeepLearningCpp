@@ -1,5 +1,4 @@
 #include "CrossEntropyWithSM.h"
-#include "../../../commonOnlyGPU.cuh"
 
 namespace Aoba
 {

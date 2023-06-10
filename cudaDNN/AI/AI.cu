@@ -10,7 +10,6 @@
 #include "./Optimizer/Optimizer.h"
 
 #include "../common.h"
-#include "../commonOnlyGPU.cuh"
 
 
 std::map<std::string, f32> timers;
@@ -160,7 +159,7 @@ namespace Aoba
 			std::cout << "deep learning now" << std::endl;
 			for (u32 loop = 0; loop < loopTime; loop++)
 			{
-				progressBar(loop + 1, loopTime, mLossOnCPU);
+				progressBar(loop + 1, loopTime, mIsGpuAvailable? mLossOnGPU :  mLossOnCPU);
 				u32 offsetForTrainingData = (batch * mDataFormat4DeepLearning.eachTrainingDataSize) * loop;
 				u32 offsetForCorrectData = (batch * mDataFormat4DeepLearning.eachCorrectDataSize) * loop;
 				if (mIsGpuAvailable)
@@ -338,7 +337,7 @@ namespace Aoba
 		std::cout << "\n" << std::endl;
 		std::cout << "this time AI use deviceID = " << maxDeviceId << std::endl;
 		cudaSetDevice(maxDeviceId);
-		mIsGpuAvailable = false;
+		mIsGpuAvailable = true;
 		std::cout << std::endl;
 	}
 

@@ -14,7 +14,7 @@ namespace Aoba::optimizer
 
 	void Adam::initializeOnCPU(std::vector<std::unique_ptr<layer::BaseLayer> >& layerList)
 	{
-		u32 layerSize = layerList.size();
+		const u32 layerSize = layerList.size();
 
 		mMomentumOnCPU.resize(layerSize);
 		mVelocityOnCPU.resize(layerSize);

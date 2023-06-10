@@ -19,8 +19,7 @@ namespace Aoba
 			DataArray& input = *mForwardResultOnCPU;
 			DataArray& correctData = *mCorrectDataOnCPU;
 
-
-			u32 dataSize = input.size / mBatchSize;
+			const u32 dataSize = input.size / mBatchSize;
 
 			f32 loss = 0.0f;
 
@@ -54,7 +53,6 @@ namespace Aoba
 
 				loss += mLossTblOnCPU[batchID] = -log(exp(input[offset + correct] - max) / sum + 1e-7);
 			}
-
 			return loss / mBatchSize;
 		}
 	}

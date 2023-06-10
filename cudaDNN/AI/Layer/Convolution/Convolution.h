@@ -12,7 +12,7 @@ namespace Aoba
 		public:
 			Convolution(u32, u32, u32, f32 weight = 0.01f);
 			Convolution(u32, u32, u32, u32, f32 weight = 0.01f);
-			Convolution(u32, u32, u32, u32, u32, f32 weight = 0.01f);
+			Convolution(u32, u32, u32, u32, u32,u32,u32, f32 weight = 0.01f);
 			~Convolution();
 
 		private:
@@ -33,16 +33,16 @@ namespace Aoba
 			{
 				printDoubleLine();
 				std::cout << "Convolution Layer" << std::endl;
-				std::cout << "	InputSize              = " << "(" << mInputDataShape.channel << " , " << mInputDataShape.height << " , " << mInputDataShape.width << ")" << std::endl;
-				std::cout << "	OutputSize             = " << "(" << mOutputDataShape.channel << " , " << mOutputDataShape.height << " , " << mOutputDataShape.width << ")" << std::endl;
-				std::cout << "	KernelSize             = " << "(" << mFilterHeight << " , " << mFilterWidth << ")" << std::endl;
+				std::cout << "	InputSize              = " << "(" << mInputDataShape.channel << ", " << mInputDataShape.height << ", " << mInputDataShape.width << ")" << std::endl;
+				std::cout << "	OutputSize             = " << "(" << mOutputDataShape.channel << ", " << mOutputDataShape.height << ", " << mOutputDataShape.width << ")" << std::endl;
+				std::cout << "	KernelSize             = " << "(" << mFilterHeight << ", " << mFilterWidth << ")" << std::endl;
 				if (mStrideHeight == mStrideWidth)
 				{
 					std::cout << "	Stride                 = " << mStrideHeight << std::endl;
 				}
 				else
 				{
-					std::cout << "	Stride                 = " << "(" << mStrideHeight << "," << mStrideWidth << ")" << std::endl;
+					std::cout << "	Stride                 = " << "(" << mStrideHeight << ", " << mStrideWidth << ")" << std::endl;
 				}
 				if (mPaddingHeight == mPaddingWidth)
 				{
@@ -50,7 +50,7 @@ namespace Aoba
 				}
 				else
 				{
-					std::cout << "	Padding                = " << "(" << mPaddingHeight << "," << mPaddingWidth << ")" << std::endl;
+					std::cout << "	Padding                = " << "(" << mPaddingHeight << ", " << mPaddingWidth << ")" << std::endl;
 				}
 				std::cout << "	ConvolutionParamWeight = " << mConvolutionParamWeight << std::endl;
 			}

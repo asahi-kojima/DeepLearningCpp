@@ -1,6 +1,7 @@
 #include <random>
 #include <cuda_runtime.h>
 #include <cassert>
+#include <device_functions.h>
 
 //このマクロはCUDAファイルがコンパイルされる時に定義される。
 //インテリセンスのエラーを一時的に抑制するためにこの定義を置いている。
@@ -8,11 +9,10 @@
 #define __CUDACC__
 #endif
 
-#include <device_functions.h>
 
 
 #include "Convolution.h"
-#include "../../../commonOnlyGPU.cuh"
+#include "../../AIMacro.h"
 #include "../../../common.h"
 
 
@@ -38,30 +38,10 @@ namespace Aoba {
 				f32 result = 0.0f;
 				for (u32 i = 0; i < inputSize; i++)
 				{
-					//#if _DEBUG
-					//					u32 tmp = xid * inputSize + i;
-					//					if (tmp < 0 || tmp >= inputSize * outputSize)
-					//					{
-					//						printf("Affine A parameter : out of range : %d\n", tmp);
-					//						printf("threadId x = %d  ,  y = %d\n", threadIdx.x, threadIdx.y);
-					//						assert(0);
-					//					}
-					//					tmp = yid * inputSize + i;
-					//					if (tmp < 0 || tmp >= inputSize * batchSize)
-					//					{
-					//						printf("Affine x parameter : out of range : %d", tmp);
-					//						assert(0);
-					//					}
-					//#endif
+
 					result += A[xid * inputSize + i] * x[yid * inputSize + i];
 				}
-				//#if _DEBUG
-				//				if (!(id >= 0 && id < batchSize * outputSize))
-				//				{
-				//					printf("Affine y parameter : out of range : %d", id);
-				//					assert(0);
-				//				}
-				//#endif
+
 				y[id] = result + b[xid];
 			}
 
@@ -165,11 +145,9 @@ namespace Aoba {
 
 			convParam.size = convDParam.size = mFilterNum * mIcFhFw;
 
-			MALLOC_ON_GPU(convParam);
-			MALLOC_ON_GPU(convDParam);
 
-			INITIALIZE_GPU_DATA_NORMAL(convParam, 1, mConvolutionParamWeight);
-			INITIALIZE_GPU_DATA_0(convDParam);
+			MALLOC_AND_INITIALIZE_NORMAL_ON_GPU(convParam, 1, mConvolutionParamWeight);
+			MALLOC_AND_INITIALIZE_0_ON_GPU(convDParam);
 
 
 			//Biasパラメータ

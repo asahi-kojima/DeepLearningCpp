@@ -2,6 +2,7 @@
 #include <memory>
 #include <vector>
 #include "../AISetting.h"
+#include "../AIMacro.h"
 
 namespace Aoba
 {

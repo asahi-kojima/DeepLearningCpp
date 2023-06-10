@@ -34,8 +34,8 @@ namespace Aoba
 			{
 				printDoubleLine();
 				std::cout << "ReLU Layer" << std::endl;
-				std::cout << "	InputSize         = " << mDataSize << std::endl;
-				std::cout << "	OutputSize        = " << mDataSize << std::endl;
+				std::cout << "	InputSize         = " << "(" << mDataShape.channel << ", " << mDataShape.height << ", " << mDataShape.width << ")" << std::endl;
+				std::cout << "	OutputSize        = " << "(" << mDataShape.channel << ", " << mDataShape.height << ", " << mDataShape.width << ")" << std::endl;
 			}
 
 		private:

@@ -83,9 +83,6 @@
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="commonOnlyGPU.cuh">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="setting.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -142,6 +139,9 @@
     </ClInclude>
     <ClInclude Include="AI\Layer\Convolution\Convolution.h">
       <Filter>ソース ファイル\AI\Layer\Convolution</Filter>
+    </ClInclude>
+    <ClInclude Include="AI\AIHelperFunction.h">
+      <Filter>ソース ファイル\AI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

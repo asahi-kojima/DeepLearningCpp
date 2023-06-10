@@ -3,7 +3,6 @@
 #include <cassert>
 
 #include "BatchNorm2d.h"
-#include "../../../commonOnlyGPU.cuh"
 
 namespace Aoba {
 	namespace layer

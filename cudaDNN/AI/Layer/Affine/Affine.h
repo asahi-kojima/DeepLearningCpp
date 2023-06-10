@@ -32,8 +32,8 @@ namespace Aoba
 			{
 				printDoubleLine();
 				std::cout << "Affine Layer" << std::endl;
-				std::cout << "	InputSize         = " << mInputSize << std::endl;
-				std::cout << "	OutputSize        = " << mOutputSize << std::endl;
+				std::cout << "	InputSize         = " << "(" << mInputShape.channel << ", " << mInputShape.height << ", " << mInputShape.width << ")" << std::endl;
+				std::cout << "	OutputSize        = " << "(" << mOutputShape.channel << ", " << mOutputShape.height << ", " << mOutputShape.width << ")" << std::endl;
 				std::cout << "	AffineParamWeight = " << mAffineParamWeight << std::endl;
 			}
 

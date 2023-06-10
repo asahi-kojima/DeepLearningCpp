@@ -24,6 +24,10 @@ namespace Aoba
 			std::vector<std::vector<DataArray> > mVelocityOnCPU;
 			std::map<layer::BaseLayer*, u32> mLayerOrderMapOnCPU;
 
+			std::vector<std::vector<DataArray> > mMomentumOnGPU;
+			std::vector<std::vector<DataArray> > mVelocityOnGPU;
+			std::map<layer::BaseLayer*, u32> mLayerOrderMapOnGPU;
+
 			f32 mBeta0;
 			f32 mBeta1;
 

@@ -64,15 +64,15 @@ namespace Aoba::layer
 		mOcOhOw = mOutputDataShape.channel * mOhOw;
 	}
 
-	Convolution::Convolution(u32 filterNum, u32 filterHeight, u32 filterwidth, u32 stride, u32 padding, f32 weight)
+	Convolution::Convolution(u32 filterNum, u32 filterHeight, u32 filterWidth, u32 strideHeight, u32 strideWidth, u32 paddingHeight, u32 paddingWidth, f32 weight)
 		: mBatchSize(0)
 		, mFilterNum(filterNum)
 		, mFilterHeight(filterHeight)
-		, mFilterWidth(filterwidth)
-		, mStrideHeight(stride)
-		, mStrideWidth(stride)
-		, mPaddingHeight(padding)
-		, mPaddingWidth(padding)
+		, mFilterWidth(filterWidth)
+		, mStrideHeight(strideHeight)
+		, mStrideWidth(strideWidth)
+		, mPaddingHeight(paddingHeight)
+		, mPaddingWidth(paddingWidth)
 		, mConvolutionParamWeight(weight)
 	{
 	}
@@ -116,10 +116,8 @@ namespace Aoba::layer
 		DataArray& convDParam = mDParametersPtrOnCPU[0];
 		convParam.setSizeAs2D(mFilterNum, mIcFhFw);
 		convDParam.setSizeAs2D(mFilterNum, mIcFhFw);
-		MALLOC_ON_CPU(convParam);
-		MALLOC_ON_CPU(convDParam);
-		INITIALIZE_CPU_DATA_NORMAL(convParam, mIcFhFw, mConvolutionParamWeight);
-		INITIALIZE_CPU_DATA_0(convDParam);
+		MALLOC_AND_INITIALIZE_NORMAL_ON_CPU(convParam, mIcFhFw, mConvolutionParamWeight);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(convDParam);
 
 
 		////////////////////////////////////////////////////////
@@ -128,10 +126,8 @@ namespace Aoba::layer
 		DataArray& biasParam = mParametersPtrOnCPU[1];
 		DataArray& biasDParam = mDParametersPtrOnCPU[1];
 		biasParam.size = biasDParam.size = mOutputDataShape.channel;
-		MALLOC_ON_CPU(biasParam);
-		MALLOC_ON_CPU(biasDParam);
-		INITIALIZE_CPU_DATA_0(biasParam);
-		INITIALIZE_CPU_DATA_0(biasDParam);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(biasParam);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(biasDParam);
 
 		////////////////////////////////////////////////////////
 		//ConvolutionÇÃì`î¿åãâ ÇÃÉÅÉÇÉäämï€Ç∆èâä˙âª
@@ -140,13 +136,9 @@ namespace Aoba::layer
 		mReshapedInputDataOnCPU.setSizeAs3D(mBatchSize, mOhOw, mIcFhFw);
 		mBackwardResultOnCPU.setSizeAs4D(mBatchSize, mIc, mIh, mIw);
 
-		mallocCPUData(mForwardResultOnCPU);
-		mallocCPUData(mReshapedInputDataOnCPU);
-		mallocCPUData(mBackwardResultOnCPU);
-
-		initializeDataOnCPU_0(mForwardResultOnCPU);
-		initializeDataOnCPU_0(mReshapedInputDataOnCPU);
-		initializeDataOnCPU_0(mBackwardResultOnCPU);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(mForwardResultOnCPU);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(mReshapedInputDataOnCPU);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(mBackwardResultOnCPU);
 	}
 
 	void Convolution::forwardOnCPU()

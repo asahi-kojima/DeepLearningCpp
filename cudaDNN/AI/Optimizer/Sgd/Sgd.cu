@@ -1,6 +1,5 @@
 #include <cuda_runtime.h>
 
-#include "../../../commonOnlyGPU.cuh"
 #include "Sgd.h"
 
 
@@ -17,9 +16,7 @@ namespace Aoba
 			{
 				return;
 			}
-			f32 tmp = param[id];
 			param[id] -= dParam[id] * learningRate;
-			//printf("param[%d] = %lf | dParam[%d] = %lf | pre = %lf\n", id, param[id], id, dParam[id], tmp);
 		}
 	}
 	namespace optimizer
@@ -38,7 +35,9 @@ namespace Aoba
 				dim3 grid((param.size + block.x - 1) / block.x);
 
 				OptimizeOnGPU << <grid, block >> > (param.address, dParam.address, mLearningRate, param.size);
-
+#if _DEBUG
+				CHECK(cudaDeviceSynchronize());
+#endif
 			}
 		}
 	}

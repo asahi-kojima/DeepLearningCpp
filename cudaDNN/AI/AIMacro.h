@@ -1,5 +1,16 @@
 #pragma once
 
+#define CHECK(call)                                                            \
+{                                                                              \
+    const cudaError_t error = call;                                            \
+    if (error != cudaSuccess)                                                  \
+    {                                                                          \
+        fprintf(stderr, "Error: %s:%d, ", __FILE__, __LINE__);                 \
+        fprintf(stderr, "code: %d, reason: %s\n", error,                       \
+                cudaGetErrorString(error));                                    \
+        exit(1);                                                               \
+    }                                                                          \
+}
 
 #define FORWARD_ON_(Device)											\
 for (auto& layer : mLayerList)										\
@@ -61,6 +72,7 @@ for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)											
 	(*rit)->setDInputDataOn##Device(pDInputDataOn##Device);																										\
 }
 
+
 #define MALLOC_ON_CPU(memory)              \
 {                                          \
     memory.address = new f32[memory.size]; \
@@ -70,7 +82,6 @@ for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)											
 {                                                                                \
     CHECK(cudaMalloc((void**)(&(memory.address)), memory.size * sizeof(f32)));   \
 }
-
 
 
 #define INITIALIZE_CPU_DATA_0(memory)                                                                            \
@@ -83,11 +94,31 @@ for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)											
     }                                                                                                            \
 }
 
+#define INITIALIZE_GPU_DATA_0(memory)                                                                            \
+{                                                                                                                \
+    {                                                                                                            \
+        std::vector<f32> tmp(memory.size);                                                                       \
+        for (u32 idx = 0; idx < memory.size; idx++)                                                              \
+        {                                                                                                        \
+            tmp[idx] = 0.0f;                                                                                     \
+        }                                                                                                        \
+        CHECK(cudaMemcpy(memory.address, tmp.data(), memory.size * sizeof(f32), cudaMemcpyHostToDevice));        \
+    }                                                                                                            \
+}
+
 #define MALLOC_AND_INITIALIZE_0_ON_CPU(memory)  \
 {                                               \
     {                                           \
         MALLOC_ON_CPU(memory);                  \
         INITIALIZE_CPU_DATA_0(memory);          \
+    }                                           \
+}
+
+#define MALLOC_AND_INITIALIZE_0_ON_GPU(memory)  \
+{                                               \
+    {                                           \
+        MALLOC_ON_GPU(memory);                  \
+        INITIALIZE_GPU_DATA_0(memory);          \
     }                                           \
 }
 
@@ -101,11 +132,31 @@ for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)											
     }                                                                                                            \
 }
 
+#define INITIALIZE_GPU_DATA_1(memory)                                                                            \
+{                                                                                                                \
+    {                                                                                                            \
+        std::vector<f32> tmp(memory.size);                                                                       \
+        for (u32 idx = 0; idx < memory.size; idx++)                                                              \
+        {                                                                                                        \
+            tmp[idx] = 1.0f;                                                                                     \
+        }                                                                                                        \
+        CHECK(cudaMemcpy(memory.address, tmp.data(), memory.size * sizeof(f32), cudaMemcpyHostToDevice));        \
+    }                                                                                                            \
+}
+
 #define MALLOC_AND_INITIALIZE_1_ON_CPU(memory)  \
 {                                               \
     {                                           \
         MALLOC_ON_CPU(memory);                  \
         INITIALIZE_CPU_DATA_1(memory);          \
+    }                                           \
+}
+
+#define MALLOC_AND_INITIALIZE_1_ON_GPU(memory)  \
+{                                               \
+    {                                           \
+        MALLOC_ON_GPU(memory);                  \
+        INITIALIZE_GPU_DATA_1(memory);          \
     }                                           \
 }
 
@@ -122,36 +173,6 @@ for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)											
     }                                                                                                      \
 }
 
-#define MALLOC_AND_INITIALIZE_NORMAL_ON_CPU(memory,elements, weight)   \
-{                                                                      \
-    {                                                                  \
-        MALLOC_ON_CPU(memory);                                         \
-        INITIALIZE_CPU_DATA_NORMAL(memory, elements, weight);          \
-    }                                                                  \
-}
-
-#define INITIALIZE_GPU_DATA_0(memory)                                                                            \
-{                                                                                                                \
-    {                                                                                                            \
-        std::vector<f32> tmp(memory.size);                                                                       \
-        for (u32 idx = 0; idx < memory.size; idx++)                                                              \
-        {                                                                                                        \
-            tmp[idx] = 0.0f;                                                                                     \
-        }                                                                                                        \
-        CHECK(cudaMemcpy(memory.address, tmp.data(), memory.size * sizeof(f32), cudaMemcpyHostToDevice));        \
-    }                                                                                                            \
-}
-#define INITIALIZE_GPU_DATA_1(memory)                                                                            \
-{                                                                                                                \
-    {                                                                                                            \
-        std::vector<f32> tmp(memory.size);                                                                       \
-        for (u32 idx = 0; idx < memory.size; idx++)                                                              \
-        {                                                                                                        \
-            tmp[idx] = 1.0f;                                                                                     \
-        }                                                                                                        \
-        CHECK(cudaMemcpy(memory.address, tmp.data(), memory.size * sizeof(f32), cudaMemcpyHostToDevice));        \
-    }                                                                                                            \
-}
 #define INITIALIZE_GPU_DATA_NORMAL(memory, elements, weight)                                               \
 {                                                                                                          \
     {                                                                                                      \
@@ -167,24 +188,39 @@ for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)											
     }                                                                                                      \
 }
 
-
-inline void mallocCPUData(Aoba::DataArray& memory)
-{
-    memory.address = new f32[memory.size];
+#define MALLOC_AND_INITIALIZE_NORMAL_ON_CPU(memory,elements, weight)   \
+{                                                                      \
+    {                                                                  \
+        MALLOC_ON_CPU(memory);                                         \
+        INITIALIZE_CPU_DATA_NORMAL(memory, elements, weight);          \
+    }                                                                  \
 }
 
-inline void initializeDataOnCPU_0(const Aoba::DataArray& memory)
-{
-	for (u32 idx = 0; idx < memory.size; idx++)
-	{
-		memory.address[idx] = 0.0f;
-	}
+#define MALLOC_AND_INITIALIZE_NORMAL_ON_GPU(memory,elements, weight)   \
+{                                                                      \
+    {                                                                  \
+        MALLOC_ON_GPU(memory);                                         \
+        INITIALIZE_GPU_DATA_NORMAL(memory, elements, weight);          \
+    }                                                                  \
 }
 
-inline void initializeDataOnCPU_1(const Aoba::DataArray& memory)
-{
-    for (u32 idx = 0; idx < memory.size; idx++)
-    {
-        memory.address[idx] = 1.0f;
-    }
-}
+//inline void mallocCPUData(Aoba::DataArray& memory)
+//{
+//    memory.address = new f32[memory.size];
+//}
+//
+//inline void initializeDataOnCPU_0(const Aoba::DataArray& memory)
+//{
+//	for (u32 idx = 0; idx < memory.size; idx++)
+//	{
+//		memory.address[idx] = 0.0f;
+//	}
+//}
+//
+//inline void initializeDataOnCPU_1(const Aoba::DataArray& memory)
+//{
+//    for (u32 idx = 0; idx < memory.size; idx++)
+//    {
+//        memory.address[idx] = 1.0f;
+//    }
+//}

@@ -31,16 +31,13 @@ namespace Aoba::layer
 	void ReLU::mallocOnCPU()
 	{
 		mMaskOnCPU.size = mBatchSize * mDataSize;
-		mallocCPUData(mMaskOnCPU);
-		initializeDataOnCPU_1(mMaskOnCPU);
+		MALLOC_AND_INITIALIZE_1_ON_CPU(mMaskOnCPU);
 
 
 		mForwardResultOnCPU.setSizeAs4D(mBatchSize, mDataShape);
 		mBackwardResultOnCPU.setSizeAs4D(mBatchSize, mDataShape);
-		mallocCPUData(mForwardResultOnCPU);
-		mallocCPUData(mBackwardResultOnCPU);
-		initializeDataOnCPU_0(mForwardResultOnCPU);
-		initializeDataOnCPU_0(mBackwardResultOnCPU);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(mForwardResultOnCPU);
+		MALLOC_AND_INITIALIZE_0_ON_CPU(mBackwardResultOnCPU);
 	}
 
 	void ReLU::forwardOnCPU()
