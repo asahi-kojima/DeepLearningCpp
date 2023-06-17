@@ -8,26 +8,8 @@
 
 namespace Aoba::layer
 {
-	namespace
-	{
-		void filterInfoCalculator(u32 outputSize, u32 inputSize, u32& filterSize, u32& stride, u32& padding)
-		{
-			u32 S = 1;
-			while (1)
-			{
-				if ((S + 1) * (outputSize - 1) <= inputSize)
-				{
-					S++;
-				}
-				else
-				{
-					break;
-				}
-			}
-		};
-	}
 
-
+	u32 Convolution::InstanceCounter = 0;
 
 	Convolution::Convolution(u32 outputChannel, u32 outputHeight, u32 outputWidth, f32 weight)
 		: mBatchSize(0)
@@ -95,6 +77,10 @@ namespace Aoba::layer
 		mOw = mOutputDataShape.width = 1 + (mIw - mFilterWidth + 2 * mPaddingWidth) / mStrideWidth;
 		shape = mOutputDataShape;
 
+		mFh = mFilterHeight;
+		mFw = mFilterWidth;
+		mSh = mStrideHeight;
+		mSw = mStrideWidth;
 
 		mFhFw = mFilterHeight * mFilterWidth;
 		mIcFhFw = mIc * mFhFw;
@@ -102,6 +88,9 @@ namespace Aoba::layer
 		mIcIhIw = mIc * mIhIw;
 		mOhOw = mOh * mOw;
 		mOcOhOw = mOc * mOhOw;
+
+		mInstanceID = InstanceCounter;
+		InstanceCounter++;
 	}
 
 	void Convolution::mallocOnCPU()
@@ -192,7 +181,7 @@ namespace Aoba::layer
 #if TIME_DEBUG
 			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
 			std::string name = "";
-			(name += __FUNCTION__) += " : forward";
+			(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : forward";
 			timers[name] = elapsedTime;
 		}
 #endif
@@ -273,7 +262,7 @@ namespace Aoba::layer
 #if TIME_DEBUG
 			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
 			std::string name = "";
-			(name += __FUNCTION__) += " : backward dF db";
+			(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backward dF db";
 			timers[name] = elapsedTime;
 		}
 #endif
@@ -283,6 +272,7 @@ namespace Aoba::layer
 		{
 			std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 #endif
+#if 0//レガシーコード
 			for (u32 N = 0; N < mBatchSize; N++)
 			{
 				for (u32 IcIhIw = 0; IcIhIw < mIcIhIw; IcIhIw++)
@@ -292,14 +282,14 @@ namespace Aoba::layer
 
 				for (u32 i = 0, end = mReshapedInputDataOnCPU.size / mBatchSize; i < end; i++)
 				{
-					f32 tmp = 0.0f;
+					/*f32 tmp = 0.0f;
 					for (u32 j = 0; j < mFilterNum; j++)
 					{
 						u32 OhOw = i / mIcFhFw;
 						u32 IcFhFw = i - OhOw * mIcFhFw;
 
 						tmp += dout[N * mOcOhOw + j * mOhOw + OhOw] * convMatrix[j * mIcFhFw + IcFhFw];
-					}
+					}*/
 
 					u32 OhOw = i / mIcFhFw;
 					u32 fCol = OhOw / mOw;
@@ -316,20 +306,59 @@ namespace Aoba::layer
 					{
 						continue;
 					}
+
+					f32 tmp = 0.0f;
+					for (u32 j = 0; j < mFilterNum; j++)
+					{
+						u32 OhOw = i / mIcFhFw;
+						u32 IcFhFw = i - OhOw * mIcFhFw;
+
+						tmp += dout[N * mOcOhOw + j * mOhOw + OhOw] * convMatrix[j * mIcFhFw + IcFhFw];
+					}
+
 					mBackwardResultOnCPU(N, c, heightIndex, widthIndex) += tmp;
 				}
 			}
+#else
+			for (u32 N = 0; N < mBatchSize; N++)
+			{
+				for (u32 IcIhIw = 0; IcIhIw < mIcIhIw; IcIhIw++)
+				{
+					const u32 c = IcIhIw / mIhIw;
+					const u32 h = (IcIhIw - c * mIhIw) / mIw;
+					const u32 w = IcIhIw % mIw;
+
+					const u32 exH = h + mPaddingHeight;
+					const u32 exW = w + mPaddingWidth;
+
+					f32 result = 0.0f;
+					for (u32 Oh = (exH < mFh ? 0 : 1 + (exH - mFh) / mSh), endOh =std::min(exH / mSh, mOh-1); Oh <= endOh; Oh++)
+					{
+						for (u32 Ow = (exW < mFw ? 0 : 1 + (exW - mFw) / mSw), endOw = std::min(exW / mSw, mOw-1); Ow <= endOw; Ow++)
+						{
+							const u32 row = Oh * mOw + Ow;
+							const u32 col = c * mFhFw + (exH - Oh * mSh) * mFw + (exW - Ow * mSw);
+							for (u32 Fc = 0; Fc < mFilterNum; Fc++)
+							{
+								result += dout(N, Fc, row) * convMatrix(Fc, col);
+							}
+						}
+					}
+					mBackwardResultOnCPU(N, IcIhIw) = result;
+				}
+			}
+#endif
 #if TIME_DEBUG
 			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
 			std::string name = "";
-			(name += __FUNCTION__) += " : backward dout";
+			(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backward dout";
 			timers[name] = elapsedTime;
-		}
+				}
 #endif
-	}
+			}
 
 	void Convolution::terminateOnCPU()
 	{
 
 	}
-}
+	}

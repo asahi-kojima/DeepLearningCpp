@@ -198,7 +198,7 @@ namespace Aoba
 #endif
 					backward();
 #if TIME_DEBUG
-					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					f32 elapsedTime = static_cast<f32>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f);
 					std::string name = "";
 					(name += __FUNCTION__) += " : backward";
 					timers[name] = elapsedTime;
@@ -337,7 +337,7 @@ namespace Aoba
 		std::cout << "\n" << std::endl;
 		std::cout << "this time AI use deviceID = " << maxDeviceId << std::endl;
 		cudaSetDevice(maxDeviceId);
-		mIsGpuAvailable = true;
+		mIsGpuAvailable = ON_CPU_DEBUG ? false : true;
 		std::cout << std::endl;
 	}
 

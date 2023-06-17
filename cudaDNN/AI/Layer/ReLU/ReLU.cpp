@@ -13,7 +13,7 @@ namespace Aoba::layer
 	{
 	}
 
-	ReLU::~ReLU(){}
+	ReLU::~ReLU() {}
 
 
 	void ReLU::setupLayerInfo(u32 batchSize, DataShape& shape)
@@ -46,29 +46,29 @@ namespace Aoba::layer
 		{
 			std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 #endif
-		for (u32 N = 0; N < mBatchSize; N++)
-		{
-			for (u32 i = 0; i < mDataSize; i++)
+			for (u32 N = 0; N < mBatchSize; N++)
 			{
-				u32 index = N * mDataSize + i;
-				f32 input = mInputDataOnCPU->address[index];
-				if (input > 0)
+				for (u32 i = 0; i < mDataSize; i++)
 				{
-					mMaskOnCPU.address[index] = 1.0f;
-					mForwardResultOnCPU[index] = input;
-				}
-				else
-				{
-					mMaskOnCPU.address[index] = 1.0f;
-					mForwardResultOnCPU[index] = 0.0f;
+					u32 index = N * mDataSize + i;
+					f32 input = mInputDataOnCPU->address[index];
+					if (input > 0)
+					{
+						mMaskOnCPU.address[index] = 1.0f;
+						mForwardResultOnCPU[index] = input;
+					}
+					else
+					{
+						mMaskOnCPU.address[index] = 1.0f;
+						mForwardResultOnCPU[index] = 0.0f;
+					}
 				}
 			}
-		}
 #if TIME_DEBUG
-		f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
-		std::string name = "";
-		(name += __FUNCTION__) += " : forward";
-		timers[name] = elapsedTime;
+			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+			std::string name = "";
+			(name += __FUNCTION__) += " : forward";
+			timers[name] = elapsedTime;
 		}
 #endif
 	}
@@ -79,20 +79,20 @@ namespace Aoba::layer
 		{
 			std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 #endif
-		for (u32 N = 0; N < mBatchSize; N++)
-		{
-			for (u32 i = 0; i < mDataSize; i++)
+			for (u32 N = 0; N < mBatchSize; N++)
 			{
-				u32 index = N * mDataSize + i;
-				mBackwardResultOnCPU.address[index] = mMaskOnCPU[index] * (*mDInputDataOnCPU)[index];
+				for (u32 i = 0; i < mDataSize; i++)
+				{
+					u32 index = N * mDataSize + i;
+					mBackwardResultOnCPU.address[index] = mMaskOnCPU[index] * (*mDInputDataOnCPU)[index];
+				}
 			}
-		}
 #if TIME_DEBUG
-		f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
-		std::string name = "";
-		(name += __FUNCTION__) += " : backward";
-		timers[name] = elapsedTime;
-	}
+			f32 elapsedTime = static_cast<f32>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f);
+			std::string name = "";
+			(name += __FUNCTION__) += " : backward";
+			timers[name] = elapsedTime;
+		}
 #endif
 	}
 
@@ -100,7 +100,7 @@ namespace Aoba::layer
 	{
 		delete[] mMaskOnCPU.address;
 
-		delete[] mForwardResultOnCPU.address ;
+		delete[] mForwardResultOnCPU.address;
 		delete[] mBackwardResultOnCPU.address;
 	}
 }

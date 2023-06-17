@@ -1,6 +1,7 @@
 #include <random>
 #include <cuda_runtime.h>
 #include <cassert>
+#include <device_functions.h>
 
 //このマクロはCUDAファイルがコンパイルされる時に定義される。
 //インテリセンスのエラーを一時的に抑制するためにこの定義を置いている。
@@ -8,7 +9,6 @@
 #define __CUDACC__
 #endif
 
-#include <device_functions.h>
 
 
 #include "Affine.h"
@@ -153,7 +153,7 @@ namespace Aoba {
 				f32 result = 0.0f;
 				for (u32 N = 0; N < batchSize; N++)
 				{
-#if _DEBUG
+#if INDEX_DEBUG
 					if (N * inputSize + xid >= batchSize * inputSize)
 					{
 						assert(0);
@@ -180,7 +180,7 @@ namespace Aoba {
 				f32 result = 0.0f;
 				for (u32 N = 0; N < batchSize; N++)
 				{
-#if _DEBUG
+#if INDEX_DEBUG
 					if ((N * outputSize + id) >= batchSize * outputSize)
 					{
 						assert(0);
@@ -188,7 +188,7 @@ namespace Aoba {
 #endif
 					result += dout[N * outputSize + id];
 				}
-#if _DEBUG
+#if INDEX_DEBUG
 				if (id >= outputSize)
 				{
 					assert(0);
@@ -211,7 +211,7 @@ namespace Aoba {
 				f32 result = 0.0f;
 				for (u32 i = 0; i < outputSize; i++)
 				{
-#if _DEBUG
+#if INDEX_DEBUG
 					if (i * inputSize + xid >= outputSize * inputSize)
 					{
 						assert(0);
@@ -477,7 +477,7 @@ namespace Aoba {
 					mOutputSize,
 					mInputSize,
 					mBatchSize);
-#if _DEBUG
+#if GPU_SYNC_DEBUG
 				CHECK(cudaDeviceSynchronize());
 #endif
 			}
@@ -497,7 +497,7 @@ namespace Aoba {
 					mInputSize,
 					mBatchSize);
 
-#if _DEBUG
+#if GPU_SYNC_DEBUG
 				CHECK(cudaDeviceSynchronize());
 #endif
 			}
@@ -513,7 +513,7 @@ namespace Aoba {
 					mOutputSize,
 					mBatchSize);
 
-#if _DEBUG
+#if GPU_SYNC_DEBUG
 				CHECK(cudaDeviceSynchronize());
 #endif
 			}

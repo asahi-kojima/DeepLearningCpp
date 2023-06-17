@@ -12,7 +12,7 @@ namespace Aoba
 		public:
 			Convolution(u32, u32, u32, f32 weight = 0.01f);
 			Convolution(u32, u32, u32, u32, f32 weight = 0.01f);
-			Convolution(u32, u32, u32, u32, u32,u32,u32, f32 weight = 0.01f);
+			Convolution(u32, u32, u32, u32, u32, u32, u32, f32 weight = 0.01f);
 			~Convolution();
 
 		private:
@@ -57,7 +57,8 @@ namespace Aoba
 
 
 		private:
-
+			static u32 InstanceCounter;
+			u32 mInstanceID;
 			u32 mBatchSize;
 			DataShape mInputDataShape;
 			DataShape mOutputDataShape;
@@ -75,6 +76,10 @@ namespace Aoba
 			u32 mOc;
 			u32 mOh;
 			u32 mOw;
+			u32 mFh;
+			u32 mFw;
+			u32 mSh;
+			u32 mSw;
 			u32 mFhFw;
 			u32 mIcFhFw;
 			u32 mIhIw;
@@ -87,7 +92,31 @@ namespace Aoba
 
 			DataArray mReshapedInputDataOnCPU;
 			DataArray mReshapedInputDataOnGPU;
-
+		public:
+			struct parameterInfo
+			{
+				u32 batchSize;
+				u32 Ih;
+				u32 Iw;
+				u32 Ic;
+				u32 IhIw;
+				u32 IcIhIw;
+				u32 IcFhFw;
+				u32 Ow;
+				u32 Oh;
+				u32 OhOw;
+				u32 OhOwIcFhFw;
+				u32 Fh;
+				u32 Fw;
+				u32 FhFw;
+				u32 Sh;
+				u32 Sw;
+				u32 Ph;
+				u32 Pw;
+			};
+		private:
+			parameterInfo* mParameterInfoOnGPU;
+			//parameterInfo mParameterInfoOnGPU;
 		};
 
 	}

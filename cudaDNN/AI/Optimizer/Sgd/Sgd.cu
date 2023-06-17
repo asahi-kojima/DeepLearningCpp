@@ -35,7 +35,7 @@ namespace Aoba
 				dim3 grid((param.size + block.x - 1) / block.x);
 
 				OptimizeOnGPU << <grid, block >> > (param.address, dParam.address, mLearningRate, param.size);
-#if _DEBUG
+#if GPU_SYNC_DEBUG
 				CHECK(cudaDeviceSynchronize());
 #endif
 			}

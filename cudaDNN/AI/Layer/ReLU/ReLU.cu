@@ -21,7 +21,7 @@ namespace Aoba {
 				}
 
 				u32 id = yid * outputSize + xid;
-#if _DEBUG
+#if INDEX_DEBUG
 				if (id >= outputSize * batchSize)
 				{
 					printf("ReLU  : out of range : %d", id);
@@ -55,7 +55,7 @@ namespace Aoba {
 				}
 
 				u32 id = yid * inputSize + xid;
-#if _DEBUG
+#if INDEX_DEBUG
 				if (id >= inputSize * batchSize)
 				{
 					printf("ReLU  : out of range : %d", id);
@@ -95,7 +95,7 @@ namespace Aoba {
 				mDataSize,
 				mDataSize,
 				mBatchSize); 
-#if _DEBUG
+#if GPU_SYNC_DEBUG
 			CHECK(cudaDeviceSynchronize());
 #endif
 		}

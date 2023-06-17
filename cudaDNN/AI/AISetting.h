@@ -3,7 +3,9 @@
 #include "../setting.h"
 #include <cassert>
 
-#define TIME_DEBUG (0 & _DEBUG)
+//Timeデバッグは以下のIndexデバッグと併用すると
+//正確な値が出ないので注意。
+#define TIME_DEBUG (1 & _DEBUG)
 #if TIME_DEBUG
 #include <map>
 #include <string>
@@ -11,6 +13,10 @@ extern std::map<std::string, f32> timers;
 #endif
 
 #define INDEX_DEBUG (0 & _DEBUG)
+
+#define ON_CPU_DEBUG (1)
+
+#define GPU_SYNC_DEBUG (1 & _DEBUG)
 
 namespace Aoba
 {
@@ -23,8 +29,6 @@ namespace Aoba
 		u32 height;
 		u32 width;
 
-		//DataShape(u32 c, u32 h, u32 w) :channel(c), height(h), width(w)
-		//{}
 
 		u32 getDataSize() const
 		{

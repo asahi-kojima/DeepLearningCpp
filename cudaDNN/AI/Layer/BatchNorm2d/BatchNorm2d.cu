@@ -339,7 +339,7 @@ namespace Aoba {
 				mDataShape.height,
 				mDataShape.width);
 
-#if _DEBUG
+#if GPU_SYNC_DEBUG
 			CHECK(cudaDeviceSynchronize());
 #endif
 		}
@@ -362,7 +362,7 @@ namespace Aoba {
 				mDataShape.height,
 				mDataShape.width);
 
-#if _DEBUG
+#if GPU_SYNC_DEBUG
 			CHECK(cudaDeviceSynchronize());
 #endif
 		}

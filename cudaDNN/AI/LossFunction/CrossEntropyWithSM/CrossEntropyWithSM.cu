@@ -69,7 +69,7 @@ namespace Aoba
 			//エラーが出る（今後のために残しておく）
 			/*f32* lossTblOnGPU = nullptr;
 			CHECK(cudaMalloc((void**)(&lossTblOnGPU), mDataShape.batchSize * sizeof(f32)));*/
-#if _DEBUG
+#if INDEX_DEBUG
 			assert(mBatchSize != 0);
 #endif
 			calcLoss<<<grid, block>>>(
@@ -79,7 +79,7 @@ namespace Aoba
 				mLossTblOnGPU.address, 
 				mBatchSize,
 				mForwardResultOnGPU->size / mBatchSize);
-#if _DEBUG
+#if GPU_SYNC_DEBUG
 			CHECK(cudaDeviceSynchronize());
 #endif
 			f32 loss = 0;
