@@ -26,56 +26,53 @@ namespace Aoba {
 
 			__global__ void cudaCreateReshapedData(
 				f32* reshapedData, f32* input,
-				Convolution::parameterInfo* pInfo, u32 batchSize, u32 reshapedDataSize)
+				Convolution::parameterInfo* pInfo, u32 batchSize, u32 dataSize)
 			{
 				Convolution::parameterInfo info = *pInfo;
 
 				const u32 N = blockIdx.x * blockDim.x + threadIdx.x;
 				const u32 id = blockIdx.y * blockDim.y + threadIdx.y;
 
-				if (N >= batchSize || id >= reshapedDataSize)
+				if (N >= batchSize || id >= dataSize)
 				{
 					return;
 				}
 
-				const u32 IcFhFw = info.IcFhFw;
-				const u32 V = id / IcFhFw;
-				const u32 H = id - V * IcFhFw;
-				 
-				const u32 Ow = info.Ow;
-				const u32 Fh = V / Ow;
-				const u32 Fw = V - Fh * Ow;
-				
-				const u32 FhFw = info.FhFw;
-				const u32 filterW = info.Fw;
-				const u32 c = H / FhFw;
-				const u32 h = (H - c * FhFw) / filterW;
-				const u32 w = H % filterW;
-				
-				const u32 indexH = Fh * info.Sh + (h - info.Ph);
-				const u32 indexW = Fw * info.Sw + (w - info.Pw);
+				const u32 Ic = id / info.IhIw;
+				const u32 Ih = (id - Ic * info.IhIw) / info.Iw;
+				const u32 Iw = id % info.Iw;
 
-				bool isValid = !(indexH < 0 || indexH >= info.Ih ||
-					indexW < 0 || indexW >= info.Iw);
-				reshapedData[id] = isValid ?
-					input[N * info.IcIhIw + c * info.IhIw + indexH * info.Iw + indexW] : 0;
+				const u32 exH = Ih + info.Ph;
+				const u32 exW = Iw + info.Pw;
+
+				f32 value = input[N * dataSize + id];
+
+				for (u32 Oh = (exH < info.Fh ? 0 : 1 + (exH - info.Fh) / info.Sh), endOh = min(1 + (exH / info.Sh), info.Oh); Oh < endOh; Oh++)
+				{
+					for (u32 Ow = (exW < info.Fw ? 0 : 1 + (exW - info.Fw) / info.Sw), endOw = min(1 + (exW / info.Sw), info.Ow); Ow < endOw; Ow++)
+					{
+						const u32 row = Oh * info.Ow + Ow;
+						const u32 col = Ic * info.FhFw + (exH - Oh * info.Sh) * info.Fw + (exW - Ow * info.Sw);
+						reshapedData[N * info.OhOwIcFhFw + row * info.IcFhFw + col] = value;
+					}
+				}
 			}
 
 			__global__ void cudaConvolutionForward(
 				f32* y, f32* FMatrix,
-				f32* input, f32* bias, Convolution::parameterInfo* pInfo, u32 batchSize, u32 OcOhOwSize)
+				f32* input, f32* bias, Convolution::parameterInfo* pInfo, u32 batchSize)
 			{
 				Convolution::parameterInfo info = *pInfo;
 
 
 				const u32 N = blockIdx.x * blockDim.x + threadIdx.x;
 				const u32 OcOhOw = blockIdx.y * blockDim.y + threadIdx.y;
-				if (N >= batchSize || OcOhOw >= OcOhOwSize)
+				if (N >= batchSize || OcOhOw >= info.OcOhOw)
 				{
 					return;
 				}
 
-				const u32 id = N * OcOhOwSize + OcOhOw;
+				const u32 id = N * info.OcOhOw + OcOhOw;
 
 				const u32 Fc = OcOhOw / info.OhOw;
 				const u32 OhOw = OcOhOw - Fc * info.OhOw;
@@ -93,94 +90,112 @@ namespace Aoba {
 				y[id] = result + bias[Fc];
 			}
 
-			//__global__ void backwardOnGPU_dout_init(f32* backwardResult, u32 batchSize, u32 IcIhIwRange)
-			//{
-			//	u32 N = blockIdx.x * blockDim.x + threadIdx.x;
-			//	u32 IcIhIw = blockIdx.y * blockDim.y + threadIdx.y;
-
-			//	if (N >= batchSize || IcIhIw >= IcIhIwRange)
-			//	{
-			//		return;
-			//	}
-
-			//	backwardResult[N * IcIhIwRange + IcIhIw] = 0.0;
-			//}
 
 
-			__global__ void backwardOnGPU_dout(f32* dFilter, f32* dout, f32* reshapedInput, Convolution::parameterInfo* pInfo)
-			{}
 
 			__global__ void backwardOnGPU_filter(f32* dFilter, f32* dout, f32* reshapedInput,
-				u32 channelSize, u32 icfhfwSize, u32 batchSize, u32 OhOw, u32 IcFhFw)
+				Convolution::parameterInfo* pInfo, u32 batchSize)
 			{
+				Convolution::parameterInfo info = *pInfo;
+
 				u32 c = blockIdx.x * blockDim.x + threadIdx.x;
 				u32 icfhfw = blockIdx.y * blockDim.y + threadIdx.y;
-				if (c >= channelSize || icfhfw >= icfhfwSize)
+				if (c >= info.Oc || icfhfw >= info.IcFhFw)
 				{
 					return;
 				}
 
+
+				const u32 OhOw = info.OhOw;
+				const u32 OcOhOw = info.OcOhOw;
+				const u32 OhOwIcFhFw = info.OhOwIcFhFw;
+				const u32 IcFhFw = info.IcFhFw;
 
 				f32 result = 0.0f;
 				for (u32 N = 0; N < batchSize; N++)
 				{
 					for (u32 hw = 0; hw < OhOw; hw++)
 					{
-						result += dout[N * (channelSize * OhOw) + c * OhOw + hw] * reshapedInput[N * (OhOw * IcFhFw) + hw * IcFhFw + icfhfw];
+						result += dout[N * OcOhOw + c * OhOw + hw] * reshapedInput[N * OhOwIcFhFw + hw * IcFhFw + IcFhFw];
 					}
 				}
-
 				dFilter[c * IcFhFw + icfhfw] = result;
 			}
 
-			__global__ void backwardOnGPU_bias(f32* dBias, f32* dout, u32 dBiasSize, u32 batchSize, u32 OhOw)
+			__global__ void backwardOnGPU_bias(f32* dBias, f32* dout, Convolution::parameterInfo* pInfo, u32 batchSize)
 			{
+				Convolution::parameterInfo info = *pInfo;
+
 				u32 id = blockIdx.x * blockDim.x + threadIdx.x;
-				if (id >= dBiasSize)
+				if (id >= info.Oc)
 				{
 					return;
 				}
+
+				const u32 OcOhOw = info.OcOhOw;
+				const u32 OhOw = info.OhOw;
 
 				f32 result = 0.0f;
 				for (u32 N = 0; N < batchSize; N++)
 				{
 					for (u32 hw = 0; hw < OhOw; hw++)
 					{
-						result += dout[N * (dBiasSize * OhOw) + id * OhOw + hw];
+						result += dout[N * OcOhOw + id * OhOw + hw];
 					}
 				}
 
 				dBias[id] = result;
 			}
-			//
-			//			__global__ void doutBackward(f32* dBias, f32* A, f32* dIn, u32 outputSize, u32 inputSize, u32 batchSize)
-			//			{
-			//				u32 xid = blockIdx.x * blockDim.x + threadIdx.x;//input
-			//				u32 yid = blockIdx.y * blockDim.y + threadIdx.y;//batch
-			//
-			//				if (xid >= inputSize || yid >= batchSize)
-			//				{
-			//					return;
-			//				}
-			//
-			//				f32 result = 0.0f;
-			//				for (u32 i = 0; i < outputSize; i++)
-			//				{
-			//#if _DEBUG
-			//					if (i * inputSize + xid >= outputSize * inputSize)
-			//					{
-			//						assert(0);
-			//					}
-			//					if (yid * outputSize + i >= batchSize * outputSize)
-			//					{
-			//						assert(0);
-			//					}
-			//#endif
-			//					result += A[i * inputSize + xid] * dIn[yid * outputSize + i];
-			//				}
-			//				dOut[yid * inputSize + xid] = result;
-			//				//printf("dOut[%d * %d + %d] = %lf\n",yid, inputSize, xid, dOut[yid * inputSize + xid]);
-			//			}
+
+			__global__ void backwardOnGPU_dout(
+				f32* backwardResult,
+				f32* dOut,
+				f32* FMatrix,
+				Convolution::parameterInfo* pInfo,
+				u32 batchSize)
+			{
+				Convolution::parameterInfo info = *pInfo;
+
+				u32 N = blockIdx.x * blockDim.x + threadIdx.x;//input
+				u32 IcIhIw = blockIdx.y * blockDim.y + threadIdx.y;//batch
+				if (N >= batchSize || IcIhIw >= info.IcIhIw)
+				{
+					return;
+				}
+
+				u32 id = N * info.IcIhIw + IcIhIw;
+
+				const u32 c = IcIhIw / info.IhIw;
+				const u32 h = (IcIhIw - c * info.IhIw) / info.Iw;
+				const u32 w = IcIhIw % info.Iw;
+
+				const u32 exH = h + info.Ph;
+				const u32 exW = w + info.Pw;
+
+				const u32 Oh = info.Oh;
+				const u32 Ow = info.Ow;
+				const u32 Fh = info.Fh;
+				const u32 Fw = info.Fw;
+				const u32 FhFw = info.FhFw;
+				const u32 Fn = info.Fn;
+				const u32 Sh = info.Sh;
+				const u32 Sw = info.Sw;
+
+				f32 result = 0.0f;
+				for (u32 oh = (exH < Fh ? 0 : 1 + (exH - Fh) / Sh), endOh = min(1 + (exH / Sh), Oh); oh < endOh; oh++)
+				{
+					for (u32 ow = (exW < Fw ? 0 : 1 + (exW - Fw) / Sw), endOw = min(1 + (exW / Sw), Ow); ow < endOw; ow++)
+					{
+						const u32 row = oh * Ow + ow;
+						const u32 col = c * FhFw + (exH - oh * Sh) * Fw + (exW - ow * Sw);
+						for (u32 Fc = 0; Fc < Fn; Fc++)
+						{
+							result += dOut[N * info.OcOhOw + Fc * info.OhOw + row] * FMatrix[Fc * info.IcFhFw + col];
+						}
+					}
+				}
+				backwardResult[id] = result;
+			}
 		}
 		void Convolution::mallocOnGPU()
 		{
@@ -194,7 +209,7 @@ namespace Aoba {
 			convParam.size = convDParam.size = mFilterNum * mIcFhFw;
 
 
-			MALLOC_AND_INITIALIZE_NORMAL_ON_GPU(convParam, 1, mConvolutionParamWeight);
+			MALLOC_AND_INITIALIZE_NORMAL_ON_GPU(convParam, mIcFhFw, mConvolutionParamWeight);
 			MALLOC_AND_INITIALIZE_0_ON_GPU(convDParam);
 
 
@@ -224,16 +239,20 @@ namespace Aoba {
 			//
 			parameterInfo tmp;
 			tmp.batchSize = mBatchSize;
+			tmp.Ic = mIc;
 			tmp.Ih = mIh;
 			tmp.Iw = mIw;
-			tmp.Ic = mIc;
 			tmp.IcIhIw = mIcIhIw;
 			tmp.IcFhFw = mIcFhFw;
+			tmp.Oc = mOc;
+			tmp.Oh = mOh;
 			tmp.Ow = mOw;
 			tmp.OhOw = mOhOw;
+			tmp.OcOhOw = mOc * mOhOw;
 			tmp.FhFw = mFhFw;
 			tmp.OhOwIcFhFw = mOhOw * mIcFhFw;
 			tmp.IhIw = mIh * mIw;
+			tmp.Fn = mOc;
 			tmp.Fh = mFilterHeight;
 			tmp.Fw = mFilterWidth;
 			tmp.Sh = mStrideHeight;
@@ -251,19 +270,30 @@ namespace Aoba {
 			DataArray& convBias = mParametersPtrOnGPU[1];
 
 			{
-				dim3 block(16, 32);
+				dim3 block(16, 16);
 				dim3 grid(
 					(mBatchSize + block.x - 1) / block.x,
-					(mIcFhFw * mOhOw + block.y - 1) / block.y);
-				cudaCreateReshapedData << <grid, block >> >
-					(mReshapedInputDataOnGPU.address,
-						input.address,
-						mParameterInfoOnGPU,
-						mBatchSize,
-						mIcFhFw * mOhOw);
+					(mIcIhIw + block.y - 1) / block.y);
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					cudaCreateReshapedData << <grid, block >> >
+						(mReshapedInputDataOnGPU.address,
+							input.address,
+							mParameterInfoOnGPU,
+							mBatchSize,
+							mIcIhIw);
 
 #if GPU_SYNC_DEBUG
-				CHECK(cudaDeviceSynchronize());
+					CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : cudaCreateReshapedData";
+					timers[name] = elapsedTime;
+				}
 #endif
 			}
 
@@ -272,17 +302,27 @@ namespace Aoba {
 				dim3 grid(
 					(mBatchSize + block.x - 1) / block.x,
 					(mOcOhOw + block.y - 1) / block.y);
-				cudaConvolutionForward << <grid, block >> >
-					(mForwardResultOnGPU.address,
-						convMatrix.address,
-						mReshapedInputDataOnGPU.address,
-						convBias.address,
-						mParameterInfoOnGPU,
-						mBatchSize,
-						mOcOhOw);
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					cudaConvolutionForward << <grid, block >> >
+						(mForwardResultOnGPU.address,
+							convMatrix.address,
+							mReshapedInputDataOnGPU.address,
+							convBias.address,
+							mParameterInfoOnGPU,
+							mBatchSize);
 
 #if GPU_SYNC_DEBUG
-				CHECK(cudaDeviceSynchronize());
+					CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : cudaConvolutionForward";
+					timers[name] = elapsedTime;
+				}
 #endif
 			}
 		}
@@ -354,23 +394,47 @@ namespace Aoba {
 				dim3 grid(
 					(mOc + block.x - 1) / block.x,
 					(mIcFhFw + block.y - 1) / block.y);
-				backwardOnGPU_filter << <grid, block >> >
-					(dConvMatrix.address, dout.address, mReshapedInputDataOnGPU.address,
-						mOc, mIcFhFw, mBatchSize, mOhOw, mIcFhFw);
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					backwardOnGPU_filter << <grid, block >> > (
+						dConvMatrix.address,
+						dout.address,
+						mReshapedInputDataOnGPU.address,
+						mParameterInfoOnGPU,
+						mBatchSize);
 
 #if GPU_SYNC_DEBUG
-				CHECK(cudaDeviceSynchronize());
+					CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backwardOnGPU_filter";
+					timers[name] = elapsedTime;
+				}
 #endif
 			}
 
 			{
 				dim3 block(16);
 				dim3 grid((mOc + block.x - 1) / block.x);
-
-				backwardOnGPU_bias << <grid, block >> > (dConvBias.address, dout.address, mOc, mBatchSize, mOhOw);
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					backwardOnGPU_bias << <grid, block >> > (dConvBias.address, dout.address, mParameterInfoOnGPU, mBatchSize);
 
 #if GPU_SYNC_DEBUG
-				CHECK(cudaDeviceSynchronize());
+					CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backwardOnGPU_bias";
+					timers[name] = elapsedTime;
+				}
 #endif
 			}
 
@@ -378,12 +442,26 @@ namespace Aoba {
 				dim3 block(16, 16);
 				dim3 grid(
 					(mBatchSize + block.x - 1) / block.x,
-					(mIcFhFw + block.y - 1) / block.y);
-
-				//backwardOnGPU_dout << <grid, block >> > (dConvBias.address, dout.address, mOc, mBatchSize, mOhOw);
+					(mIcIhIw + block.y - 1) / block.y);
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					backwardOnGPU_dout << <grid, block >> > (
+						mBackwardResultOnGPU.address,
+						dout.address, convMatrix.address,
+						mParameterInfoOnGPU,
+						mBatchSize);
 
 #if GPU_SYNC_DEBUG
-				CHECK(cudaDeviceSynchronize());
+					CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backwardOnGPU_dout";
+					timers[name] = elapsedTime;
+				}
 #endif
 			}
 		}

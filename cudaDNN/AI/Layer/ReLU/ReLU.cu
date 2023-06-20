@@ -69,7 +69,7 @@ namespace Aoba {
 
 		void ReLU::mallocOnGPU()
 		{
-			mMaskOnGPU.size =  mBatchSize * mDataSize;
+			mMaskOnGPU.size = mBatchSize * mDataSize;
 			MALLOC_ON_GPU(mMaskOnGPU);
 			INITIALIZE_GPU_DATA_1(mMaskOnGPU);
 
@@ -87,16 +87,26 @@ namespace Aoba {
 			dim3 grid(
 				(mDataSize + block.x - 1) / block.x,
 				(mBatchSize + block.y - 1) / block.y);
-
-			ReLUForward << <grid, block >> > (
-				mForwardResultOnGPU.address,
-				mInputDataOnGPU->address,
-				mMaskOnGPU.address,
-				mDataSize,
-				mDataSize,
-				mBatchSize); 
+#if TIME_DEBUG
+			{
+				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+				ReLUForward << <grid, block >> > (
+					mForwardResultOnGPU.address,
+					mInputDataOnGPU->address,
+					mMaskOnGPU.address,
+					mDataSize,
+					mDataSize,
+					mBatchSize);
 #if GPU_SYNC_DEBUG
-			CHECK(cudaDeviceSynchronize());
+				CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+				f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+				std::string name = "";
+				(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : ReLUForward";
+				timers[name] = elapsedTime;
+			}
 #endif
 		}
 
@@ -106,14 +116,27 @@ namespace Aoba {
 			dim3 grid(
 				(mDataSize + block.x - 1) / block.x,
 				(mBatchSize + block.y - 1) / block.y);
-
-			ReLUBackward << <grid, block >> > (
-				mBackwardResultOnGPU.address,
-				mDInputDataOnGPU->address,
-				mMaskOnGPU.address,
-				mDataSize,
-				mDataSize,
-				mBatchSize); 
+#if TIME_DEBUG
+			{
+				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+				ReLUBackward << <grid, block >> > (
+					mBackwardResultOnGPU.address,
+					mDInputDataOnGPU->address,
+					mMaskOnGPU.address,
+					mDataSize,
+					mDataSize,
+					mBatchSize);
+#if GPU_SYNC_DEBUG
+				CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+				f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+				std::string name = "";
+				(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : ReLUBackward";
+				timers[name] = elapsedTime;
+			}
+#endif
 		}
 
 		void ReLU::terminateOnGPU()

@@ -20,7 +20,7 @@ namespace Aoba
 			}
 
 			u32 offset = batchID * dataSize;
-			
+
 
 			f32 tmpLoss = 0.0f;
 			for (u32 i = 0; i < dataSize; i++)
@@ -57,20 +57,31 @@ namespace Aoba
 #if INDEX_DEBUG
 			assert(mBatchSize != 0);
 #endif
-			calcLoss << <grid, block >> > (
-				mForwardResultOnGPU->address,
-				mCorrectDataOnGPU->address,
-				mDInputDataOnGPU.address,
-				mLossTblOnGPU.address,
-				mBatchSize,
-				mForwardResultOnGPU->size / mBatchSize);
-#if GPU_SYNC_DEBUG
-			CHECK(cudaDeviceSynchronize());
+#if TIME_DEBUG
+			{
+				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 #endif
-			f32 loss = 0;
+				calcLoss << <grid, block >> > (
+					mForwardResultOnGPU->address,
+					mCorrectDataOnGPU->address,
+					mDInputDataOnGPU.address,
+					mLossTblOnGPU.address,
+					mBatchSize,
+					mForwardResultOnGPU->size / mBatchSize);
+#if GPU_SYNC_DEBUG
+				CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+				f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+				std::string name = "";
+				(((name += __FUNCTION__) += " : ") ) += " : calcLoss";
+				timers[name] = elapsedTime;
+			}
+#endif
 			std::vector<f32> lossOnCPU(mLossTblOnGPU.size);
 			CHECK(cudaMemcpy(lossOnCPU.data(), mLossTblOnGPU.address, mLossTblOnGPU.size * sizeof(f32), cudaMemcpyDeviceToHost));
 
+			f32 loss = 0;
 			for (u32 i = 0; i < mLossTblOnGPU.size; i++)
 			{
 				loss += lossOnCPU[i];

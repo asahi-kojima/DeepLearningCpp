@@ -311,60 +311,60 @@ namespace Aoba {
 
 		void Affine::forwardOnGPU()
 		{
-//将来的にgroupSharedを利用したほうが早いと確定したらこの部分の後者で置き換える予定。
-//			{
-//				std::chrono::system_clock::time_point time = std::chrono::system_clock::now();
-//#if 0
-//				dim3 block(16, 16);
-//				dim3 grid(
-//					(mOutputSize + block.x - 1) / block.x,
-//					(mBatchSize + block.y - 1) / block.y);
-//
-//
-//				AffineForward << <grid, block >> > (
-//					mForwardResultOnGPU.address,
-//					mParametersPtrOnGPU[0].address,
-//					mInputDataOnGPU->address,
-//					mParametersPtrOnGPU[1].address,
-//					mOutputSize,
-//					mInputSize,
-//					mBatchSize);
-//
-//#if _DEBUG
-//				CHECK(cudaDeviceSynchronize());
-//#endif
-//
-//#else
-//				u32 sharedMemorySize = 48000 / sizeof(f32);
-//
-//
-//				const u32 BlockSize = std::min(static_cast<u32>(1 << 5), sharedMemorySize / (2 * mInputSize));
-//				if (BlockSize < 1)
-//				{
-//					std::cout << "BlockSize is less than 1\n";
-//					assert(0);
-//				}
-//				dim3 block(BlockSize, BlockSize);
-//				dim3 grid((mOutputSize + BlockSize - 1) / BlockSize, (mBatchSize + BlockSize - 1) / BlockSize);
-//
-//				AffineForwardWithSM << <grid, block, 2 * mInputSize * BlockSize * sizeof(f32) >> > (
-//					mForwardResultOnGPU.address,
-//					mParametersPtrOnGPU[0].address,
-//					mInputDataOnGPU->address,
-//					mParametersPtrOnGPU[1].address,
-//					mOutputSize,
-//					mInputSize,
-//					mBatchSize);
-//
-//#if _DEBUG
-//				CHECK(cudaDeviceSynchronize());
-//#endif
-//
-//#endif
-//				auto time2 = static_cast<f32>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - time).count() / 1000.0f);
-//				//std::cout << time2 << std::endl;
-//				return;
-//		}
+			//将来的にgroupSharedを利用したほうが早いと確定したらこの部分の後者で置き換える予定。
+			//			{
+			//				std::chrono::system_clock::time_point time = std::chrono::system_clock::now();
+			//#if 0
+			//				dim3 block(16, 16);
+			//				dim3 grid(
+			//					(mOutputSize + block.x - 1) / block.x,
+			//					(mBatchSize + block.y - 1) / block.y);
+			//
+			//
+			//				AffineForward << <grid, block >> > (
+			//					mForwardResultOnGPU.address,
+			//					mParametersPtrOnGPU[0].address,
+			//					mInputDataOnGPU->address,
+			//					mParametersPtrOnGPU[1].address,
+			//					mOutputSize,
+			//					mInputSize,
+			//					mBatchSize);
+			//
+			//#if _DEBUG
+			//				CHECK(cudaDeviceSynchronize());
+			//#endif
+			//
+			//#else
+			//				u32 sharedMemorySize = 48000 / sizeof(f32);
+			//
+			//
+			//				const u32 BlockSize = std::min(static_cast<u32>(1 << 5), sharedMemorySize / (2 * mInputSize));
+			//				if (BlockSize < 1)
+			//				{
+			//					std::cout << "BlockSize is less than 1\n";
+			//					assert(0);
+			//				}
+			//				dim3 block(BlockSize, BlockSize);
+			//				dim3 grid((mOutputSize + BlockSize - 1) / BlockSize, (mBatchSize + BlockSize - 1) / BlockSize);
+			//
+			//				AffineForwardWithSM << <grid, block, 2 * mInputSize * BlockSize * sizeof(f32) >> > (
+			//					mForwardResultOnGPU.address,
+			//					mParametersPtrOnGPU[0].address,
+			//					mInputDataOnGPU->address,
+			//					mParametersPtrOnGPU[1].address,
+			//					mOutputSize,
+			//					mInputSize,
+			//					mBatchSize);
+			//
+			//#if _DEBUG
+			//				CHECK(cudaDeviceSynchronize());
+			//#endif
+			//
+			//#endif
+			//				auto time2 = static_cast<f32>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - time).count() / 1000.0f);
+			//				//std::cout << time2 << std::endl;
+			//				return;
+			//		}
 
 
 			std::chrono::system_clock::time_point time;
@@ -381,19 +381,33 @@ namespace Aoba {
 					(mOutputSize + block.x - 1) / block.x,
 					(mBatchSize + block.y - 1) / block.y);
 
-
-				AffineForward << <grid, block >> > (
-					mForwardResultOnGPU.address,
-					mParametersPtrOnGPU[0].address,
-					mInputDataOnGPU->address,
-					mParametersPtrOnGPU[1].address,
-					mOutputSize,
-					mInputSize,
-					mBatchSize);
-
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					AffineForward << <grid, block >> > (
+						mForwardResultOnGPU.address,
+						mParametersPtrOnGPU[0].address,
+						mInputDataOnGPU->address,
+						mParametersPtrOnGPU[1].address,
+						mOutputSize,
+						mInputSize,
+						mBatchSize);
+#if GPU_SYNC_DEBUG
+					CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : AffineForward";
+					timers[name] = elapsedTime;
+				}
+#endif
 				if (mNowComparing)
 				{
+#if !GPU_SYNC_DEBUG
 					CHECK(cudaDeviceSynchronize());
+#endif
 					auto elapsedTime = static_cast<f32>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - time).count() / 1000.0f);
 
 					mFunc0AveTime = (mFunc0AveTime * mFunc0CallCnt + elapsedTime) / (mFunc0CallCnt + 1);
@@ -423,19 +437,33 @@ namespace Aoba {
 				}
 				dim3 block(BlockSize, BlockSize);
 				dim3 grid((mOutputSize + BlockSize - 1) / BlockSize, (mBatchSize + BlockSize - 1) / BlockSize);
-
-				AffineForwardWithSM << <grid, block, 2 * mInputSize * BlockSize * sizeof(f32) >> > (
-					mForwardResultOnGPU.address,
-					mParametersPtrOnGPU[0].address,
-					mInputDataOnGPU->address,
-					mParametersPtrOnGPU[1].address,
-					mOutputSize,
-					mInputSize,
-					mBatchSize);
-
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					AffineForwardWithSM << <grid, block, 2 * mInputSize * BlockSize * sizeof(f32) >> > (
+						mForwardResultOnGPU.address,
+						mParametersPtrOnGPU[0].address,
+						mInputDataOnGPU->address,
+						mParametersPtrOnGPU[1].address,
+						mOutputSize,
+						mInputSize,
+						mBatchSize);
+#if GPU_SYNC_DEBUG
+					CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backwardOnGPU_dout";
+					timers[name] = elapsedTime;
+				}
+#endif
 				if (mNowComparing)
 				{
+#if !GPU_SYNC_DEBUG
 					CHECK(cudaDeviceSynchronize());
+#endif
 					auto elapsedTime = static_cast<f32>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - time).count() / 1000.0f);
 
 					mFunc1AveTime = (mFunc1AveTime * mFunc1CallCnt + elapsedTime) / (mFunc1CallCnt + 1);
@@ -470,15 +498,26 @@ namespace Aoba {
 				dim3 grid(
 					(mInputSize + block.x - 1) / block.x,
 					(mBatchSize + block.y - 1) / block.y);
-				doutBackward << <grid, block >> > (
-					mBackwardResultOnGPU.address,
-					mParametersPtrOnGPU[0].address,
-					mDInputDataOnGPU->address,
-					mOutputSize,
-					mInputSize,
-					mBatchSize);
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					doutBackward << <grid, block >> > (
+						mBackwardResultOnGPU.address,
+						mParametersPtrOnGPU[0].address,
+						mDInputDataOnGPU->address,
+						mOutputSize,
+						mInputSize,
+						mBatchSize);
 #if GPU_SYNC_DEBUG
-				CHECK(cudaDeviceSynchronize());
+					CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : doutBackward";
+					timers[name] = elapsedTime;
+				}
 #endif
 			}
 
@@ -488,17 +527,27 @@ namespace Aoba {
 				dim3 grid(
 					(mInputSize + block.x - 1) / block.x,
 					(mOutputSize + block.y - 1) / block.y);
-
-				AffineBackward << <grid, block >> > (
-					mDParametersPtrOnGPU[0].address,
-					mDInputDataOnGPU->address,
-					mInputDataOnGPU->address,
-					mOutputSize,
-					mInputSize,
-					mBatchSize);
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					AffineBackward << <grid, block >> > (
+						mDParametersPtrOnGPU[0].address,
+						mDInputDataOnGPU->address,
+						mInputDataOnGPU->address,
+						mOutputSize,
+						mInputSize,
+						mBatchSize);
 
 #if GPU_SYNC_DEBUG
-				CHECK(cudaDeviceSynchronize());
+					CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : AffineBackward";
+					timers[name] = elapsedTime;
+				}
 #endif
 			}
 
@@ -506,15 +555,25 @@ namespace Aoba {
 			{
 				dim3 block(16);
 				dim3 grid((mOutputSize + block.x - 1) / block.x);
-
-				biasBackward << <grid, block >> > (
-					mDParametersPtrOnGPU[1].address,
-					mDInputDataOnGPU->address,
-					mOutputSize,
-					mBatchSize);
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					biasBackward << <grid, block >> > (
+						mDParametersPtrOnGPU[1].address,
+						mDInputDataOnGPU->address,
+						mOutputSize,
+						mBatchSize);
 
 #if GPU_SYNC_DEBUG
-				CHECK(cudaDeviceSynchronize());
+					CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : biasBackward";
+					timers[name] = elapsedTime;
+				}
 #endif
 			}
 		}

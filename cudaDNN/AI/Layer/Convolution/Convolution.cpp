@@ -142,6 +142,7 @@ namespace Aoba::layer
 #endif
 			for (u32 N = 0; N < mBatchSize; N++)
 			{
+#if 0
 				for (u32 i = 0, end = mReshapedInputDataOnCPU.size / mBatchSize; i < end; i++)
 				{
 					u32 V = i / mIcFhFw;
@@ -163,7 +164,31 @@ namespace Aoba::layer
 						//input(N, c, mFilterHeight * mStrideHeight + (h - mPaddingHeight), mFilterWidth * mStrideWidth + (w - mPaddingWidth)) :
 						0.0f;
 				}
+#else
+				for (u32 Ic = 0; Ic < mIc; Ic++)
+				{
+					for (u32 Ih = 0; Ih < mIh; Ih++)
+					{
+						for (u32 Iw = 0; Iw < mIw; Iw++)
+						{
+							const u32 exH = Ih + mPaddingHeight;
+							const u32 exW = Iw + mPaddingWidth;
 
+							auto value = input(N, Ic, Ih, Iw);
+
+							for (u32 Oh = (exH < mFh ? 0 : 1 + (exH - mFh) / mSh), endOh = std::min(1 + (exH / mSh), mOh); Oh < endOh; Oh++)
+							{
+								for (u32 Ow = (exW < mFw ? 0 : 1 + (exW - mFw) / mSw), endOw = std::min(1 + (exW / mSw), mOw); Ow < endOw; Ow++)
+								{
+									const u32 row = Oh * mOw + Ow;
+									const u32 col = Ic * mFhFw + (exH - Oh * mSh) * mFw + (exW - Ow * mSw);
+									mReshapedInputDataOnCPU(N, row, col) = value;
+								}
+							}
+						}
+					}
+				}
+#endif
 				for (u32 OcOhOw = 0, end = mForwardResultOnCPU.size / mBatchSize; OcOhOw < end; OcOhOw++)
 				{
 					f32 tmp = 0.0f;
@@ -177,7 +202,6 @@ namespace Aoba::layer
 					mForwardResultOnCPU(N, OcOhOw) = tmp + convBias[Fc];
 				}
 			}
-
 #if TIME_DEBUG
 			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
 			std::string name = "";
@@ -332,9 +356,9 @@ namespace Aoba::layer
 					const u32 exW = w + mPaddingWidth;
 
 					f32 result = 0.0f;
-					for (u32 Oh = (exH < mFh ? 0 : 1 + (exH - mFh) / mSh), endOh =std::min(exH / mSh, mOh-1); Oh <= endOh; Oh++)
+					for (u32 Oh = (exH < mFh ? 0 : 1 + (exH - mFh) / mSh), endOh = std::min(1 + (exH / mSh), mOh); Oh < endOh; Oh++)
 					{
-						for (u32 Ow = (exW < mFw ? 0 : 1 + (exW - mFw) / mSw), endOw = std::min(exW / mSw, mOw-1); Ow <= endOw; Ow++)
+						for (u32 Ow = (exW < mFw ? 0 : 1 + (exW - mFw) / mSw), endOw = std::min(1 + (exW / mSw), mOw); Ow < endOw; Ow++)
 						{
 							const u32 row = Oh * mOw + Ow;
 							const u32 col = c * mFhFw + (exH - Oh * mSh) * mFw + (exW - Ow * mSw);
@@ -353,12 +377,12 @@ namespace Aoba::layer
 			std::string name = "";
 			(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backward dout";
 			timers[name] = elapsedTime;
-				}
+		}
 #endif
-			}
+	}
 
 	void Convolution::terminateOnCPU()
 	{
 
 	}
-	}
+}

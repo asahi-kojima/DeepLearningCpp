@@ -7,6 +7,8 @@
 
 namespace Aoba::layer
 {
+	u32 ReLU::InstanceCounter = 0;
+
 	ReLU::ReLU()
 		:mBatchSize(0)
 		, mDataSize(0)
@@ -21,6 +23,9 @@ namespace Aoba::layer
 		mBatchSize = batchSize;
 		mDataShape = shape;
 		mDataSize = mDataShape.getDataSize();
+
+		mInstanceID = InstanceCounter;
+		InstanceCounter++;
 	}
 
 
@@ -67,7 +72,7 @@ namespace Aoba::layer
 #if TIME_DEBUG
 			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
 			std::string name = "";
-			(name += __FUNCTION__) += " : forward";
+			(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : forward";
 			timers[name] = elapsedTime;
 		}
 #endif
@@ -90,7 +95,7 @@ namespace Aoba::layer
 #if TIME_DEBUG
 			f32 elapsedTime = static_cast<f32>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f);
 			std::string name = "";
-			(name += __FUNCTION__) += " : backward";
+			(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backward";
 			timers[name] = elapsedTime;
 		}
 #endif

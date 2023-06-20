@@ -236,7 +236,6 @@ namespace Aoba
 				}
 				std::sort(sortedTimes.begin(), sortedTimes.end(), cmp);
 #endif
-
 				if (mIsGpuAvailable)
 					loss += mLossOnGPU;
 				else

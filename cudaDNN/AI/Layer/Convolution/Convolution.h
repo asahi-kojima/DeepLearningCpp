@@ -102,10 +102,13 @@ namespace Aoba
 				u32 IhIw;
 				u32 IcIhIw;
 				u32 IcFhFw;
-				u32 Ow;
+				u32 Oc;
 				u32 Oh;
+				u32 Ow;
 				u32 OhOw;
+				u32 OcOhOw;
 				u32 OhOwIcFhFw;
+				u32 Fn;
 				u32 Fh;
 				u32 Fw;
 				u32 FhFw;

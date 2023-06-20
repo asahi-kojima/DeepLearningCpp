@@ -9,7 +9,7 @@
 
 namespace Aoba::layer
 {
-
+	u32 Affine::InstanceCounter = 0;
 
 	Affine::Affine(u32 outputSize, f32 weight)
 		:mBatchSize(0)
@@ -41,6 +41,9 @@ namespace Aoba::layer
 		mInputSize = shape.getDataSize();
 
 		shape = mOutputShape;
+
+		mInstanceID = InstanceCounter;
+		InstanceCounter++;
 	}
 
 
@@ -110,7 +113,7 @@ namespace Aoba::layer
 #if TIME_DEBUG
 			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
 			std::string name = "";
-			(name += __FUNCTION__) += " : forward";
+			(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : forward";
 			timers[name] = elapsedTime;
 		}
 #endif
@@ -153,7 +156,7 @@ namespace Aoba::layer
 #if TIME_DEBUG
 			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
 			std::string name = "";
-			(name += __FUNCTION__) += " : backward dA db";
+			(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backward dA db";
 			timers[name] = elapsedTime;
 		}
 #endif
@@ -177,7 +180,7 @@ namespace Aoba::layer
 #if TIME_DEBUG
 			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
 			std::string name = "";
-			(name += __FUNCTION__) += " : backward dout";
+			(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backward dout";
 			timers[name] = elapsedTime;
 		}
 #endif

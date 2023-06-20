@@ -18,7 +18,7 @@ namespace Aoba
 			f32 tmpM = m[id] += (1 - beta0) * (dP - m[id]);
 			f32 tmpV = v[id] += (1 - beta1) * (dP * dP - v[id]);
 
-			param[id] -= learningRate * tmpM / (std::sqrtf(tmpV) + 1e-7);
+			param[id] -= learningRate * tmpM / (sqrtf(tmpV) + 1e-7);
 		}
 	}
 
@@ -72,9 +72,20 @@ namespace Aoba
 
 				dim3 block(32);
 				dim3 grid((param.size + block.x - 1) / block.x);
-				OptimizeOnGPU << <grid, block >> > (param.address, dParam.address, m.address, v.address, mBeta0, mBeta1, effectiveLr, param.size);
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					OptimizeOnGPU << <grid, block >> > (param.address, dParam.address, m.address, v.address, mBeta0, mBeta1, effectiveLr, param.size);
 #if GPU_SYNC_DEBUG
-				CHECK(cudaDeviceSynchronize());
+					CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") ) += " : OptimizeOnGPU";
+					timers[name] = elapsedTime;
+				}
 #endif
 			}
 		}
