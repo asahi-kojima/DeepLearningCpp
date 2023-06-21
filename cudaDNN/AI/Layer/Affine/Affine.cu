@@ -2,17 +2,15 @@
 #include <cuda_runtime.h>
 #include <cassert>
 #include <device_functions.h>
-
+#include <chrono>
 //このマクロはCUDAファイルがコンパイルされる時に定義される。
 //インテリセンスのエラーを一時的に抑制するためにこの定義を置いている。
 #if !defined(__CUDACC__)
 #define __CUDACC__
 #endif
 
-
-
+#include "../../AIHelperFunction.h"
 #include "Affine.h"
-#include "../../../common.h"
 
 
 

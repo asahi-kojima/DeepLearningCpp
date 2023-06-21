@@ -9,12 +9,9 @@
 #define __CUDACC__
 #endif
 
-
-
-#include "Convolution.h"
+#include "../../AIHelperFunction.h"
 #include "../../AIMacro.h"
-#include "../../../common.h"
-#include "../../../setting.h"
+#include "Convolution.h"
 
 
 namespace Aoba {

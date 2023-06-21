@@ -2,8 +2,7 @@
 #include <vector>
 #include <cassert>
 #include <iostream>
-
-#include "../../common.h"
+#include  "../AIHelperFunction.h"
 #include "../AISetting.h"
 #include "../AIMacro.h"
 #include "../Optimizer/BaseOptimizer.h"

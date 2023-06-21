@@ -84,7 +84,7 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 }
 
 
-#if 1
+#if 0
 int main()
 {
 	using namespace Aoba;

@@ -1,6 +1,4 @@
 #pragma once
-#include "../../../common.h"
-#include "../../AISetting.h"
 #include "../BaseLayer.h"
 
 namespace Aoba
@@ -32,27 +30,27 @@ namespace Aoba
 			void printLayerInfo() override
 			{
 				printDoubleLine();
-				std::cout << "Convolution Layer" << std::endl;
-				std::cout << "	InputSize              = " << "(" << mInputDataShape.channel << ", " << mInputDataShape.height << ", " << mInputDataShape.width << ")" << std::endl;
-				std::cout << "	OutputSize             = " << "(" << mOutputDataShape.channel << ", " << mOutputDataShape.height << ", " << mOutputDataShape.width << ")" << std::endl;
-				std::cout << "	KernelSize             = " << "(" << mFilterHeight << ", " << mFilterWidth << ")" << std::endl;
+				printLayerName("Convolution Layer");
+				print3dProperty("InputSize", mInputDataShape);
+				print3dProperty("OutputSize", mOutputDataShape);
+				print2dProperty("KernelSize", mFilterHeight, mFilterWidth);
 				if (mStrideHeight == mStrideWidth)
 				{
-					std::cout << "	Stride                 = " << mStrideHeight << std::endl;
+					printProperty("Stride", mStrideHeight);
 				}
 				else
 				{
-					std::cout << "	Stride                 = " << "(" << mStrideHeight << ", " << mStrideWidth << ")" << std::endl;
+					print2dProperty("Stride", mStrideHeight, mStrideWidth);
 				}
 				if (mPaddingHeight == mPaddingWidth)
 				{
-					std::cout << "	Padding                = " << mPaddingHeight << std::endl;
+					printProperty("Padding", mPaddingHeight);
 				}
 				else
 				{
-					std::cout << "	Padding                = " << "(" << mPaddingHeight << ", " << mPaddingWidth << ")" << std::endl;
+					print2dProperty("Padding", mPaddingHeight, mPaddingWidth);
 				}
-				std::cout << "	ConvolutionParamWeight = " << mConvolutionParamWeight << std::endl;
+				printProperty("ParamWeight", mConvolutionParamWeight);
 			}
 
 

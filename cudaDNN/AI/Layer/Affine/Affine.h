@@ -1,5 +1,4 @@
 #pragma once
-#include "../../../common.h"
 #include "../../AISetting.h"
 #include "../BaseLayer.h"
 
@@ -31,10 +30,10 @@ namespace Aoba
 			void printLayerInfo() override
 			{
 				printDoubleLine();
-				std::cout << "Affine Layer" << std::endl;
-				std::cout << "	InputSize         = " << "(" << mInputShape.channel << ", " << mInputShape.height << ", " << mInputShape.width << ")" << std::endl;
-				std::cout << "	OutputSize        = " << "(" << mOutputShape.channel << ", " << mOutputShape.height << ", " << mOutputShape.width << ")" << std::endl;
-				std::cout << "	AffineParamWeight = " << mAffineParamWeight << std::endl;
+				printLayerName("Affine Layer");
+				print3dProperty("InputSize", mInputShape);
+				print3dProperty("OutputSize", mOutputShape);
+				printProperty("ParamWeight", mAffineParamWeight);
 			}
 
 		private:

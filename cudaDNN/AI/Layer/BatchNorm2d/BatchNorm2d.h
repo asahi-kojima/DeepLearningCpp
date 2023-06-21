@@ -1,7 +1,4 @@
 #pragma once
-
-#include "../../../common.h"
-#include "../../../setting.h"
 #include "../BaseLayer.h"
 
 

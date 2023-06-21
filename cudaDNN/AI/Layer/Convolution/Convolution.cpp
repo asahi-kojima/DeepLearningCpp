@@ -2,9 +2,7 @@
 #include <cuda_runtime.h>
 #include <iostream>
 #include <cassert>
-
 #include "Convolution.h"
-#include "../../../common.h"
 
 namespace Aoba::layer
 {

@@ -1,6 +1,5 @@
 #pragma once
-
-#include "../setting.h"
+#include "../typeinfo.h"
 #include <cassert>
 
 //Timeデバッグは以下のIndexデバッグと併用すると
@@ -24,9 +23,6 @@ extern std::map<std::string, f32> timers;
 
 namespace Aoba
 {
-	using cf32 = const f32;
-
-
 	struct DataShape
 	{
 		u32 channel;

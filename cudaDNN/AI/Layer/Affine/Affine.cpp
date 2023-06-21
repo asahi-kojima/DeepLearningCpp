@@ -5,7 +5,6 @@
 #include <thread>
 #include <chrono>
 #include "Affine.h"
-#include "../../../common.h"
 
 namespace Aoba::layer
 {

@@ -1,7 +1,5 @@
 #include <iostream>
 #include <cassert>
-
-#include "../../../common.h"
 #include "BatchNorm2d.h"
 
 namespace Aoba::layer

@@ -1,7 +1,4 @@
 #pragma once
-
-
-#include "../../../setting.h"
 #include "../BaseLayer.h"
 
 
@@ -33,9 +30,9 @@ namespace Aoba
 			void printLayerInfo() override
 			{
 				printDoubleLine();
-				std::cout << "ReLU Layer" << std::endl;
-				std::cout << "	InputSize         = " << "(" << mDataShape.channel << ", " << mDataShape.height << ", " << mDataShape.width << ")" << std::endl;
-				std::cout << "	OutputSize        = " << "(" << mDataShape.channel << ", " << mDataShape.height << ", " << mDataShape.width << ")" << std::endl;
+				printLayerName("ReLU Layer");
+				print3dProperty("InputSize", mDataShape);
+				print3dProperty("OutputSize", mDataShape);
 			}
 
 		private:

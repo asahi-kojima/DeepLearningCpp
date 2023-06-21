@@ -1,7 +1,5 @@
 #include <iostream>
 #include <cassert>
-
-#include "../../../common.h"
 #include "ReLU.h"
 
 

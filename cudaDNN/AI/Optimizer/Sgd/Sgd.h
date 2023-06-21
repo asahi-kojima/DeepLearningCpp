@@ -1,5 +1,4 @@
 #pragma once
-
 #include "../BaseOptimizer.h"
 
 namespace Aoba

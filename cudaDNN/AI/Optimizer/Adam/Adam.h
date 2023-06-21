@@ -1,6 +1,5 @@
 #pragma once
 #include <map>
-
 #include "../BaseOptimizer.h"
 
 namespace Aoba

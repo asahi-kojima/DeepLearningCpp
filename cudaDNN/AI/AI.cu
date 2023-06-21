@@ -2,14 +2,11 @@
 #include <thread>
 #include <random>
 #include <cassert>
-
+#include "AIHelperFunction.h"
 #include "AI.h"
 #include "AIMacro.h"
-
 #include "./Layer/Layer.h"
 #include "./Optimizer/Optimizer.h"
-
-#include "../common.h"
 
 
 std::map<std::string, f32> timers;

@@ -1,7 +1,7 @@
 #pragma once
-
 #include "../AISetting.h"
 #include "../Layer/BaseLayer.h"
+
 namespace Aoba
 {
 	namespace lossFunction
