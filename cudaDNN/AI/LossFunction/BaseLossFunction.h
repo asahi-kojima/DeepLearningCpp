@@ -34,9 +34,10 @@ namespace Aoba
 			{
 				return &mDInputDataOnCPU;
 			}
+			virtual void terminateOnCPU() = 0;
 
 
-
+			virtual f32 calcLossAndDInputOnGPU() = 0;
 			virtual void initializeOnGPU(u32 batchSize, DataShape& trainingDataShape, DataShape& correctDataShape) final
 			{
 				if (!mIsSetupDataShape)
@@ -48,17 +49,16 @@ namespace Aoba
 				}
 				mallocOnGPU();
 			}
-			virtual f32 calcLossAndDInputOnGPU() = 0;
 			void setInputOnGPU(DataArray* pData, DataArray* pCorrectData)
 			{
 				mForwardResultOnGPU = pData;
 				mCorrectDataOnGPU = pCorrectData;
 			}
-
 			DataArray* getDInputDataOnGPU()
 			{
 				return &mDInputDataOnGPU;
 			}
+			virtual void terminateOnGPU() = 0;
 
 		protected:
 			//////////////////////////////////////////////////////////////////////

@@ -25,24 +25,11 @@ void loadMnistFromBin(std::string filePath, std::vector<f32>& data, u32 loadByte
 	std::cout << "-----> load finish" << std::endl;
 }
 
-//void printMNIST(f32* data)
-//{
-//	for (int i = 0; i < 28; i++)
-//	{
-//		for (int j = 0; j < 28; j++)
-//		{
-//			std::cout << (data[i * 28 + j] > 0.1 ? 1 : 0);
-//		}
-//		std::cout << "\n";
-//	}
-//	std::cout << "\n\n";
-//}
-
 void mnistNormalizer(std::vector<f32>& v, u32 size)
 {
 	for (u32 i = 0; i < size; i++)
 	{
-		u32 offset = i * 784;
+		const u32 offset = i * 784;
 
 		f32 mu = 0;
 		for (u32 j = 0; j < 784; j++)
@@ -84,7 +71,7 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 }
 
 
-#if 0
+#if 1
 int main()
 {
 	using namespace Aoba;
@@ -102,7 +89,7 @@ int main()
 	DataShape inputTrainingDataShape = { 1,  28 , 28 };
 	DataShape inputCorrectDataShape = { 1,   28 , 28 };
 	//訓練データと教師データの形状についてAIに教える
-	DataFormat4DeepLearning format(trainingDataNum, 100, inputTrainingDataShape, inputCorrectDataShape);
+	DataFormat4DeepLearning format(trainingDataNum, 30, inputTrainingDataShape, inputCorrectDataShape);
 
 	//////////////////////////////////////////
 	//AIの準備
@@ -110,7 +97,9 @@ int main()
 
 
 	AI Aira{};
-	Aira.addLayer<layer::Convolution>(1u, 3u, 1u, 1u, 1.0f); 
+	Aira.addLayer<layer::Convolution>(3u, 3u, 1u, 1u, 1.0f); 
+	Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Convolution>(9u, 3u, 1u, 1u, 1.0f);
 	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Convolution>(1u, 3u, 1u, 1u, 1.0f);
 	Aira.setOptimizer<optimizer::Adam>(0.001f);
@@ -155,12 +144,6 @@ int main()
 
 
 	AI Aira{};
-	//Aira.addLayer<layer::Convolution>(10u, 5u, 5u, 2u, 1u);
-	/*Aira.addLayer<layer::Affine>(300, 0.001f);
-	Aira.addLayer<layer::ReLU>();*/
-	/*Aira.addLayer<layer::Affine>(100, 0.001f);
-	Aira.addLayer<layer::ReLU>();*/
-	//Aira.addLayer<layer::Affine>(50, 0.1f);
 	Aira.addLayer<layer::Convolution>(1u, 4u, 2u, 2u, 1.0f);
 	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Convolution>(3u, 4u, 2u, 2u, 1.0f);

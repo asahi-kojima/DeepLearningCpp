@@ -90,5 +90,11 @@ namespace Aoba
 
 			return loss / mBatchSize;
 		}
+
+		void L2Loss::terminateOnGPU()
+		{
+			CUDA_FREE(mDInputDataOnGPU);
+			CUDA_FREE(mLossTblOnGPU);
+		}
 	}
 }

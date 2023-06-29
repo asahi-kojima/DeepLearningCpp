@@ -89,5 +89,17 @@ namespace Aoba
 #endif
 			}
 		}
+
+		void Adam::terminateOnGPU()
+		{
+			for (u32 order = 0; order < mMomentumOnGPU.size(); order++)
+			{
+				for (u32 id = 0; id < mMomentumOnGPU[order].size(); id++)
+				{
+					CUDA_FREE(mMomentumOnGPU[order][id]);
+					CUDA_FREE(mVelocityOnGPU[order][id]);
+				}
+			}
+		}
 	}
 }

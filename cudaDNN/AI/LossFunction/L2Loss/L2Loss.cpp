@@ -58,5 +58,11 @@ namespace Aoba
 
 			return loss / mBatchSize;
 		}
+
+		void L2Loss::terminateOnCPU()
+		{
+			delete[] mDInputDataOnCPU.address;
+			delete[] mLossTblOnCPU.address;
+		}
 	}
 }

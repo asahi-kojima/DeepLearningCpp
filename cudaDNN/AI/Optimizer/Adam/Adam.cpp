@@ -68,4 +68,16 @@ namespace Aoba::optimizer
 			}
 		}
 	}
+
+	void Adam::terminateOnCPU()
+	{
+		for (u32 order = 0; order < mMomentumOnCPU.size(); order++)
+		{
+			for (u32 id = 0; id < mMomentumOnCPU[order].size(); id++)
+			{
+				delete[] mMomentumOnCPU[order][id].address;
+				delete[] mVelocityOnCPU[order][id].address;
+			}
+		}
+	}
 }

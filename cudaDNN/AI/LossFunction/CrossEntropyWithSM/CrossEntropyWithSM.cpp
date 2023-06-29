@@ -55,5 +55,11 @@ namespace Aoba
 			}
 			return loss / mBatchSize;
 		}
+
+		void CrossEntropyWithSM::terminateOnCPU()
+		{
+			delete[] mDInputDataOnCPU.address;
+			delete[] mLossTblOnCPU.address;
+		}
 	}
 }

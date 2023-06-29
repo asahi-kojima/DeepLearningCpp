@@ -16,6 +16,8 @@ namespace Aoba
 		private:
 			void initializeOnCPU(std::vector<std::unique_ptr<layer::BaseLayer> >&) override;
 			void initializeOnGPU(std::vector<std::unique_ptr<layer::BaseLayer> >&) override;
+			void terminateOnCPU() override;
+			void terminateOnGPU() override;
 			void optimizeOnCPU(std::unique_ptr<layer::BaseLayer>&) override;
 			void optimizeOnGPU(std::unique_ptr<layer::BaseLayer>&) override;
 

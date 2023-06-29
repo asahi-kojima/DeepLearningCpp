@@ -94,5 +94,11 @@ namespace Aoba
 
 			return loss / mBatchSize;
 		}
+
+		void CrossEntropyWithSM::terminateOnGPU()
+		{
+			CUDA_FREE(mDInputDataOnGPU);
+			CUDA_FREE(mLossTblOnGPU);
+		}
 	}
 }

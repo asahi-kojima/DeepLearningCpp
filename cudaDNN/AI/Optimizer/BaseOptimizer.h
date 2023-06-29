@@ -21,6 +21,9 @@ namespace Aoba
 			virtual void initializeOnCPU(std::vector<std::unique_ptr<layer::BaseLayer> >&) = 0;
 			virtual void initializeOnGPU(std::vector<std::unique_ptr<layer::BaseLayer> >&) = 0;
 			
+			virtual void terminateOnCPU() = 0;
+			virtual void terminateOnGPU() = 0;
+
 			virtual void optimizeOnCPU(std::unique_ptr<layer::BaseLayer>&) = 0;
 			virtual void optimizeOnGPU(std::unique_ptr<layer::BaseLayer>&) = 0;
 			virtual void setLearningRate(f32 lr) final {mLearningRate = lr;}

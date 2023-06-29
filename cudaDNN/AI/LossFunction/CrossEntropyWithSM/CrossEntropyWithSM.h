@@ -17,6 +17,9 @@ namespace Aoba
 
 			f32 calcLossAndDInputOnGPU() override;
 			f32 calcLossAndDInputOnCPU() override;
+
+			void terminateOnGPU() override;
+			void terminateOnCPU() override;
 		};
 	}
 }

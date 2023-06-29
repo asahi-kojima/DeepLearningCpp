@@ -20,6 +20,8 @@ namespace Aoba
 	{
 		if (mIsGpuAvailable)
 		{
+			mOptimizer->terminateOnGPU();
+			mLossFunction->terminateOnGPU();
 			for (auto& layer : mLayerList)
 			{
 				layer->terminateOnGPU();
@@ -27,6 +29,8 @@ namespace Aoba
 		}
 		else
 		{
+			mOptimizer->terminateOnCPU();
+			mLossFunction->terminateOnCPU();
 			for (auto& layer : mLayerList)
 			{
 				layer->terminateOnCPU();
@@ -63,7 +67,7 @@ namespace Aoba
 		}
 
 		//------------------------------------------------------------------
-		//GPUの利用が可能かチェックし、情報を出力。また全ての層にその情報を送る。
+		//GPUの利用が可能かチェックし、情報を出力。
 		//------------------------------------------------------------------
 		checkGpuIsAvailable();
 
