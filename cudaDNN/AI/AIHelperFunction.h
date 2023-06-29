@@ -6,7 +6,7 @@
 #include <cuda_runtime.h>
 
 #include "../typeinfo.h"
-#include "AISetting.h"
+#include "AIDataStructure.h"
 #include "AIMacro.h"
 
 
@@ -123,6 +123,11 @@ namespace Aoba
 	}
 
 	inline void printProperty(std::string s, u32 value)
+	{
+		std::cout << std::string("	") + addSpace2String(s) + std::string(" = ") << value << std::endl;
+	}
+
+	inline void printProperty(std::string s, f32 value)
 	{
 		std::cout << std::string("	") + addSpace2String(s) + std::string(" = ") << value << std::endl;
 	}

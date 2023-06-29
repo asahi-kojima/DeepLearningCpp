@@ -2,7 +2,7 @@
 #include <vector>
 #include <memory>
 
-#include "AISetting.h"
+#include "AIDataStructure.h"
 #include "./Layer/BaseLayer.h"
 #include "./Layer/Layer.h"
 #include "./Optimizer/BaseOptimizer.h"

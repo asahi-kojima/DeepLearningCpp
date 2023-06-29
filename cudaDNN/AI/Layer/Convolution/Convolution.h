@@ -117,7 +117,6 @@ namespace Aoba
 			};
 		private:
 			parameterInfo* mParameterInfoOnGPU;
-			//parameterInfo mParameterInfoOnGPU;
 		};
 
 	}

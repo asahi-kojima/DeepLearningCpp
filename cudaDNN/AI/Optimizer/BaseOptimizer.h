@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include <vector>
-#include "../AISetting.h"
+#include "../AIDataStructure.h"
 #include "../AIMacro.h"
 
 namespace Aoba

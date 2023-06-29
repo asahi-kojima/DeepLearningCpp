@@ -1,5 +1,5 @@
 #pragma once
-#include "../../AISetting.h"
+#include "../../AIDataStructure.h"
 #include "../BaseLayer.h"
 
 namespace Aoba

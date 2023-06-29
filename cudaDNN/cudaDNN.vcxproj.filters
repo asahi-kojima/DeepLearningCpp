@@ -86,9 +86,6 @@
     <ClInclude Include="typeinfo.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="common.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="AI\AI.h">
       <Filter>ソース ファイル\AI</Filter>
     </ClInclude>
@@ -113,7 +110,7 @@
     <ClInclude Include="AI\Layer\ReLU\ReLU.h">
       <Filter>ソース ファイル\AI\Layer\ReLU</Filter>
     </ClInclude>
-    <ClInclude Include="AI\AISetting.h">
+    <ClInclude Include="AI\AIDataStructure.h">
       <Filter>ソース ファイル\AI</Filter>
     </ClInclude>
     <ClInclude Include="AI\Optimizer\Sgd\Sgd.h">
@@ -141,6 +138,9 @@
       <Filter>ソース ファイル\AI\Layer\Convolution</Filter>
     </ClInclude>
     <ClInclude Include="AI\AIHelperFunction.h">
+      <Filter>ソース ファイル\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="AI\AIDebugSetting.h">
       <Filter>ソース ファイル\AI</Filter>
     </ClInclude>
   </ItemGroup>

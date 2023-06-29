@@ -204,23 +204,7 @@ for (auto rit = mLayerList.rbegin(); rit != mLayerList.rend(); rit++)											
     }                                                                  \
 }
 
-//inline void mallocCPUData(Aoba::DataArray& memory)
-//{
-//    memory.address = new f32[memory.size];
-//}
-//
-//inline void initializeDataOnCPU_0(const Aoba::DataArray& memory)
-//{
-//	for (u32 idx = 0; idx < memory.size; idx++)
-//	{
-//		memory.address[idx] = 0.0f;
-//	}
-//}
-//
-//inline void initializeDataOnCPU_1(const Aoba::DataArray& memory)
-//{
-//    for (u32 idx = 0; idx < memory.size; idx++)
-//    {
-//        memory.address[idx] = 1.0f;
-//    }
-//}
+#define CUDA_FREE(memory)     \
+{                             \
+    cudaFree(memory.address); \
+}

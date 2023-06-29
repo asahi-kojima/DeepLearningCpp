@@ -3,7 +3,7 @@
 #include <cassert>
 #include <iostream>
 #include  "../AIHelperFunction.h"
-#include "../AISetting.h"
+#include "../AIDataStructure.h"
 #include "../AIMacro.h"
 #include "../Optimizer/BaseOptimizer.h"
 

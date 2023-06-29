@@ -205,7 +205,6 @@ namespace Aoba {
 
 			convParam.size = convDParam.size = mFilterNum * mIcFhFw;
 
-
 			MALLOC_AND_INITIALIZE_NORMAL_ON_GPU(convParam, mIcFhFw, mConvolutionParamWeight);
 			MALLOC_AND_INITIALIZE_0_ON_GPU(convDParam);
 
@@ -233,7 +232,7 @@ namespace Aoba {
 
 
 
-			//
+			//GPUÇ…ìnÇ∑ÉpÉâÉÅÅ[É^
 			parameterInfo tmp;
 			tmp.batchSize = mBatchSize;
 			tmp.Ic = mIc;

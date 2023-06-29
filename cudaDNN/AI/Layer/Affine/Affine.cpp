@@ -187,10 +187,13 @@ namespace Aoba::layer
 
 	void Affine::terminateOnCPU()
 	{
-		delete[] mParametersPtrOnCPU[0].address;
-		delete[] mParametersPtrOnCPU[1].address;
+		for (u32 id = 0; id < mParametersPtrOnCPU.size(); id++)
+		{
+			delete[] mParametersPtrOnCPU[id].address;
+			delete[] mDParametersPtrOnCPU[id].address;
+		}
 
-		delete[] mDParametersPtrOnCPU[0].address;
-		delete[] mDParametersPtrOnCPU[1].address;
+		delete[] mForwardResultOnCPU.address;
+		delete[] mBackwardResultOnCPU.address;
 	}
 }

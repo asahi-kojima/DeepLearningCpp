@@ -1,6 +1,6 @@
 #include "Adam.h"
 #include "../../Layer/Layer.h"
-#include "../../AISetting.h"
+#include "../../AIDataStructure.h"
 
 namespace Aoba::optimizer
 {

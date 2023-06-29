@@ -16,7 +16,23 @@ namespace Aoba
 #pragma region public
 
 	AI::AI() = default;
-	AI::~AI() = default;
+	AI::~AI()
+	{
+		if (mIsGpuAvailable)
+		{
+			for (auto& layer : mLayerList)
+			{
+				layer->terminateOnGPU();
+			}
+		}
+		else
+		{
+			for (auto& layer : mLayerList)
+			{
+				layer->terminateOnCPU();
+			}
+		}
+	}
 
 
 	void AI::build(DataFormat4DeepLearning& format)
@@ -93,7 +109,7 @@ namespace Aoba
 		//------------------------------------------------------------------
 		//訓練データの情報を表示
 		//------------------------------------------------------------------
-		informationFormat("Training Data Information");
+		printTitle("Training Data Information");
 #pragma region print_TrainingData_infomation
 		auto printer = [](std::string name, u32 value, u32 stringLen = 25)
 		{
@@ -145,7 +161,7 @@ namespace Aoba
 			{
 				s += " ";
 			}
-			s += " " + std::to_string(static_cast<u32>(static_cast<f32>(currentLoop * 100) / totalLoop)) + "/100  :  " + std::to_string( loss);
+			s += " " + std::to_string(static_cast<u32>(static_cast<f32>(currentLoop * 100) / totalLoop)) + "/100  :  " + std::to_string(loss);
 			printf(s.c_str());
 		};
 
@@ -156,14 +172,14 @@ namespace Aoba
 			std::cout << "deep learning now" << std::endl;
 			for (u32 loop = 0; loop < loopTime; loop++)
 			{
-				progressBar(loop + 1, loopTime, mIsGpuAvailable? mLossOnGPU :  mLossOnCPU);
+				progressBar(loop + 1, loopTime, mIsGpuAvailable ? mLossOnGPU : mLossOnCPU);
 				u32 offsetForTrainingData = (batch * mDataFormat4DeepLearning.eachTrainingDataSize) * loop;
 				u32 offsetForCorrectData = (batch * mDataFormat4DeepLearning.eachCorrectDataSize) * loop;
 				if (mIsGpuAvailable)
 				{
 					mInputTrainingDataOnGPU.address = mInputTrainingDataStartAddressOnGPU + offsetForTrainingData;
 					mInputCorrectDataOnGPU.address = mInputCorrectDataStartAddressOnGPU + offsetForCorrectData;
-				}
+			}
 				else
 				{
 					mInputTrainingDataOnCPU.address = mInputTrainingDataStartAddressOnCPU + offsetForTrainingData;
@@ -237,11 +253,11 @@ namespace Aoba
 					loss += mLossOnGPU;
 				else
 					loss += mLossOnCPU;
-			}
+				}
 			std::cout << "\n";
 			std::cout << "current loss = " << loss / loopTime << "\n" << std::endl;
-		}
-	}
+				}
+				}
 
 
 	DataArray AI::operator()(f32* inputData)
@@ -441,4 +457,4 @@ namespace Aoba
 	}
 
 #pragma endregion
-}
+		}

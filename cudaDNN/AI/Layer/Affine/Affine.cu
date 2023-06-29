@@ -36,41 +36,11 @@ namespace Aoba {
 				f32 result = 0.0f;
 				for (u32 i = 0; i < inputSize; i++)
 				{
-					//#if _DEBUG
-					//					u32 tmp = xid * inputSize + i;
-					//					if (tmp < 0 || tmp >= inputSize * outputSize)
-					//					{
-					//						printf("Affine A parameter : out of range : %d\n", tmp);
-					//						printf("threadId x = %d  ,  y = %d\n", threadIdx.x, threadIdx.y);
-					//						assert(0);
-					//					}
-					//					tmp = yid * inputSize + i;
-					//					if (tmp < 0 || tmp >= inputSize * batchSize)
-					//					{
-					//						printf("Affine x parameter : out of range : %d", tmp);
-					//						assert(0);
-					//					}
-					//#endif
 					result += A[xid * inputSize + i] * x[yid * inputSize + i];
 				}
-				//#if _DEBUG
-				//				if (!(id >= 0 && id < batchSize * outputSize))
-				//				{
-				//					printf("Affine y parameter : out of range : %d", id);
-				//					assert(0);
-				//				}
-				//#endif
 				y[id] = result + b[xid];
 			}
 
-
-			//struct DataShape
-			//{
-			//	u32 inputSize;
-			//	u32 outputSize;
-			//	u32 batchSize;
-			//	u32 blockSize;
-			//};
 
 			__global__ void AffineForwardWithSM(
 				f32* y, f32* A,
@@ -222,7 +192,6 @@ namespace Aoba {
 					result += A[i * inputSize + xid] * dIn[yid * outputSize + i];
 				}
 				dOut[yid * inputSize + xid] = result;
-				//printf("dOut[%d * %d + %d] = %lf\n",yid, inputSize, xid, dOut[yid * inputSize + xid]);
 			}
 		}
 		void Affine::mallocOnGPU()
@@ -236,27 +205,8 @@ namespace Aoba {
 
 			affineParam.size = affineDParam.size = mOutputSize * mInputSize;
 
-			CHECK(cudaMalloc((void**)(&(affineParam.address)), affineParam.size * sizeof(f32)));
-			CHECK(cudaMalloc((void**)(&(affineDParam.address)), affineDParam.size * sizeof(f32)));
-
-			{
-				std::random_device seed_gen;
-				std::default_random_engine engine(seed_gen());
-				std::normal_distribution<> dist(0.0, std::sqrt(2.0 / mInputSize));
-
-				std::vector<f32> tmp(affineParam.size);
-				for (u32 idx = 0; idx < affineParam.size; idx++)
-				{
-					tmp[idx] = mAffineParamWeight * static_cast<f32>(dist(engine));
-				}
-				CHECK(cudaMemcpy(affineParam.address, tmp.data(), affineParam.size * sizeof(f32), cudaMemcpyHostToDevice));
-
-				for (u32 idx = 0; idx < affineDParam.size; idx++)
-				{
-					tmp[idx] = 0.0f;
-				}
-				CHECK(cudaMemcpy(affineDParam.address, tmp.data(), affineDParam.size * sizeof(f32), cudaMemcpyHostToDevice));
-			}
+			MALLOC_AND_INITIALIZE_NORMAL_ON_GPU(affineParam, mInputSize, mAffineParamWeight);
+			MALLOC_AND_INITIALIZE_0_ON_GPU(affineDParam);
 
 
 			//Biasƒpƒ‰ƒ[ƒ^
@@ -265,46 +215,16 @@ namespace Aoba {
 
 			biasParam.size = biasDParam.size = mOutputSize;
 
-			cudaMalloc((void**)(&(biasParam.address)), biasParam.size * sizeof(f32));
-			cudaMalloc((void**)(&(biasDParam.address)), biasDParam.size * sizeof(f32));
-			{
-				f32* tmp = new f32[biasParam.size];
-				for (u32 idx = 0; idx < biasParam.size; idx++)
-				{
-					tmp[idx] = 0.0f;
-				}
-				CHECK(cudaMemcpy(biasParam.address, tmp, biasParam.size * sizeof(f32), cudaMemcpyHostToDevice));
-				CHECK(cudaMemcpy(biasDParam.address, tmp, biasDParam.size * sizeof(f32), cudaMemcpyHostToDevice));
-				delete[] tmp;
-			}
+			MALLOC_AND_INITIALIZE_0_ON_GPU(biasParam);
+			MALLOC_AND_INITIALIZE_0_ON_GPU(biasDParam);
+
 
 			//ŒvŽZŒ‹‰Ê‚ðŠi”[‚·‚é‚½‚ß‚Ìƒƒ‚ƒŠŠm•Û
 			mForwardResultOnGPU.size = mBatchSize * mOutputSize;
 			mBackwardResultOnGPU.size = mBatchSize * mInputSize;
-			CHECK(cudaMalloc((void**)(&(mForwardResultOnGPU.address)),
-				mForwardResultOnGPU.size * sizeof(f32)));
-			CHECK(cudaMalloc((void**)(&(mBackwardResultOnGPU.address)),
-				mBackwardResultOnGPU.size * sizeof(f32)));
-			{
-				f32* tmp = new f32[mForwardResultOnGPU.size];
-				for (u32 idx = 0; idx < mForwardResultOnGPU.size; idx++)
-				{
-					tmp[idx] = 0.0f;
-				}
-				CHECK(cudaMemcpy(mForwardResultOnGPU.address, tmp,
-					mForwardResultOnGPU.size * sizeof(f32), cudaMemcpyHostToDevice));
-				delete[] tmp;
 
-
-				tmp = new f32[mBackwardResultOnGPU.size];
-				for (u32 idx = 0; idx < mBackwardResultOnGPU.size; idx++)
-				{
-					tmp[idx] = 0.0f;
-				}
-				CHECK(cudaMemcpy(mBackwardResultOnGPU.address, tmp,
-					mBackwardResultOnGPU.size * sizeof(f32), cudaMemcpyHostToDevice));
-				delete[] tmp;
-			}
+			MALLOC_AND_INITIALIZE_0_ON_GPU(mForwardResultOnGPU);
+			MALLOC_AND_INITIALIZE_0_ON_GPU(mBackwardResultOnGPU);
 		}
 
 		void Affine::forwardOnGPU()
@@ -578,7 +498,13 @@ namespace Aoba {
 
 		void Affine::terminateOnGPU()
 		{
-
+			for (u32 id = 0; id < mParametersPtrOnGPU.size(); id++)
+			{
+				CUDA_FREE(mParametersPtrOnGPU[id]);
+				CUDA_FREE(mDParametersPtrOnGPU[id]);
+			}
+			CUDA_FREE(mForwardResultOnGPU);
+			CUDA_FREE(mBackwardResultOnGPU);
 		}
 
 	}

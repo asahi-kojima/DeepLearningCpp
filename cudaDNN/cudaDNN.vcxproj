@@ -159,9 +159,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AI\AI.h" />
+    <ClInclude Include="AI\AIDebugSetting.h" />
     <ClInclude Include="AI\AIHelperFunction.h" />
     <ClInclude Include="AI\AIMacro.h" />
-    <ClInclude Include="AI\AISetting.h" />
+    <ClInclude Include="AI\AIDataStructure.h" />
     <ClInclude Include="AI\Layer\Affine\Affine.h" />
     <ClInclude Include="AI\Layer\BaseLayer.h" />
     <ClInclude Include="AI\Layer\BatchNorm2d\BatchNorm2d.h" />
@@ -176,7 +177,6 @@
     <ClInclude Include="AI\Optimizer\BaseOptimizer.h" />
     <ClInclude Include="AI\Optimizer\Optimizer.h" />
     <ClInclude Include="AI\Optimizer\Sgd\Sgd.h" />
-    <ClInclude Include="common.h" />
     <ClInclude Include="typeinfo.h" />
   </ItemGroup>
   <ItemGroup>

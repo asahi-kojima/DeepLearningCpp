@@ -25,18 +25,18 @@ void loadMnistFromBin(std::string filePath, std::vector<f32>& data, u32 loadByte
 	std::cout << "-----> load finish" << std::endl;
 }
 
-void printMNIST(f32* data)
-{
-	for (int i = 0; i < 28; i++)
-	{
-		for (int j = 0; j < 28; j++)
-		{
-			std::cout << (data[i * 28 + j] > 0.1 ? 1 : 0);
-		}
-		std::cout << "\n";
-	}
-	std::cout << "\n\n";
-}
+//void printMNIST(f32* data)
+//{
+//	for (int i = 0; i < 28; i++)
+//	{
+//		for (int j = 0; j < 28; j++)
+//		{
+//			std::cout << (data[i * 28 + j] > 0.1 ? 1 : 0);
+//		}
+//		std::cout << "\n";
+//	}
+//	std::cout << "\n\n";
+//}
 
 void mnistNormalizer(std::vector<f32>& v, u32 size)
 {
@@ -97,16 +97,6 @@ int main()
 	std::vector<f32> trainingData, trainingLabel, testData, testLabel;
 	setupMnistData(trainingData, trainingLabel, testData, testLabel);
 
-	//{
-	//	std::random_device seed_gen;                                              
-	//		std::default_random_engine engine(seed_gen());                        
-	//		std::normal_distribution<> dist(0.0, std::sqrt(2.0 / 1));
-	//	for (auto& i : trainingData)
-	//	{
-	//		i = static_cast<f32>(dist(engine));
-	//	}
-	//}
-
 
 	//データ形状は自分の手で決める。
 	DataShape inputTrainingDataShape = { 1,  28 , 28 };
@@ -120,20 +110,9 @@ int main()
 
 
 	AI Aira{};
-	//Aira.addLayer<layer::Affine>(50, 0.001f);
-	//Aira.addLayer<layer::BatchNorm2d>();
-	//Aira.addLayer<layer::ReLU>();
-	//Aira.addLayer<layer::Affine>(784, 0.001f);
-	//Aira.addLayer<layer::BatchNorm2d>();
-	//Aira.setOptimizer<optimizer::Sgd>(0.0001f);
-	//Aira.setLossFunction<lossFunction::L2Loss>();
-	//Aira.addLayer<layer::Convolution>(10u, 3u, 3u, 1u, 1u);
-	//Aira.addLayer<layer::BatchNorm2d>();
-	//Aira.addLayer<layer::ReLU>();
-	Aira.addLayer<layer::Convolution>(1u, 3u, 1u, 1u, 1.0f); Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::Convolution>(1u, 3u, 1u, 1u, 1.0f); 
+	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Convolution>(1u, 3u, 1u, 1u, 1.0f);
-	//Aira.addLayer<layer::Affine>(1, 28, 28, 0.01f);
-	//Aira.addLayer<layer::BatchNorm2d>();
 	Aira.setOptimizer<optimizer::Adam>(0.001f);
 	Aira.setLossFunction<lossFunction::L2Loss>();
 
@@ -167,7 +146,8 @@ int main()
 	DataShape inputTrainingDataShape = { 1,  28 , 28 };
 	DataShape inputCorrectDataShape = { 1, 1, 1 };
 	//訓練データと教師データの形状についてAIに教える
-	DataFormat4DeepLearning format(trainingDataNum, 100, inputTrainingDataShape, inputCorrectDataShape);
+	//バッチサイズでGPUの速度は劇的に変化する。 
+	DataFormat4DeepLearning format(trainingDataNum, 30, inputTrainingDataShape, inputCorrectDataShape);
 
 	//////////////////////////////////////////
 	//AIの準備
