@@ -369,7 +369,17 @@ namespace Aoba {
 
 		void BatchNorm2d::terminateOnGPU()
 		{
+			for (u32 id = 0; id < mParametersPtrOnGPU.size(); id++)
+			{
+				delete[] mParametersPtrOnGPU[id].address;
+				delete[] mDParametersPtrOnGPU[id].address;
+			}
 
+			delete[] mSigmaOnGPU.address;
+
+			delete[] mForwardResultOnGPU.address;
+			delete[] mBackwardResultOnGPU.address;
+			delete[] mIntermediateResultOnGPU.address;
 		}
 	}
 }

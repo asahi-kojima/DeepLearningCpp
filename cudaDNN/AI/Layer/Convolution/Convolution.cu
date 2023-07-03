@@ -464,7 +464,17 @@ namespace Aoba {
 
 		void Convolution::terminateOnGPU()
 		{
+			for (u32 id = 0; id < mParametersPtrOnCPU.size(); id++)
+			{
+				CUDA_FREE(mParametersPtrOnGPU[id]);
+				CUDA_FREE(mDParametersPtrOnGPU[id]);
+			}
 
+			CUDA_FREE(mForwardResultOnGPU);
+			CUDA_FREE(mReshapedInputDataOnGPU);
+			CUDA_FREE(mBackwardResultOnGPU);
+
+			cudaFree(mParameterInfoOnGPU);
 		}
 
 	}

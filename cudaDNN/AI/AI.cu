@@ -18,6 +18,12 @@ namespace Aoba
 	AI::AI() = default;
 	AI::~AI()
 	{
+		if (!mAlreadyBuild)
+		{
+			return;
+		}
+
+
 		if (mIsGpuAvailable)
 		{
 			mOptimizer->terminateOnGPU();

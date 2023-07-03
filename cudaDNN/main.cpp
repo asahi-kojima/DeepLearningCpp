@@ -71,13 +71,14 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 }
 
 
-#if 1
+#if 0
 int main()
 {
 	using namespace Aoba;
 	//////////////////////////////////////////
 	//データの準備
 	//////////////////////////////////////////
+
 	constexpr u32 dataSize = 784;
 	constexpr u32 trainingDataNum = 60000;
 	constexpr u32 testDataNum = 10000;
@@ -94,7 +95,6 @@ int main()
 	//////////////////////////////////////////
 	//AIの準備
 	//////////////////////////////////////////
-
 
 	AI Aira{};
 	Aira.addLayer<layer::Convolution>(3u, 3u, 1u, 1u, 1.0f); 
@@ -142,27 +142,27 @@ int main()
 	//AIの準備
 	//////////////////////////////////////////
 
+	{
+		AI Aira{};
+		Aira.addLayer<layer::Convolution>(1u, 4u, 2u, 2u, 1.0f);
+		Aira.addLayer<layer::ReLU>();
+		Aira.addLayer<layer::Convolution>(3u, 4u, 2u, 2u, 1.0f);
+		Aira.addLayer<layer::ReLU>();
+		Aira.addLayer<layer::Convolution>(9u, 4u, 2u, 2u, 1.0f);
+		Aira.addLayer<layer::ReLU>();
+		Aira.addLayer<layer::Affine>(10, 0.1f);
+		Aira.setOptimizer<optimizer::Adam>(0.001f);
+		Aira.setLossFunction<lossFunction::CrossEntropyWithSM>();
+		//Aira.setLossFunction<lossFunction::L2Loss>();
 
-	AI Aira{};
-	Aira.addLayer<layer::Convolution>(1u, 4u, 2u, 2u, 1.0f);
-	Aira.addLayer<layer::ReLU>();
-	Aira.addLayer<layer::Convolution>(3u, 4u, 2u, 2u, 1.0f);
-	Aira.addLayer<layer::ReLU>();
-	Aira.addLayer<layer::Convolution>(9u, 4u, 2u, 2u, 1.0f);
-	Aira.addLayer<layer::ReLU>();
-	Aira.addLayer<layer::Affine>(10, 0.1f);
-	Aira.setOptimizer<optimizer::Adam>(0.001f);
-	Aira.setLossFunction<lossFunction::CrossEntropyWithSM>();
-	//Aira.setLossFunction<lossFunction::L2Loss>();
+		Aira.build(format);
 
-	Aira.build(format);
+		//////////////////////////////////////////
+		//学習ループ
+		//////////////////////////////////////////
 
-	//////////////////////////////////////////
-	//学習ループ
-	//////////////////////////////////////////
-
-	Aira.deepLearning(trainingData.data(), trainingLabel.data());
-
+		Aira.deepLearning(trainingData.data(), trainingLabel.data());
+	}
 	return 0;
 }
 #endif

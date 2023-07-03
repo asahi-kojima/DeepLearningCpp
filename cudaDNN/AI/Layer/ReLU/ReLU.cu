@@ -141,7 +141,9 @@ namespace Aoba {
 
 		void ReLU::terminateOnGPU()
 		{
-
+			CUDA_FREE(mMaskOnGPU);
+			CUDA_FREE(mForwardResultOnGPU);
+			CUDA_FREE(mBackwardResultOnGPU);
 		}
 	}
 }

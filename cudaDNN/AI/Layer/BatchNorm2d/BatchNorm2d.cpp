@@ -170,7 +170,16 @@ namespace Aoba::layer
 
 	void BatchNorm2d::terminateOnCPU()
 	{
+		for (u32 id = 0; id < mParametersPtrOnCPU.size(); id++)
+		{
+			delete[] mParametersPtrOnCPU[id].address;
+			delete[] mDParametersPtrOnCPU[id].address;
+		}
+
+		delete[] mSigmaOnCPU.address;
+
 		delete[] mForwardResultOnCPU.address;
 		delete[] mBackwardResultOnCPU.address;
+		delete[] mIntermediateResultOnCPU.address;
 	}
 }

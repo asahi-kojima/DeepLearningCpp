@@ -381,6 +381,14 @@ namespace Aoba::layer
 
 	void Convolution::terminateOnCPU()
 	{
+		for (u32 id = 0; id < mParametersPtrOnCPU.size(); id++)
+		{
+			delete[] mParametersPtrOnCPU[id].address;
+			delete[] mDParametersPtrOnCPU[id].address;
+		}
 
+		delete[] mForwardResultOnCPU.address;
+		delete[] mReshapedInputDataOnCPU.address;
+		delete[] mBackwardResultOnCPU.address;
 	}
 }
