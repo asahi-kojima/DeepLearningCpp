@@ -4,6 +4,7 @@
 ### 今後の開発予定
 ・TransposedConvolution層の実装  
 ・MaxPooling層の実装  
+・convolutionなどのフィルターをテクスチャ化して変化をGIF化  
 ・リファクタリング  
 ・CPU計算をマルチスレッド化もしくはSIMD化  
 ・CPU計算の最適化  
