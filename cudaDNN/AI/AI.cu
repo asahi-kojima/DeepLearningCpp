@@ -189,7 +189,7 @@ namespace Aoba
 				{
 					mInputTrainingDataOnGPU.address = mInputTrainingDataStartAddressOnGPU + offsetForTrainingData;
 					mInputCorrectDataOnGPU.address = mInputCorrectDataStartAddressOnGPU + offsetForCorrectData;
-			}
+				}
 				else
 				{
 					mInputTrainingDataOnCPU.address = mInputTrainingDataStartAddressOnCPU + offsetForTrainingData;
@@ -263,11 +263,11 @@ namespace Aoba
 					loss += mLossOnGPU;
 				else
 					loss += mLossOnCPU;
-				}
+			}
 			std::cout << "\n";
 			std::cout << "current loss = " << loss / loopTime << "\n" << std::endl;
-				}
-				}
+		}
+	}
 
 
 	DataArray AI::operator()(f32* inputData)
@@ -467,4 +467,4 @@ namespace Aoba
 	}
 
 #pragma endregion
-		}
+}

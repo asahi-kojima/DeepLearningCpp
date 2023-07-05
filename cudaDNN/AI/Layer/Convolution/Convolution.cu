@@ -42,49 +42,65 @@ namespace Aoba {
 				const u32 exH = Ih + info.Ph;
 				const u32 exW = Iw + info.Pw;
 
+				const u32 Sh = info.Sh;
+				const u32 Sw = info.Sw;
+
+				const u32 Fh = info.Fh;
+				const u32 Fw = info.Fw;
+				const u32 FhFw = Fh * Fw;
+
+				const u32 Oh = info.Oh;
+				const u32 Ow = info.Ow;
+
+				const u32 OhOwIcFhFw = info.OhOwIcFhFw;
+				const u32 IcFhFw = info.IcFhFw;
+
 				f32 value = input[N * dataSize + id];
 
-				for (u32 Oh = (exH < info.Fh ? 0 : 1 + (exH - info.Fh) / info.Sh), endOh = min(1 + (exH / info.Sh), info.Oh); Oh < endOh; Oh++)
+				for (u32 oh = (exH < Fh ? 0 : 1 + (exH - Fh) / Sh), endOh = min(1 + (exH / Sh), Oh); oh < endOh; oh++)
 				{
-					for (u32 Ow = (exW < info.Fw ? 0 : 1 + (exW - info.Fw) / info.Sw), endOw = min(1 + (exW / info.Sw), info.Ow); Ow < endOw; Ow++)
+					for (u32 ow = (exW < Fw ? 0 : 1 + (exW - Fw) / Sw), endOw = min(1 + (exW / Sw), Ow); ow < endOw; ow++)
 					{
-						const u32 row = Oh * info.Ow + Ow;
-						const u32 col = Ic * info.FhFw + (exH - Oh * info.Sh) * info.Fw + (exW - Ow * info.Sw);
-						reshapedData[N * info.OhOwIcFhFw + row * info.IcFhFw + col] = value;
+						const u32 row = oh * Ow + ow;
+						const u32 col = Ic * FhFw + (exH - oh * Sh) * Fw + (exW - ow * Sw);
+						reshapedData[N * OhOwIcFhFw + row * IcFhFw + col] = value;
 					}
 				}
 			}
 
 			__global__ void cudaConvolutionForward(
 				f32* y, f32* FMatrix,
-				f32* input, f32* bias, Convolution::parameterInfo* pInfo, u32 batchSize)
+				f32* reshapedInput, f32* bias, Convolution::parameterInfo* pInfo, u32 batchSize)
 			{
 				Convolution::parameterInfo info = *pInfo;
 
 
 				const u32 N = blockIdx.x * blockDim.x + threadIdx.x;
 				const u32 OcOhOw = blockIdx.y * blockDim.y + threadIdx.y;
-				if (N >= batchSize || OcOhOw >= info.OcOhOw)
+
+				const u32 mOcOhOw = info.OcOhOw;
+				if (N >= batchSize || OcOhOw >= mOcOhOw)
 				{
 					return;
 				}
 
-				const u32 id = N * info.OcOhOw + OcOhOw;
+				const u32 id = N * mOcOhOw + OcOhOw;
 
-				const u32 Fc = OcOhOw / info.OhOw;
-				const u32 OhOw = OcOhOw - Fc * info.OhOw;
+				const u32 mOhOw = info.OhOw;
+				const u32 mFc = OcOhOw / mOhOw;
+				const u32 OhOw = OcOhOw - mFc * mOhOw;
 
-				const u32 IcFhFw = info.IcFhFw;
-				const u32 OhOwIcFhFw = info.OhOwIcFhFw;
+				const u32 mIcFhFw = info.IcFhFw;
+				const u32 mOhOwIcFhFw = info.OhOwIcFhFw;
 
 				f32 result = 0.0f;
-				for (u32 i = 0, end = info.IcFhFw; i < end; i++)
+				for (u32 i = 0; i < mIcFhFw; i++)
 				{
 
-					result += FMatrix[Fc * IcFhFw + i] * input[N * OhOwIcFhFw + OhOw * IcFhFw + i];
+					result += FMatrix[mFc * mIcFhFw + i] * reshapedInput[N * mOhOwIcFhFw + OhOw * mIcFhFw + i];
 				}
 
-				y[id] = result + bias[Fc];
+				y[id] = result + bias[mFc];
 			}
 
 
@@ -103,20 +119,20 @@ namespace Aoba {
 				}
 
 
-				const u32 OhOw = info.OhOw;
-				const u32 OcOhOw = info.OcOhOw;
-				const u32 OhOwIcFhFw = info.OhOwIcFhFw;
-				const u32 IcFhFw = info.IcFhFw;
+				const u32 mOhOw = info.OhOw;
+				const u32 mOcOhOw = info.OcOhOw;
+				const u32 mOhOwIcFhFw = info.OhOwIcFhFw;
+				const u32 mIcFhFw = info.IcFhFw;
 
 				f32 result = 0.0f;
 				for (u32 N = 0; N < batchSize; N++)
 				{
-					for (u32 hw = 0; hw < OhOw; hw++)
+					for (u32 hw = 0; hw < mOhOw; hw++)
 					{
-						result += dout[N * OcOhOw + c * OhOw + hw] * reshapedInput[N * OhOwIcFhFw + hw * IcFhFw + IcFhFw];
+						result += dout[N * mOcOhOw + c * mOhOw + hw] * reshapedInput[N * mOhOwIcFhFw + hw * mIcFhFw + icfhfw];
 					}
 				}
-				dFilter[c * IcFhFw + icfhfw] = result;
+				dFilter[c * mIcFhFw + icfhfw] = result;
 			}
 
 			__global__ void backwardOnGPU_bias(f32* dBias, f32* dout, Convolution::parameterInfo* pInfo, u32 batchSize)
@@ -203,7 +219,7 @@ namespace Aoba {
 			DataArray& convParam = mParametersPtrOnGPU[0];
 			DataArray& convDParam = mDParametersPtrOnGPU[0];
 
-			convParam.size = convDParam.size = mFilterNum * mIcFhFw;
+			convParam.size = convDParam.size = mOc * mIcFhFw;
 
 			MALLOC_AND_INITIALIZE_NORMAL_ON_GPU(convParam, mIcFhFw, mConvolutionParamWeight);
 			MALLOC_AND_INITIALIZE_0_ON_GPU(convDParam);
@@ -249,12 +265,12 @@ namespace Aoba {
 			tmp.OhOwIcFhFw = mOhOw * mIcFhFw;
 			tmp.IhIw = mIh * mIw;
 			tmp.Fn = mOc;
-			tmp.Fh = mFilterHeight;
-			tmp.Fw = mFilterWidth;
-			tmp.Sh = mStrideHeight;
-			tmp.Sw = mStrideWidth;
-			tmp.Ph = mPaddingHeight;
-			tmp.Pw = mPaddingWidth;
+			tmp.Fh = mFh;
+			tmp.Fw = mFw;
+			tmp.Sh = mSh;
+			tmp.Sw = mSw;
+			tmp.Ph = mPh;
+			tmp.Pw = mPw;
 			CHECK(cudaMalloc(&mParameterInfoOnGPU, sizeof(parameterInfo)););
 			CHECK(cudaMemcpy(mParameterInfoOnGPU, &tmp, sizeof(parameterInfo), cudaMemcpyHostToDevice));
 		}

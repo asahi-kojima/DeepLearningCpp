@@ -9,52 +9,63 @@ namespace Aoba::layer
 
 	u32 Convolution::InstanceCounter = 0;
 
-	Convolution::Convolution(u32 outputChannel, u32 outputHeight, u32 outputWidth, f32 weight)
-		: mBatchSize(0)
-		, mOutputDataShape{ outputChannel, outputHeight, outputWidth }
-		, mConvolutionParamWeight(weight)
-	{
-		mIcFhFw = mInputDataShape.channel * mFilterHeight * mFilterWidth;
-		mIhIw = mInputDataShape.height * mInputDataShape.width;
-		mIcIhIw = mInputDataShape.channel * mIhIw;
-		mOhOw = mOutputDataShape.height * mOutputDataShape.width;
-		mOcOhOw = mOutputDataShape.channel * mOhOw;
+	//Convolution::Convolution(u32 outputChannel, u32 outputHeight, u32 outputWidth, f32 weight)
+	//	: mBatchSize(0)
+	//	, mOutputDataShape{ outputChannel, outputHeight, outputWidth }
+	//	, mConvolutionParamWeight(weight)
+	//{
+	//	mIcFhFw = mInputDataShape.channel * mFh * mFw;
+	//	mIhIw = mInputDataShape.height * mInputDataShape.width;
+	//	mIcIhIw = mInputDataShape.channel * mIhIw;
+	//	mOhOw = mOutputDataShape.height * mOutputDataShape.width;
+	//	mOcOhOw = mOutputDataShape.channel * mOhOw;
 
-		mFilterNum = mOutputDataShape.channel;
-	}
+	//	mOc = mOutputDataShape.channel;
+	//}
 
 	Convolution::Convolution(u32 filterNum, u32 filterSize, u32 stride, u32 padding, f32 weight)
 		: mBatchSize(0)
-		, mFilterNum(filterNum)
-		, mFilterHeight(filterSize)
-		, mFilterWidth(filterSize)
-		, mStrideHeight(stride)
-		, mStrideWidth(stride)
-		, mPaddingHeight(padding)
-		, mPaddingWidth(padding)
+		, mOc(filterNum)
+		, mFh(filterSize)
+		, mFw(filterSize)
+		, mSh(stride)
+		, mSw(stride)
+		, mPh(padding)
+		, mPw(padding)
 		, mConvolutionParamWeight(weight)
 	{
-		mOutputDataShape.channel = mFilterNum;
-		mOutputDataShape.height = 1 + (mInputDataShape.height - mFilterHeight + 2 * mPaddingHeight) / mStrideHeight;
-		mOutputDataShape.width = 1 + (mInputDataShape.width - mFilterWidth + 2 * mPaddingWidth) / mStrideWidth;
-		mIcFhFw = mInputDataShape.channel * mFilterHeight * mFilterWidth;
+		mOutputDataShape.channel = mOc;
+		mOutputDataShape.height = 1 + (mInputDataShape.height - mFh + 2 * mPh) / mSh;
+		mOutputDataShape.width = 1 + (mInputDataShape.width - mFw + 2 * mPw) / mSw;
+		mIcFhFw = mInputDataShape.channel * mFh * mFw;
 		mIhIw = mInputDataShape.height * mInputDataShape.width;
 		mIcIhIw = mInputDataShape.channel * mIhIw;
 		mOhOw = mOutputDataShape.height * mOutputDataShape.width;
 		mOcOhOw = mOutputDataShape.channel * mOhOw;
 	}
 
-	Convolution::Convolution(u32 filterNum, u32 filterHeight, u32 filterWidth, u32 strideHeight, u32 strideWidth, u32 paddingHeight, u32 paddingWidth, f32 weight)
+	Convolution::Convolution(u32 filterNum, 
+		u32 filterHeight, u32 filterWidth, 
+		u32 strideHeight, u32 strideWidth, 
+		u32 paddingHeight, u32 paddingWidth, f32 weight)
 		: mBatchSize(0)
-		, mFilterNum(filterNum)
-		, mFilterHeight(filterHeight)
-		, mFilterWidth(filterWidth)
-		, mStrideHeight(strideHeight)
-		, mStrideWidth(strideWidth)
-		, mPaddingHeight(paddingHeight)
-		, mPaddingWidth(paddingWidth)
+		, mOc(filterNum)
+		, mFh(filterHeight)
+		, mFw(filterWidth)
+		, mSh(strideHeight)
+		, mSw(strideWidth)
+		, mPh(paddingHeight)
+		, mPw(paddingWidth)
 		, mConvolutionParamWeight(weight)
 	{
+		mOutputDataShape.channel = mOc;
+		mOutputDataShape.height = 1 + (mInputDataShape.height - mFh + 2 * mPh) / mSh;
+		mOutputDataShape.width = 1 + (mInputDataShape.width - mFw + 2 * mPw) / mSw;
+		mIcFhFw = mInputDataShape.channel * mFh * mFw;
+		mIhIw = mInputDataShape.height * mInputDataShape.width;
+		mIcIhIw = mInputDataShape.channel * mIhIw;
+		mOhOw = mOutputDataShape.height * mOutputDataShape.width;
+		mOcOhOw = mOutputDataShape.channel * mOhOw;
 	}
 
 	Convolution::~Convolution()
@@ -70,17 +81,13 @@ namespace Aoba::layer
 		mIh = shape.height;
 		mIw = shape.width;
 
-		mOc = mOutputDataShape.channel = mFilterNum;
-		mOh = mOutputDataShape.height = 1 + (mIh - mFilterHeight + 2 * mPaddingHeight) / mStrideHeight;
-		mOw = mOutputDataShape.width = 1 + (mIw - mFilterWidth + 2 * mPaddingWidth) / mStrideWidth;
+		mOutputDataShape.channel = mOc;
+		mOh = mOutputDataShape.height = 1 + (mIh - mFh + 2 * mPh) / mSh;
+		mOw = mOutputDataShape.width = 1 + (mIw - mFw + 2 * mPw) / mSw;
 		shape = mOutputDataShape;
 
-		mFh = mFilterHeight;
-		mFw = mFilterWidth;
-		mSh = mStrideHeight;
-		mSw = mStrideWidth;
 
-		mFhFw = mFilterHeight * mFilterWidth;
+		mFhFw = mFh * mFw;
 		mIcFhFw = mIc * mFhFw;
 		mIhIw = mIh * mIw;
 		mIcIhIw = mIc * mIhIw;
@@ -101,8 +108,8 @@ namespace Aoba::layer
 		////////////////////////////////////////////////////////
 		DataArray& convParam = mParametersPtrOnCPU[0];
 		DataArray& convDParam = mDParametersPtrOnCPU[0];
-		convParam.setSizeAs2D(mFilterNum, mIcFhFw);
-		convDParam.setSizeAs2D(mFilterNum, mIcFhFw);
+		convParam.setSizeAs2D(mOc, mIcFhFw);
+		convDParam.setSizeAs2D(mOc, mIcFhFw);
 		MALLOC_AND_INITIALIZE_NORMAL_ON_CPU(convParam, mIcFhFw, mConvolutionParamWeight);
 		MALLOC_AND_INITIALIZE_0_ON_CPU(convDParam);
 
@@ -150,16 +157,16 @@ namespace Aoba::layer
 					u32 Fw = V - Fh * mOw;
 
 					u32 c = H / mFhFw;
-					u32 h = (H - c * mFhFw) / mFilterWidth;
-					u32 w = H % mFilterWidth;
+					u32 h = (H - c * mFhFw) / mFw;
+					u32 w = H % mFw;
 
-					u32 indexH = Fh * mStrideHeight + (h - mPaddingHeight);
-					u32 indexW = Fw * mStrideWidth + (w - mPaddingWidth);
+					u32 indexH = Fh * mSh + (h - mPh);
+					u32 indexW = Fw * mSw + (w - mPw);
 					bool isValid = !(indexH < 0 || indexH >= mIh || indexW < 0 || indexW >= mIw);
 					mReshapedInputDataOnCPU(N, i) =
 						isValid ?
 						input(N, c, indexH, indexW) :
-						//input(N, c, mFilterHeight * mStrideHeight + (h - mPaddingHeight), mFilterWidth * mStrideWidth + (w - mPaddingWidth)) :
+						//input(N, c, mFh * mSh + (h - mPh), mFw * mSw + (w - mPw)) :
 						0.0f;
 				}
 #else
@@ -169,8 +176,8 @@ namespace Aoba::layer
 					{
 						for (u32 Iw = 0; Iw < mIw; Iw++)
 						{
-							const u32 exH = Ih + mPaddingHeight;
-							const u32 exW = Iw + mPaddingWidth;
+							const u32 exH = Ih + mPh;
+							const u32 exW = Iw + mPw;
 
 							auto value = input(N, Ic, Ih, Iw);
 
@@ -305,7 +312,7 @@ namespace Aoba::layer
 				for (u32 i = 0, end = mReshapedInputDataOnCPU.size / mBatchSize; i < end; i++)
 				{
 					/*f32 tmp = 0.0f;
-					for (u32 j = 0; j < mFilterNum; j++)
+					for (u32 j = 0; j < mOc; j++)
 					{
 						u32 OhOw = i / mIcFhFw;
 						u32 IcFhFw = i - OhOw * mIcFhFw;
@@ -319,18 +326,18 @@ namespace Aoba::layer
 
 					u32 iRes = i - mIcFhFw * OhOw;
 					u32 c = iRes / mFhFw;
-					u32 h = (iRes - c * mFhFw) / mFilterWidth;
-					u32 w = iRes % mFilterWidth;
+					u32 h = (iRes - c * mFhFw) / mFw;
+					u32 w = iRes % mFw;
 
-					u32 heightIndex = fCol * mStrideHeight + (h - mPaddingHeight);
-					u32 widthIndex = fRow * mStrideWidth + (w - mPaddingWidth);
+					u32 heightIndex = fCol * mSh + (h - mPh);
+					u32 widthIndex = fRow * mSw + (w - mPw);
 					if (heightIndex < 0 || heightIndex >= mInputDataShape.height || widthIndex < 0 || widthIndex >= mInputDataShape.width)
 					{
 						continue;
 					}
 
 					f32 tmp = 0.0f;
-					for (u32 j = 0; j < mFilterNum; j++)
+					for (u32 j = 0; j < mOc; j++)
 					{
 						u32 OhOw = i / mIcFhFw;
 						u32 IcFhFw = i - OhOw * mIcFhFw;
@@ -350,8 +357,8 @@ namespace Aoba::layer
 					const u32 h = (IcIhIw - c * mIhIw) / mIw;
 					const u32 w = IcIhIw % mIw;
 
-					const u32 exH = h + mPaddingHeight;
-					const u32 exW = w + mPaddingWidth;
+					const u32 exH = h + mPh;
+					const u32 exW = w + mPw;
 
 					f32 result = 0.0f;
 					for (u32 Oh = (exH < mFh ? 0 : 1 + (exH - mFh) / mSh), endOh = std::min(1 + (exH / mSh), mOh); Oh < endOh; Oh++)
@@ -360,7 +367,7 @@ namespace Aoba::layer
 						{
 							const u32 row = Oh * mOw + Ow;
 							const u32 col = c * mFhFw + (exH - Oh * mSh) * mFw + (exW - Ow * mSw);
-							for (u32 Fc = 0; Fc < mFilterNum; Fc++)
+							for (u32 Fc = 0; Fc < mOc; Fc++)
 							{
 								result += dout(N, Fc, row) * convMatrix(Fc, col);
 							}

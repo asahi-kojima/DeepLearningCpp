@@ -8,7 +8,7 @@ namespace Aoba
 		class Convolution : public BaseLayer
 		{
 		public:
-			Convolution(u32, u32, u32, f32 weight = 0.01f);
+			//Convolution(u32, u32, u32, f32 weight = 0.01f);
 			Convolution(u32, u32, u32, u32, f32 weight = 0.01f);
 			Convolution(u32, u32, u32, u32, u32, u32, u32, f32 weight = 0.01f);
 			~Convolution();
@@ -33,22 +33,22 @@ namespace Aoba
 				printLayerName("Convolution Layer");
 				print3dProperty("InputSize", mInputDataShape);
 				print3dProperty("OutputSize", mOutputDataShape);
-				print2dProperty("KernelSize", mFilterHeight, mFilterWidth);
-				if (mStrideHeight == mStrideWidth)
+				print2dProperty("KernelSize", mFh, mFw);
+				if (mSh == mSw)
 				{
-					printProperty("Stride", mStrideHeight);
+					printProperty("Stride", mSh);
 				}
 				else
 				{
-					print2dProperty("Stride", mStrideHeight, mStrideWidth);
+					print2dProperty("Stride", mSh, mSw);
 				}
-				if (mPaddingHeight == mPaddingWidth)
+				if (mPh == mPw)
 				{
-					printProperty("Padding", mPaddingHeight);
+					printProperty("Padding", mPh);
 				}
 				else
 				{
-					print2dProperty("Padding", mPaddingHeight, mPaddingWidth);
+					print2dProperty("Padding", mPh, mPw);
 				}
 				printProperty("ParamWeight", mConvolutionParamWeight);
 			}
@@ -60,13 +60,6 @@ namespace Aoba
 			u32 mBatchSize;
 			DataShape mInputDataShape;
 			DataShape mOutputDataShape;
-			u32 mFilterHeight;
-			u32 mFilterWidth;
-			u32 mFilterNum;
-			u32 mStrideHeight;
-			u32 mStrideWidth;
-			u32 mPaddingHeight;
-			u32 mPaddingWidth;
 
 			u32 mIc;
 			u32 mIh;
@@ -78,6 +71,8 @@ namespace Aoba
 			u32 mFw;
 			u32 mSh;
 			u32 mSw;
+			u32 mPh;
+			u32 mPw;
 			u32 mFhFw;
 			u32 mIcFhFw;
 			u32 mIhIw;

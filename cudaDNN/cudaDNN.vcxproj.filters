@@ -49,6 +49,9 @@
     <Filter Include="ソース ファイル\AI\Layer\Convolution">
       <UniqueIdentifier>{58c6d8c7-46fb-4523-bb8c-57a2a901b0b2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\AI\Layer\TransposeConv">
+      <UniqueIdentifier>{27d7695d-8a95-4e76-a17f-189475a074ee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="main.cpp">
@@ -142,6 +145,9 @@
     </ClInclude>
     <ClInclude Include="AI\AIDebugSetting.h">
       <Filter>ソース ファイル\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="AI\Layer\TransposeConv\TransposeConv.h">
+      <Filter>ソース ファイル\AI\Layer\TransposeConv</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
