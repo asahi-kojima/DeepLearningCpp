@@ -152,6 +152,7 @@
     <CudaCompile Include="AI\Layer\Affine\Affine.cu" />
     <CudaCompile Include="AI\Layer\BatchNorm2d\BatchNorm2d.cu" />
     <CudaCompile Include="AI\Layer\Convolution\Convolution.cu" />
+    <CudaCompile Include="AI\Layer\MaxPooling\MaxPooling.cu" />
     <CudaCompile Include="AI\Layer\ReLU\ReLU.cu" />
     <CudaCompile Include="AI\LossFunction\CrossEntropyWithSM\CrossEntropyWithSM.cu" />
     <CudaCompile Include="AI\LossFunction\L2Loss\L2Loss.cu" />
@@ -168,6 +169,7 @@
     <ClInclude Include="AI\Layer\BatchNorm2d\BatchNorm2d.h" />
     <ClInclude Include="AI\Layer\Convolution\Convolution.h" />
     <ClInclude Include="AI\Layer\Layer.h" />
+    <ClInclude Include="AI\Layer\MaxPooling\MaxPooling.h" />
     <ClInclude Include="AI\Layer\ReLU\ReLU.h" />
     <ClInclude Include="AI\Layer\TransposeConv\TransposeConv.h" />
     <ClInclude Include="AI\LossFunction\BaseLossFunction.h" />
@@ -184,6 +186,7 @@
     <ClCompile Include="AI\Layer\Affine\Affine.cpp" />
     <ClCompile Include="AI\Layer\BatchNorm2d\BatchNorm2d.cpp" />
     <ClCompile Include="AI\Layer\Convolution\Convolution.cpp" />
+    <ClCompile Include="AI\Layer\MaxPooling\MaxPooling.cpp" />
     <ClCompile Include="AI\Layer\ReLU\ReLU.cpp" />
     <ClCompile Include="AI\LossFunction\CrossEntropyWithSM\CrossEntropyWithSM.cpp" />
     <ClCompile Include="AI\LossFunction\L2Loss\L2Loss.cpp" />

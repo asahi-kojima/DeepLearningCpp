@@ -8,7 +8,6 @@ namespace Aoba
 		class Convolution : public BaseLayer
 		{
 		public:
-			//Convolution(u32, u32, u32, f32 weight = 0.01f);
 			Convolution(u32, u32, u32, u32, f32 weight = 0.01f);
 			Convolution(u32, u32, u32, u32, u32, u32, u32, f32 weight = 0.01f);
 			~Convolution();

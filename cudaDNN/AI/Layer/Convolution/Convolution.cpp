@@ -34,14 +34,6 @@ namespace Aoba::layer
 		, mPw(padding)
 		, mConvolutionParamWeight(weight)
 	{
-		mOutputDataShape.channel = mOc;
-		mOutputDataShape.height = 1 + (mInputDataShape.height - mFh + 2 * mPh) / mSh;
-		mOutputDataShape.width = 1 + (mInputDataShape.width - mFw + 2 * mPw) / mSw;
-		mIcFhFw = mInputDataShape.channel * mFh * mFw;
-		mIhIw = mInputDataShape.height * mInputDataShape.width;
-		mIcIhIw = mInputDataShape.channel * mIhIw;
-		mOhOw = mOutputDataShape.height * mOutputDataShape.width;
-		mOcOhOw = mOutputDataShape.channel * mOhOw;
 	}
 
 	Convolution::Convolution(u32 filterNum, 
@@ -58,14 +50,6 @@ namespace Aoba::layer
 		, mPw(paddingWidth)
 		, mConvolutionParamWeight(weight)
 	{
-		mOutputDataShape.channel = mOc;
-		mOutputDataShape.height = 1 + (mInputDataShape.height - mFh + 2 * mPh) / mSh;
-		mOutputDataShape.width = 1 + (mInputDataShape.width - mFw + 2 * mPw) / mSw;
-		mIcFhFw = mInputDataShape.channel * mFh * mFw;
-		mIhIw = mInputDataShape.height * mInputDataShape.width;
-		mIcIhIw = mInputDataShape.channel * mIhIw;
-		mOhOw = mOutputDataShape.height * mOutputDataShape.width;
-		mOcOhOw = mOutputDataShape.channel * mOhOw;
 	}
 
 	Convolution::~Convolution()
@@ -147,7 +131,7 @@ namespace Aoba::layer
 #endif
 			for (u32 N = 0; N < mBatchSize; N++)
 			{
-#if 0
+#if 0//“®ìŠm”FŒã‚ÉÁ‚·B
 				for (u32 i = 0, end = mReshapedInputDataOnCPU.size / mBatchSize; i < end; i++)
 				{
 					u32 V = i / mIcFhFw;

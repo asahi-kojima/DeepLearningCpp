@@ -35,35 +35,38 @@ namespace Aoba {
 					return;
 				}
 
-				const u32 Ic = id / info.IhIw;
-				const u32 Ih = (id - Ic * info.IhIw) / info.Iw;
-				const u32 Iw = id % info.Iw;
+				const u32 mIhIw = info.IhIw;
+				const u32 mIw = info.Iw;
+
+				const u32 Ic = id / mIhIw;
+				const u32 Ih = (id - Ic * mIhIw) / mIw;
+				const u32 Iw = id % mIw;
 
 				const u32 exH = Ih + info.Ph;
 				const u32 exW = Iw + info.Pw;
 
-				const u32 Sh = info.Sh;
-				const u32 Sw = info.Sw;
+				const u32 mSh = info.Sh;
+				const u32 mSw = info.Sw;
 
-				const u32 Fh = info.Fh;
-				const u32 Fw = info.Fw;
-				const u32 FhFw = Fh * Fw;
+				const u32 mFh = info.Fh;
+				const u32 mFw = info.Fw;
+				const u32 mFhFw = mFh * mFw;
 
-				const u32 Oh = info.Oh;
-				const u32 Ow = info.Ow;
+				const u32 mOh = info.Oh;
+				const u32 mOw = info.Ow;
 
-				const u32 OhOwIcFhFw = info.OhOwIcFhFw;
-				const u32 IcFhFw = info.IcFhFw;
+				const u32 mOhOwIcFhFw = info.OhOwIcFhFw;
+				const u32 mIcFhFw = info.IcFhFw;
 
 				f32 value = input[N * dataSize + id];
 
-				for (u32 oh = (exH < Fh ? 0 : 1 + (exH - Fh) / Sh), endOh = min(1 + (exH / Sh), Oh); oh < endOh; oh++)
+				for (u32 Oh = (exH < mFh ? 0 : 1 + (exH - mFh) / mSh), endOh = min(1 + (exH / mSh), mOh); Oh < endOh; Oh++)
 				{
-					for (u32 ow = (exW < Fw ? 0 : 1 + (exW - Fw) / Sw), endOw = min(1 + (exW / Sw), Ow); ow < endOw; ow++)
+					for (u32 Ow = (exW < mFw ? 0 : 1 + (exW - mFw) / mSw), endOw = min(1 + (exW / mSw), mOw); Ow < endOw; Ow++)
 					{
-						const u32 row = oh * Ow + ow;
-						const u32 col = Ic * FhFw + (exH - oh * Sh) * Fw + (exW - ow * Sw);
-						reshapedData[N * OhOwIcFhFw + row * IcFhFw + col] = value;
+						const u32 row = Oh * mOw + Ow;
+						const u32 col = Ic * mFhFw + (exH - Oh * mSh) * mFw + (exW - Ow * mSw);
+						reshapedData[N * mOhOwIcFhFw + row * mIcFhFw + col] = value;
 					}
 				}
 			}
@@ -171,39 +174,48 @@ namespace Aoba {
 
 				u32 N = blockIdx.x * blockDim.x + threadIdx.x;//input
 				u32 IcIhIw = blockIdx.y * blockDim.y + threadIdx.y;//batch
-				if (N >= batchSize || IcIhIw >= info.IcIhIw)
+
+				const u32 mIcIhIw = info.IcIhIw;
+				if (N >= batchSize || IcIhIw >= mIcIhIw)
 				{
 					return;
 				}
 
-				u32 id = N * info.IcIhIw + IcIhIw;
+				u32 id = N * mIcIhIw + IcIhIw;
 
-				const u32 c = IcIhIw / info.IhIw;
-				const u32 h = (IcIhIw - c * info.IhIw) / info.Iw;
-				const u32 w = IcIhIw % info.Iw;
+				const u32 mIhIw = info.IhIw;
+				const u32 mIw = info.Iw;
+
+				const u32 c = IcIhIw / mIhIw;
+				const u32 h = (IcIhIw - c * mIhIw) / mIw;
+				const u32 w = IcIhIw % mIw;
 
 				const u32 exH = h + info.Ph;
 				const u32 exW = w + info.Pw;
 
-				const u32 Oh = info.Oh;
-				const u32 Ow = info.Ow;
-				const u32 Fh = info.Fh;
-				const u32 Fw = info.Fw;
-				const u32 FhFw = info.FhFw;
-				const u32 Fn = info.Fn;
-				const u32 Sh = info.Sh;
-				const u32 Sw = info.Sw;
+				const u32 mOh = info.Oh;
+				const u32 mOw = info.Ow;
+				const u32 mFh = info.Fh;
+				const u32 mFw = info.Fw;
+				const u32 mFhFw = info.FhFw;
+				const u32 mFn = info.Fn;
+				const u32 mSh = info.Sh;
+				const u32 mSw = info.Sw;
+
+				const u32 mOcOhOw = info.OcOhOw;
+				const u32 mOhOw = info.OhOw;
+				const u32 mIcFhFw = info.IcFhFw;
 
 				f32 result = 0.0f;
-				for (u32 oh = (exH < Fh ? 0 : 1 + (exH - Fh) / Sh), endOh = min(1 + (exH / Sh), Oh); oh < endOh; oh++)
+				for (u32 oh = (exH < mFh ? 0 : 1 + (exH - mFh) / mSh), endOh = min(1 + (exH / mSh), mOh); oh < endOh; oh++)
 				{
-					for (u32 ow = (exW < Fw ? 0 : 1 + (exW - Fw) / Sw), endOw = min(1 + (exW / Sw), Ow); ow < endOw; ow++)
+					for (u32 ow = (exW < mFw ? 0 : 1 + (exW - mFw) / mSw), endOw = min(1 + (exW / mSw), mOw); ow < endOw; ow++)
 					{
-						const u32 row = oh * Ow + ow;
-						const u32 col = c * FhFw + (exH - oh * Sh) * Fw + (exW - ow * Sw);
-						for (u32 Fc = 0; Fc < Fn; Fc++)
+						const u32 row = oh * mOw + ow;
+						const u32 col = c * mFhFw + (exH - oh * mSh) * mFw + (exW - ow * mSw);
+						for (u32 Fc = 0; Fc < mFn; Fc++)
 						{
-							result += dOut[N * info.OcOhOw + Fc * info.OhOw + row] * FMatrix[Fc * info.IcFhFw + col];
+							result += dOut[N * mOcOhOw + Fc * mOhOw + row] * FMatrix[Fc * mIcFhFw + col];
 						}
 					}
 				}
