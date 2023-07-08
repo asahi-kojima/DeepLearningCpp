@@ -2,9 +2,9 @@
 このレポジトリにはC++/CUDAで自作しているAIのコードを置いています。  
 CUDAコンパイラが無いとコンパイル出来ません。
 
-### 今後の開発予定
+### 今後の開発予定（横棒は完了）
 ・TransposedConvolution層の実装  
-・MaxPooling層の実装  
+・~~MaxPooling層の実装~~  
 ・convolutionなどのフィルターをテクスチャ化して変化をGIF化  
 ・リファクタリング  
 ・CPU計算をマルチスレッド化もしくはSIMD化  
