@@ -98,6 +98,7 @@ int main()
 
 	AI Aira{};
 	Aira.addLayer<layer::Convolution>(3u, 3u, 1u, 1u, 1.0f); 
+	Aira.addLayer<layer::MaxPooling>(3u, 1u, 1u); 
 	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Convolution>(9u, 3u, 1u, 1u, 1.0f);
 	Aira.addLayer<layer::ReLU>();

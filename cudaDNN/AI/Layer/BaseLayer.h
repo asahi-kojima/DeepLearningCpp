@@ -47,6 +47,25 @@ namespace Aoba
 				std::cout << "No Infomation" << std::endl;
 			}
 
+			u32 getTotalParameterNum(bool isGpuUse) const
+			{
+				u32 parameterNum = 0;
+				if (isGpuUse)
+				{
+					for (auto& parameters : mParametersPtrOnGPU)
+					{
+						parameterNum += parameters.size;
+					}
+				}
+				else
+				{
+					for (auto& parameters : mParametersPtrOnCPU)
+					{
+						parameterNum += parameters.size;
+					}
+				}
+			}
+
 			//CPU
 			std::vector<DataArray> mParametersPtrOnCPU;
 			std::vector<DataArray> mDParametersPtrOnCPU;
