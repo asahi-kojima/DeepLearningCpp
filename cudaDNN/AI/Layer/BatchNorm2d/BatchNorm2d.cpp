@@ -104,7 +104,8 @@ namespace Aoba::layer
 			sigma2 /= (mBatchSize * hXw);
 			sigma = std::sqrt(sigma2);*/
 
-			sigma = std::sqrt(sqMean - mean * mean);
+			f32 ep = 1e-7;
+			sigma = std::sqrt(sqMean - mean * mean) + ep;
 
 			//------------------------------------------------------------------
 			//•W€‰»
