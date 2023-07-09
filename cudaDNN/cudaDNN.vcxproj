@@ -154,6 +154,7 @@
     <CudaCompile Include="AI\Layer\Convolution\Convolution.cu" />
     <CudaCompile Include="AI\Layer\MaxPooling\MaxPooling.cu" />
     <CudaCompile Include="AI\Layer\ReLU\ReLU.cu" />
+    <CudaCompile Include="AI\Layer\TransposeConv\TransposeConv.cu" />
     <CudaCompile Include="AI\LossFunction\CrossEntropyWithSM\CrossEntropyWithSM.cu" />
     <CudaCompile Include="AI\LossFunction\L2Loss\L2Loss.cu" />
     <CudaCompile Include="AI\Optimizer\Adam\Adam.cu" />
@@ -188,6 +189,7 @@
     <ClCompile Include="AI\Layer\Convolution\Convolution.cpp" />
     <ClCompile Include="AI\Layer\MaxPooling\MaxPooling.cpp" />
     <ClCompile Include="AI\Layer\ReLU\ReLU.cpp" />
+    <ClCompile Include="AI\Layer\TransposeConv\TransposeConv.cpp" />
     <ClCompile Include="AI\LossFunction\CrossEntropyWithSM\CrossEntropyWithSM.cpp" />
     <ClCompile Include="AI\LossFunction\L2Loss\L2Loss.cpp" />
     <ClCompile Include="AI\Optimizer\Adam\Adam.cpp" />

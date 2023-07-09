@@ -90,6 +90,9 @@
     <CudaCompile Include="AI\Layer\MaxPooling\MaxPooling.cu">
       <Filter>ソース ファイル\AI\Layer\MaxPooling</Filter>
     </CudaCompile>
+    <CudaCompile Include="AI\Layer\TransposeConv\TransposeConv.cu">
+      <Filter>ソース ファイル\AI\Layer\TransposeConv</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="typeinfo.h">
@@ -189,6 +192,9 @@
     </ClCompile>
     <ClCompile Include="AI\Layer\MaxPooling\MaxPooling.cpp">
       <Filter>ソース ファイル\AI\Layer\MaxPooling</Filter>
+    </ClCompile>
+    <ClCompile Include="AI\Layer\TransposeConv\TransposeConv.cpp">
+      <Filter>ソース ファイル\AI\Layer\TransposeConv</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -70,22 +70,21 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 	mnistNormalizer(testData, testDataNum);
 }
 
-#if 1
+#if 0
 int main()
 {
-	using namespace Aoba;
-	//層の単体テスト用main関数
+#if 0
+	{
+		using namespace Aoba;
+		//層の単体テスト用main関数
 
-	DataShape testShape = { 3,  28 , 28 };
-	layer::BaseLayer::unitTest<layer::Affine>(testShape,50);
-	layer::BaseLayer::unitTest<layer::ReLU>(testShape);
-	layer::BaseLayer::unitTest<layer::Convolution>(testShape,9u, 3u, 2u, 1u, 1.0f);
-	layer::BaseLayer::unitTest<layer::MaxPooling>(testShape, 9u, 1u, 1u);
-}
-#else
-#if 1
-int main()
-{
+		DataShape testShape = { 3,  28 , 28 };
+		layer::BaseLayer::unitTest<layer::Affine>(testShape, 50);
+		layer::BaseLayer::unitTest<layer::ReLU>(testShape);
+		layer::BaseLayer::unitTest<layer::Convolution>(testShape, 9u, 3u, 2u, 1u, 1.0f);
+		layer::BaseLayer::unitTest<layer::MaxPooling>(testShape, 9u, 1u, 1u);
+	}
+#endif
 	using namespace Aoba;
 	//////////////////////////////////////////
 	//データの準備
@@ -110,6 +109,8 @@ int main()
 
 	AI Aira{};
 	Aira.addLayer<layer::Convolution>(3u, 3u, 1u, 1u, 1.0f);
+	Aira.addLayer<layer::MaxPooling>(3, 1, 1);
+	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Convolution>(9u, 3u, 1u, 1u, 1.0f);
 	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Convolution>(1u, 3u, 1u, 1u, 1.0f);
@@ -142,7 +143,6 @@ int main()
 
 
 	//データ形状は自分の手で決める。
-	//DataShape inputTrainingDataShape = { 1, 1, 28 * 28 };
 	DataShape inputTrainingDataShape = { 1,  28 , 28 };
 	DataShape inputCorrectDataShape = { 1, 1, 1 };
 	//訓練データと教師データの形状についてAIに教える
@@ -155,15 +155,11 @@ int main()
 
 	{
 		AI Aira{};
-		//Aira.addLayer<layer::Convolution>(1u, 4u, 2u, 2u, 1.0f);
-		//Aira.addLayer<layer::ReLU>();
-		//Aira.addLayer<layer::Convolution>(1u, 4u, 2u, 2u, 1.0f);
-		//Aira.addLayer<layer::ReLU>();
-		//Aira.addLayer<layer::Convolution>(3u, 4u, 2u, 2u, 1.0f);
-		//Aira.addLayer<layer::ReLU>();
-		//Aira.addLayer<layer::Convolution>(9u, 4u, 2u, 2u, 1.0f);
-		Aira.addLayer<layer::Affine>(50, 0.1f);
+		Aira.addLayer<layer::Convolution>(1u, 4u, 2u, 2u, 1.0f);
 		Aira.addLayer<layer::ReLU>();
+		Aira.addLayer<layer::Convolution>(3u, 4u, 2u, 2u, 1.0f);
+		Aira.addLayer<layer::ReLU>();
+		Aira.addLayer<layer::Convolution>(9u, 4u, 2u, 2u, 1.0f);
 		Aira.addLayer<layer::Affine>(10, 0.1f);
 		Aira.setOptimizer<optimizer::Adam>(0.001f);
 		Aira.setLossFunction<lossFunction::CrossEntropyWithSM>();
@@ -179,5 +175,4 @@ int main()
 	}
 	return 0;
 }
-#endif
 #endif

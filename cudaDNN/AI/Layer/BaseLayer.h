@@ -66,20 +66,6 @@ namespace Aoba
 				}
 			}
 
-			virtual void copyCpuParams2GpuParams() final
-			{
-				assert(mIsSetupLayerInfo);
-
-				for (u32 i = 0; i < mParametersPtrOnCPU.size(); i++)
-				{
-					CHECK(cudaMemcpy(
-						mParametersPtrOnGPU[i].address,
-						mParametersPtrOnCPU[i].address,
-						mParametersPtrOnCPU[i].size * sizeof(f32),
-						cudaMemcpyHostToDevice));
-
-				}
-			}
 
 			template<typename T, typename ... Args>
 			static void unitTest(DataShape inputShape, Args ... args)
