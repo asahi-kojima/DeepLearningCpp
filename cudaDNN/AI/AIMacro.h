@@ -1,4 +1,11 @@
 #pragma once
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <chrono>
+#include <ostream>
+#include <random>
 
 #define CHECK(call)                                                            \
 {                                                                              \

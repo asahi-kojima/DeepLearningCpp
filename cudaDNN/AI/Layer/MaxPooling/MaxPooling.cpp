@@ -124,7 +124,8 @@ namespace Aoba::layer
 							const s32 indexIh = basisIndexIh + fh;
 							const s32 indexIw = basisIndexIw + fw;
 
-							const f32 value = rangeCheckerHW(indexIh, indexIw, mIh, mIw) ? input(N, Ic, indexIh, indexIw) : 0;
+							const f32 value = rangeCheckerHW(indexIh, indexIw, mIh, mIw) ?
+								input(N, Ic, indexIh, indexIw) : 0;
 
 							if (maxValueCand < value)
 							{
@@ -135,7 +136,9 @@ namespace Aoba::layer
 						}
 					}
 
-					mPoolingMaskOnCPU[N * mOcOhOw + OcOhOw] = rangeCheckerHW(maxCandIh, maxCandIw, mIh, mIw) ? Ic * mIhIw + maxCandIh * mIw + maxCandIw : -1;
+					mPoolingMaskOnCPU[N * mOcOhOw + OcOhOw] = 
+						rangeCheckerHW(maxCandIh, maxCandIw, mIh, mIw) ?
+						Ic * mIhIw + maxCandIh * mIw + maxCandIw : -1;
 					mForwardResultOnCPU(N, OcOhOw) = maxValueCand;
 				}
 			}
@@ -189,7 +192,7 @@ namespace Aoba::layer
 						continue;
 					}
 
-					mBackwardResultOnCPU(N, index) = dout[N * mOcOhOw + OcOhOw];
+					mBackwardResultOnCPU(N, index) += dout[N * mOcOhOw + OcOhOw];
 				}
 			}
 

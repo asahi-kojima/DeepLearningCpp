@@ -56,10 +56,10 @@ namespace Aoba {
 				const u32 Ow = OhOw - Oh * mOw;
 
 
-				const s32 mSh = info.Sh;
-				const s32 mSw = info.Sw;
-				const s32 mPh = info.Ph;
-				const s32 mPw = info.Pw;
+				const u32 mSh = info.Sh;
+				const u32 mSw = info.Sw;
+				const u32 mPh = info.Ph;
+				const u32 mPw = info.Pw;
 				const s32 basisIndexIh = Oh * mSh - mPh;
 				const s32 basisIndexIw = Ow * mSw - mPw;
 
@@ -138,7 +138,8 @@ namespace Aoba {
 					return;
 				}
 
-				backwardResult[N * mIcIhIw + index] = dout[id];
+				//backwardResult[N * mIcIhIw + index] += dout[id];
+				atomicAdd(&(backwardResult[N * mIcIhIw + index]), dout[id]);
 			}
 		}
 

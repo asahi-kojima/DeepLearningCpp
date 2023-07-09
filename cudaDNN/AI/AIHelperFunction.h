@@ -206,4 +206,5 @@ namespace Aoba
 		//fwrite(pData, height * width * sizeof(*pData), 1, fp);
 		//fclose(fp);
 	}
+
 }

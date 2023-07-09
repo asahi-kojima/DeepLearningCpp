@@ -62,7 +62,7 @@ namespace Aoba::layer
 					}
 					else
 					{
-						mMaskOnCPU.address[index] = 1.0f;
+						mMaskOnCPU.address[index] = 0.0f;
 						mForwardResultOnCPU[index] = 0.0f;
 					}
 				}
