@@ -4,6 +4,8 @@
 
 namespace Aoba::layer
 {
+	u32 BatchNorm2d::InstanceCounter = 0;
+
 	BatchNorm2d::BatchNorm2d()
 	{}
 
@@ -13,6 +15,9 @@ namespace Aoba::layer
 	{
 		mBatchSize = batchSize;
 		mDataShape = shape;
+
+		mInstanceID = InstanceCounter;
+		InstanceCounter++;
 	}
 
 
@@ -65,115 +70,125 @@ namespace Aoba::layer
 
 	void BatchNorm2d::forwardOnCPU()
 	{
-		f32 ep = 1e-7;
-		u32 hXw = mDataShape.height * mDataShape.width;
-		for (u32 c = 0; c < mDataShape.channel; c++)
+#if TIME_DEBUG
 		{
-			f32 mean = 0.0f;
-			f32 sqMean = 0.0f;
-			f32 sigma = 0.0f;
-
-			const u32 dataSize = mDataShape.getDataSize();
-			//------------------------------------------------------------------
-			//ïΩãœÇåvéZ
-			//------------------------------------------------------------------
-			for (u32 N = 0; N < mBatchSize; N++)
-			{
-				for (u32 hw = 0; hw < hXw; hw++)
-				{
-					f32 value = mInputDataOnCPU->address[N * dataSize + c * hXw + hw];
-					mean += value;
-					sqMean += value * value;
-				}
-			}
-			mean /= (mBatchSize * hXw);
-			sqMean /= (mBatchSize * hXw);
-
-			//------------------------------------------------------------------
-			//ïŒç∑ÇåvéZ
-			//------------------------------------------------------------------
-			/*f32 sigma2 = 0.0f;
-			for (u32 N = 0; N < mBatchSize; N++)
-			{
-				for (u32 hw = 0; hw < hXw; hw++)
-				{
-					f32 diff = mInputDataOnCPU->address[N * mDataShape.getDataSize() + c * hXw + hw] - mean;
-					sigma2 += diff * diff;
-				}
-			}
-			sigma2 /= (mBatchSize * hXw);
-			sigma = std::sqrt(sigma2);*/
-
+			std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
 			f32 ep = 1e-7;
-			sigma = std::sqrt(sqMean - mean * mean) + ep;
-
-			//------------------------------------------------------------------
-			//ïWèÄâª
-			//------------------------------------------------------------------
-			f32 gamma = mParametersPtrOnCPU[0].address[c];
-			f32 beta = mParametersPtrOnCPU[1].address[c];
-			for (u32 N = 0; N < mBatchSize; N++)
+			u32 hXw = mDataShape.height * mDataShape.width;
+			for (u32 c = 0; c < mDataShape.channel; c++)
 			{
-				for (u32 hw = 0; hw < hXw; hw++)
-				{
-					u32 index = N * dataSize + c * hXw + hw;
-					f32 normalizeResult = (mInputDataOnCPU->address[index] - mean) / sigma;
-					mIntermediateResultOnCPU.address[index] = normalizeResult;
-					mForwardResultOnCPU.address[index] = gamma * normalizeResult + beta;
-				}
-			}
+				f32 mean = 0.0f;
+				f32 sqMean = 0.0f;
+				f32 sigma = 0.0f;
 
-			mSigmaOnCPU.address[c] = sigma;
+				const u32 dataSize = mDataShape.getDataSize();
+				//------------------------------------------------------------------
+				//ïΩãœÇåvéZ
+				//------------------------------------------------------------------
+				for (u32 N = 0; N < mBatchSize; N++)
+				{
+					for (u32 hw = 0; hw < hXw; hw++)
+					{
+						f32 value = mInputDataOnCPU->address[N * dataSize + c * hXw + hw];
+						mean += value;
+						sqMean += value * value;
+					}
+				}
+				mean /= (mBatchSize * hXw);
+				sqMean /= (mBatchSize * hXw);
+
+				//------------------------------------------------------------------
+				//ïŒç∑ÇåvéZ
+				//------------------------------------------------------------------
+				f32 ep = 1e-7;
+				sigma = std::sqrt(sqMean - mean * mean) + ep;
+
+				//------------------------------------------------------------------
+				//ïWèÄâª
+				//------------------------------------------------------------------
+				f32 gamma = mParametersPtrOnCPU[0].address[c];
+				f32 beta = mParametersPtrOnCPU[1].address[c];
+				for (u32 N = 0; N < mBatchSize; N++)
+				{
+					for (u32 hw = 0; hw < hXw; hw++)
+					{
+						u32 index = N * dataSize + c * hXw + hw;
+						f32 normalizeResult = (mInputDataOnCPU->address[index] - mean) / sigma;
+						mIntermediateResultOnCPU.address[index] = normalizeResult;
+						mForwardResultOnCPU.address[index] = gamma * normalizeResult + beta;
+					}
+				}
+
+				mSigmaOnCPU.address[c] = sigma;
+			}
+#if TIME_DEBUG
+			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+			std::string name = "";
+			(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : forward";
+			timers[name] = elapsedTime;
 		}
+#endif
 	}
 
 	void BatchNorm2d::backwardOnCPU()
 	{
 		u32 hXw = mDataShape.height * mDataShape.width;
 		auto& dout = *mDInputDataOnCPU;
-		for (u32 c = 0; c < mDataShape.channel; c++)
+
+#if TIME_DEBUG
 		{
-			f32 dGamma = 0.0f;
-			f32 dBeta = 0.0f;
-			for (u32 N = 0; N < mBatchSize; N++)
+			std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+			for (u32 c = 0; c < mDataShape.channel; c++)
 			{
-				for (u32 hw = 0; hw < hXw; hw++)
+				f32 dGamma = 0.0f;
+				f32 dBeta = 0.0f;
+				for (u32 N = 0; N < mBatchSize; N++)
 				{
-					u32 index = N * mDataShape.getDataSize() + c * hXw + hw;
-					f32 dO = dout[index];
-					dGamma += dO * mIntermediateResultOnCPU[index];
-					dBeta += dO;
+					for (u32 hw = 0; hw < hXw; hw++)
+					{
+						u32 index = N * mDataShape.getDataSize() + c * hXw + hw;
+						f32 dO = dout[index];
+						dGamma += dO * mIntermediateResultOnCPU[index];
+						dBeta += dO;
+					}
 				}
-			}
-			mDParametersPtrOnCPU[0][c] = dGamma;
-			mDParametersPtrOnCPU[1][c] = dBeta;
-			
-			
-			
-			f32 dMean = 0.0f;
-			f32 diMean = 0.0f;
-			for (u32 N = 0; N < mBatchSize; N++)
-			{
-				for (u32 hw = 0; hw < hXw; hw++)
-				{
-					u32 index = N * mDataShape.getDataSize() + c * hXw + hw;
-					dMean += dout[index];
-					diMean += dout[index] * mIntermediateResultOnCPU[index];
-				}
-			}
-			dMean /= (mBatchSize * hXw);
-			diMean /= (mBatchSize * hXw);
+				mDParametersPtrOnCPU[0][c] = dGamma;
+				mDParametersPtrOnCPU[1][c] = dBeta;
 
-			for (u32 N = 0; N < mBatchSize; N++)
-			{
-				for (u32 hw = 0; hw < hXw; hw++)
+
+
+				f32 dMean = 0.0f;
+				f32 diMean = 0.0f;
+				for (u32 N = 0; N < mBatchSize; N++)
 				{
-					u32 index = N * mDataShape.getDataSize() + c * hXw + hw;
-					mBackwardResultOnCPU[index] = (mParametersPtrOnCPU[0][c] / (mSigmaOnCPU[c] + 1e-7)) * (dout[index] - dMean - mIntermediateResultOnCPU[index] * diMean);
+					for (u32 hw = 0; hw < hXw; hw++)
+					{
+						u32 index = N * mDataShape.getDataSize() + c * hXw + hw;
+						dMean += dout[index];
+						diMean += dout[index] * mIntermediateResultOnCPU[index];
+					}
+				}
+				dMean /= (mBatchSize * hXw);
+				diMean /= (mBatchSize * hXw);
+
+				for (u32 N = 0; N < mBatchSize; N++)
+				{
+					for (u32 hw = 0; hw < hXw; hw++)
+					{
+						u32 index = N * mDataShape.getDataSize() + c * hXw + hw;
+						mBackwardResultOnCPU[index] = (mParametersPtrOnCPU[0][c] / (mSigmaOnCPU[c] + 1e-7)) * (dout[index] - dMean - mIntermediateResultOnCPU[index] * diMean);
+					}
 				}
 			}
+#if TIME_DEBUG
+			f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+			std::string name = "";
+			(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backward";
+			timers[name] = elapsedTime;
 		}
-
+#endif
 	}
 
 	void BatchNorm2d::terminateOnCPU()

@@ -247,7 +247,7 @@ namespace Aoba {
 				delete[] tmp;
 			}
 
-			 
+
 			//------------------------------------------------------------------
 			//Beta
 			//------------------------------------------------------------------
@@ -320,21 +320,31 @@ namespace Aoba {
 		{
 			dim3 block(16);
 			dim3 grid((mDataShape.channel + block.x - 1) / block.x);
-
-			BatchNorm2d_forwardOnGPU << <grid, block >> > (
-				mInputDataOnGPU->address,
-				mIntermediateResultOnGPU.address,
-				mForwardResultOnGPU.address,
-				mParametersPtrOnGPU[0].address,
-				mParametersPtrOnGPU[1].address,
-				mSigmaOnGPU.address,
-				mBatchSize,
-				mDataShape.channel,
-				mDataShape.height,
-				mDataShape.width);
+#if TIME_DEBUG
+			{
+				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+				BatchNorm2d_forwardOnGPU << <grid, block >> > (
+					mInputDataOnGPU->address,
+					mIntermediateResultOnGPU.address,
+					mForwardResultOnGPU.address,
+					mParametersPtrOnGPU[0].address,
+					mParametersPtrOnGPU[1].address,
+					mSigmaOnGPU.address,
+					mBatchSize,
+					mDataShape.channel,
+					mDataShape.height,
+					mDataShape.width);
 
 #if GPU_SYNC_DEBUG
-			CHECK(cudaDeviceSynchronize());
+				CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+				f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+				std::string name = "";
+				(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : forward";
+				timers[name] = elapsedTime;
+			}
 #endif
 		}
 
@@ -342,22 +352,32 @@ namespace Aoba {
 		{
 			dim3 block(16);
 			dim3 grid((mDataShape.channel + block.x - 1) / block.x);
-
-			BatchNorm2d_backwardOnGPU << <grid, block >> > (
-				mDInputDataOnGPU->address,
-				mIntermediateResultOnGPU.address,
-				mBackwardResultOnGPU.address,
-				mParametersPtrOnGPU[0].address,
-				mDParametersPtrOnGPU[0].address,
-				mDParametersPtrOnGPU[1].address,
-				mSigmaOnGPU.address,
-				mBatchSize,
-				mDataShape.channel,
-				mDataShape.height,
-				mDataShape.width);
+#if TIME_DEBUG
+			{
+				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+				BatchNorm2d_backwardOnGPU << <grid, block >> > (
+					mDInputDataOnGPU->address,
+					mIntermediateResultOnGPU.address,
+					mBackwardResultOnGPU.address,
+					mParametersPtrOnGPU[0].address,
+					mDParametersPtrOnGPU[0].address,
+					mDParametersPtrOnGPU[1].address,
+					mSigmaOnGPU.address,
+					mBatchSize,
+					mDataShape.channel,
+					mDataShape.height,
+					mDataShape.width);
 
 #if GPU_SYNC_DEBUG
-			CHECK(cudaDeviceSynchronize());
+				CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+				f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+				std::string name = "";
+				(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backward";
+				timers[name] = elapsedTime;
+			}
 #endif
 		}
 

@@ -37,6 +37,9 @@ namespace Aoba
 			}
 
 		private:
+			static u32 InstanceCounter;
+			u32 mInstanceID;
+
 			u32 mBatchSize;
 			DataShape mDataShape;
 

@@ -73,7 +73,7 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 #if 1
 int main()
 {
-#if 1
+#if 0
 	{
 		using namespace Aoba;
 		//層の単体テスト用main関数
@@ -115,6 +115,7 @@ int main()
 
 	AI Aira{};
 	Aira.addLayer<layer::Convolution>(3u, 3u, 1u, 1u, 1.0f);
+	Aira.addLayer<layer::BatchNorm2d>();
 	Aira.addLayer<layer::MaxPooling>(3, 1, 1);
 	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Convolution>(9u, 3u, 1u, 1u, 1.0f);
