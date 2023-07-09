@@ -106,8 +106,9 @@ namespace Aoba {
 				f32 ep = 1e-7;
 				u32 hXw = height * width;
 				u32 cXhXw = channel * hXw;
+
 				f32 mean = 0.0f;
-				f32 sigma = 0.0f;
+				f32 sqMean = 0.0f;
 
 				//------------------------------------------------------------------
 				//•½‹Ï‚ðŒvŽZ
@@ -116,25 +117,18 @@ namespace Aoba {
 				{
 					for (u32 hw = 0; hw < hXw; hw++)
 					{
-						mean += input[N * cXhXw + c * hXw + hw];
+						f32 value = input[N * cXhXw + c * hXw + hw];
+						mean += value;
+						sqMean += value * value;
 					}
 				}
 				mean /= (batchSize * hXw);
+				sqMean /= (batchSize * hXw);
 
 				//------------------------------------------------------------------
 				//•Î·‚ðŒvŽZ
 				//------------------------------------------------------------------
-				f32 sigma2 = 0.0f;
-				for (u32 N = 0; N < batchSize; N++)
-				{
-					for (u32 hw = 0; hw < hXw; hw++)
-					{
-						f32 diff = input[N * cXhXw + c * hXw + hw] - mean;
-						sigma2 += diff * diff;
-					}
-				}
-				sigma2 /= (batchSize * hXw);
-				sigma = std::sqrt(sigma2);
+				f32 sigma = std::sqrt(sqMean - mean * mean) + ep;
 
 				//------------------------------------------------------------------
 				//•W€‰»

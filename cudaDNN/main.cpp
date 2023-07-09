@@ -70,10 +70,10 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 	mnistNormalizer(testData, testDataNum);
 }
 
-#if 0
+#if 1
 int main()
 {
-#if 0
+#if 1
 	{
 		using namespace Aoba;
 		//層の単体テスト用main関数
@@ -81,10 +81,11 @@ int main()
 		DataShape testShape = { 3,  28 , 28 };
 		layer::BaseLayer::unitTest<layer::Affine>(testShape, 50);
 		layer::BaseLayer::unitTest<layer::ReLU>(testShape);
+		layer::BaseLayer::unitTest<layer::BatchNorm2d>(testShape);
 		layer::BaseLayer::unitTest<layer::Convolution>(testShape, 9u, 3u, 2u, 1u, 1.0f);
 		layer::BaseLayer::unitTest<layer::MaxPooling>(testShape, 9u, 1u, 1u);
 	}
-#endif
+#else
 	using namespace Aoba;
 	//////////////////////////////////////////
 	//データの準備
@@ -124,7 +125,7 @@ int main()
 	//////////////////////////////////////////
 
 	Aira.deepLearning(trainingData.data(), trainingData.data());
-
+#endif
 	return 0;
 }
 
@@ -147,7 +148,7 @@ int main()
 	DataShape inputCorrectDataShape = { 1, 1, 1 };
 	//訓練データと教師データの形状についてAIに教える
 	//バッチサイズでGPUの速度は劇的に変化する。 
-	DataFormat4DeepLearning format(trainingDataNum, 30, inputTrainingDataShape, inputCorrectDataShape);
+	DataFormat4DeepLearning format(trainingDataNum, 100, inputTrainingDataShape, inputCorrectDataShape);
 
 	//////////////////////////////////////////
 	//AIの準備
@@ -156,6 +157,7 @@ int main()
 	{
 		AI Aira{};
 		Aira.addLayer<layer::Convolution>(1u, 4u, 2u, 2u, 1.0f);
+		Aira.addLayer<layer::BatchNorm2d>();
 		Aira.addLayer<layer::ReLU>();
 		Aira.addLayer<layer::Convolution>(3u, 4u, 2u, 2u, 1.0f);
 		Aira.addLayer<layer::ReLU>();

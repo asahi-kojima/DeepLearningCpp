@@ -70,8 +70,10 @@ namespace Aoba::layer
 		for (u32 c = 0; c < mDataShape.channel; c++)
 		{
 			f32 mean = 0.0f;
+			f32 sqMean = 0.0f;
 			f32 sigma = 0.0f;
 
+			const u32 dataSize = mDataShape.getDataSize();
 			//------------------------------------------------------------------
 			//ïΩãœÇåvéZ
 			//------------------------------------------------------------------
@@ -79,15 +81,18 @@ namespace Aoba::layer
 			{
 				for (u32 hw = 0; hw < hXw; hw++)
 				{
-					mean += mInputDataOnCPU->address[N * mDataShape.getDataSize() + c * hXw + hw];
+					f32 value = mInputDataOnCPU->address[N * dataSize + c * hXw + hw];
+					mean += value;
+					sqMean += value * value;
 				}
 			}
 			mean /= (mBatchSize * hXw);
+			sqMean /= (mBatchSize * hXw);
 
 			//------------------------------------------------------------------
 			//ïŒç∑ÇåvéZ
 			//------------------------------------------------------------------
-			f32 sigma2 = 0.0f;
+			/*f32 sigma2 = 0.0f;
 			for (u32 N = 0; N < mBatchSize; N++)
 			{
 				for (u32 hw = 0; hw < hXw; hw++)
@@ -97,7 +102,9 @@ namespace Aoba::layer
 				}
 			}
 			sigma2 /= (mBatchSize * hXw);
-			sigma = std::sqrt(sigma2);
+			sigma = std::sqrt(sigma2);*/
+
+			sigma = std::sqrt(sqMean - mean * mean);
 
 			//------------------------------------------------------------------
 			//ïWèÄâª
@@ -108,7 +115,7 @@ namespace Aoba::layer
 			{
 				for (u32 hw = 0; hw < hXw; hw++)
 				{
-					u32 index = N * mDataShape.getDataSize() + c * hXw + hw;
+					u32 index = N * dataSize + c * hXw + hw;
 					f32 normalizeResult = (mInputDataOnCPU->address[index] - mean) / sigma;
 					mIntermediateResultOnCPU.address[index] = normalizeResult;
 					mForwardResultOnCPU.address[index] = gamma * normalizeResult + beta;
