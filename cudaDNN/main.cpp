@@ -116,9 +116,9 @@ int main()
 	AI Aira{};
 	Aira.addLayer<layer::Convolution>(3u, 3u, 1u, 1u, 1.0f);
 	Aira.addLayer<layer::BatchNorm2d>();
-	Aira.addLayer<layer::MaxPooling>(3, 1, 1);
 	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Convolution>(9u, 3u, 1u, 1u, 1.0f);
+	Aira.addLayer<layer::MaxPooling>(3, 1, 1);
 	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Convolution>(1u, 3u, 1u, 1u, 1.0f);
 	Aira.setOptimizer<optimizer::Adam>(0.0001f);
