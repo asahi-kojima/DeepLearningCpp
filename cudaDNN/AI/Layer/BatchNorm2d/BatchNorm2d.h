@@ -48,6 +48,9 @@ namespace Aoba
 			
 			DataArray mIntermediateResultOnGPU;
 			DataArray mSigmaOnGPU;
+			DataArray mMeanOnGPU;
+			DataArray mBlockSqMeanOnGPU;
+			DataArray mBlockMeanOnGPU;
 		};
 
 	}
