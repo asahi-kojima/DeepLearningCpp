@@ -51,6 +51,14 @@ namespace Aoba
 			DataArray mMeanOnGPU;
 			DataArray mBlockSqMeanOnGPU;
 			DataArray mBlockMeanOnGPU;
+
+			DataArray mDMeanOnGPU;
+			DataArray mDIMeanOnGPU;
+
+			DataArray mBlockDMeanOnGPU;
+			DataArray mBlockDIMeanOnGPU;
+			DataArray mBlockDGammaOnGPU;
+			DataArray mBlockDBetaOnGPU;
 		};
 
 	}

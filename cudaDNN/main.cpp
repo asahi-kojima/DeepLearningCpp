@@ -73,7 +73,7 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 #if 1
 int main()
 {
-#if 0
+#if 1
 	{
 		using namespace Aoba;
 		//層の単体テスト用main関数

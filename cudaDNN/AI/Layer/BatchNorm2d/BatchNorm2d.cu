@@ -18,15 +18,14 @@ namespace Aoba {
 				u32 height,
 				u32 width)
 			{
-				u32 C = blockIdx.x * blockDim.x + threadIdx.x;
+				u32 Ic = blockIdx.x * blockDim.x + threadIdx.x;
 				u32 IhIw = blockIdx.y * blockDim.y + threadIdx.y;
 
-				if (C >= channel || IhIw >= height * width)
+				if (Ic >= channel || IhIw >= height * width)
 				{
 					return;
 				}
 
-				f32 ep = 1e-7;
 				u32 mIhIw = height * width;
 				u32 mIcIhIw = channel * mIhIw;
 
@@ -38,13 +37,13 @@ namespace Aoba {
 				//------------------------------------------------------------------
 				for (u32 N = 0; N < batchSize; N++)
 				{
-					f32 value = input[N * mIcIhIw + C * mIhIw + IhIw];
+					f32 value = input[N * mIcIhIw + Ic * mIhIw + IhIw];
 					mean += value;
 					sqMean += value * value;
 				}
 
-				blockMean[C * mIhIw + IhIw] = mean;
-				blockSqMean[C * mIhIw + IhIw] = sqMean;
+				blockMean[Ic * mIhIw + IhIw] = mean;
+				blockSqMean[Ic * mIhIw + IhIw] = sqMean;
 			}
 
 			__global__ void BatchNorm2d_computeMeanSigma(
@@ -57,9 +56,9 @@ namespace Aoba {
 				u32 height,
 				u32 width)
 			{
-				u32 C = blockIdx.x * blockDim.x + threadIdx.x;
+				u32 Ic = blockIdx.x * blockDim.x + threadIdx.x;
 
-				if (C >= channel)
+				if (Ic >= channel)
 				{
 					return;
 				}
@@ -75,8 +74,8 @@ namespace Aoba {
 				//------------------------------------------------------------------
 				for (u32 IhIw = 0; IhIw < mIhIw; IhIw++)
 				{
-					mean += blockMean[C * mIhIw + IhIw];
-					sqMean += blockSqMean[C * mIhIw + IhIw];
+					mean += blockMean[Ic * mIhIw + IhIw];
+					sqMean += blockSqMean[Ic * mIhIw + IhIw];
 				}
 
 				mean /= (batchSize * mIhIw);
@@ -85,8 +84,8 @@ namespace Aoba {
 				//------------------------------------------------------------------
 				//•Î·‚ðŒvŽZ
 				//------------------------------------------------------------------
-				Mean[C] = mean;
-				Sigma[C] = std::sqrt(sqMean - mean * mean) + ep;
+				Mean[Ic] = mean;
+				Sigma[Ic] = std::sqrt(sqMean - mean * mean) + ep;
 			}
 
 			__global__ void BatchNorm2d_forwardOnGPU(
@@ -111,7 +110,6 @@ namespace Aoba {
 				}
 
 
-				f32 ep = 1e-7;
 				u32 mIhIw = height * width;
 				u32 mIcIhIw = channel * mIhIw;
 
@@ -131,6 +129,100 @@ namespace Aoba {
 					intermediateResult[index] = normalizeResult;
 					forwardResult[index] = gamma * normalizeResult + beta;
 				}
+			}
+
+
+			__global__ void BatchNorm2d_backwardOnGPU_computeBlock(
+				f32* dout,
+				f32* intermediateResult,
+				f32* dBlockGamma,
+				f32* dBlockBeta,
+				f32* dBlockMean,
+				f32* dBlockIMean,
+				u32 batchSize,
+				u32 channel,
+				u32 height,
+				u32 width)
+			{
+				u32 Ic = blockIdx.x * blockDim.x + threadIdx.x;
+				u32 IhIw = blockIdx.y * blockDim.y + threadIdx.y;
+
+				if (Ic >= channel || IhIw >= height * width)
+				{
+					return;
+				}
+
+				f32 ep = 1e-7;
+				u32 mIhIw = height * width;
+				u32 mIcIhIw = channel * mIhIw;
+
+				f32 dGamma = 0.0f;
+				f32 dBeta = 0.0f;
+				f32 dMean = 0.0f;
+				f32 dIMean = 0.0f;
+
+				for (u32 N = 0; N < batchSize; N++)
+				{
+					u32 index = N * mIcIhIw + Ic * mIhIw + IhIw;
+					f32 dO = dout[index];
+					f32 iR = intermediateResult[index];
+
+					dGamma += dO * iR;
+					dBeta += dO;
+					dMean += dO;
+					dIMean += dO * iR;
+				}
+
+				dBlockGamma[Ic * mIhIw + IhIw] = dGamma;
+				dBlockBeta[Ic * mIhIw + IhIw] = dBeta;
+				dBlockMean[Ic * mIhIw + IhIw] = dMean;
+				dBlockIMean[Ic * mIhIw + IhIw] = dIMean;
+			}
+
+			__global__ void BatchNorm2d_backwardOnGPU_computeDValue(
+				f32* dGamma,
+				f32* dBlockGamma,
+				f32* dBeta,
+				f32* dBlockBeta,
+				f32* dMean,
+				f32* dBlockMean,
+				f32* dIMean,
+				f32* dBlockIMean,
+				u32 batchSize,
+				u32 channel,
+				u32 height,
+				u32 width)
+			{
+				u32 Ic = blockIdx.x * blockDim.x + threadIdx.x;
+
+				if (Ic >= channel)
+				{
+					return;
+				}
+
+				f32 ep = 1e-7;
+				u32 mIhIw = height * width;
+				u32 mIcIhIw = channel * mIhIw;
+
+				f32 gamma = 0.0f;
+				f32 beta = 0.0f;
+				f32 mean = 0.0f;
+				f32 iMean = 0.0f;
+
+				for (u32 IhIw = 0; IhIw < mIhIw; IhIw++)
+				{
+					u32 index = Ic * mIhIw + IhIw;
+
+					gamma += dBlockGamma[index];
+					beta += dBlockBeta[index];
+					mean += dBlockMean[index];
+					iMean += dBlockIMean[index];
+				}
+
+				dGamma[Ic] = gamma;
+				dBeta[Ic] = beta;
+				dMean[Ic] = mean / (batchSize * mIhIw);
+				dIMean[Ic] = iMean / (batchSize * mIhIw);
 			}
 
 			__global__ void BatchNorm2d_backwardOnGPU(
@@ -199,6 +291,38 @@ namespace Aoba {
 						backwardResult[index] = (Gamma[c] / (Sigma[c] + 1e-7)) * (dout[index] - dMean - intermediateResult[index] * diMean);
 					}
 				}
+			}
+
+			__global__ void BatchNorm2d_backwardOnGPU2(
+				f32* dout,
+				f32* intermediateResult,
+				f32* backwardResult,
+				f32* Gamma,
+				f32* Sigma,
+				f32* DMean,
+				f32* DIMean,
+				u32 batchSize,
+				u32 channel,
+				u32 height,
+				u32 width)
+			{
+				u32 N = blockIdx.x * blockDim.x + threadIdx.x;
+				u32 IcIhIw = blockIdx.y * blockDim.y + threadIdx.y;
+
+				const u32 mIcIhIw = channel * height * width;
+				if (N >= batchSize || IcIhIw >= mIcIhIw)
+				{
+					return;
+				}
+
+				const u32 mIhIw = height * width;
+				const u32 Ic = IcIhIw / mIhIw;
+
+				const u32 index = N * mIcIhIw + IcIhIw;
+
+				backwardResult[index]
+					= 
+					(Gamma[Ic] / (Sigma[Ic] + 1e-7)) * (dout[index] - DMean[Ic] - intermediateResult[index] * DIMean[Ic]);
 			}
 		}
 
@@ -280,6 +404,20 @@ namespace Aoba {
 			MALLOC_AND_INITIALIZE_0_ON_GPU(mBlockSqMeanOnGPU);
 			mBlockMeanOnGPU.size = mDataShape.getDataSize();
 			MALLOC_AND_INITIALIZE_0_ON_GPU(mBlockMeanOnGPU);
+
+			mDMeanOnGPU.size = mDataShape.channel;
+			MALLOC_AND_INITIALIZE_0_ON_GPU(mDMeanOnGPU);
+			mDIMeanOnGPU.size = mDataShape.channel;
+			MALLOC_AND_INITIALIZE_0_ON_GPU(mDIMeanOnGPU);
+
+			mBlockDMeanOnGPU.size = mDataShape.getDataSize();
+			MALLOC_AND_INITIALIZE_0_ON_GPU(mBlockDMeanOnGPU);
+			mBlockDIMeanOnGPU.size = mDataShape.getDataSize();
+			MALLOC_AND_INITIALIZE_0_ON_GPU(mBlockDIMeanOnGPU);
+			mBlockDGammaOnGPU.size = mDataShape.getDataSize();
+			MALLOC_AND_INITIALIZE_0_ON_GPU(mBlockDGammaOnGPU);
+			mBlockDBetaOnGPU.size = mDataShape.getDataSize();
+			MALLOC_AND_INITIALIZE_0_ON_GPU(mBlockDBetaOnGPU);
 			//------------------------------------------------------------------
 			//“`”À—p
 			//------------------------------------------------------------------
@@ -328,17 +466,6 @@ namespace Aoba {
 							mDataShape.height,
 							mDataShape.width
 							);
-					/*BatchNorm2d_forwardOnGPU << <grid, block >> > (
-						mInputDataOnGPU->address,
-						mIntermediateResultOnGPU.address,
-						mForwardResultOnGPU.address,
-						mParametersPtrOnGPU[0].address,
-						mParametersPtrOnGPU[1].address,
-						mSigmaOnGPU.address,
-						mBatchSize,
-						mDataShape.channel,
-						mDataShape.height,
-						mDataShape.width);*/
 
 #if GPU_SYNC_DEBUG
 					CHECK(cudaDeviceSynchronize());
@@ -346,7 +473,7 @@ namespace Aoba {
 #if TIME_DEBUG
 					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
 					std::string name = "";
-					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : forward";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : computeBlockMean";
 					timers[name] = elapsedTime;
 				}
 #endif
@@ -378,7 +505,7 @@ namespace Aoba {
 #if TIME_DEBUG
 					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
 					std::string name = "";
-					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : forward";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : ComputeMeanSigma";
 					timers[name] = elapsedTime;
 				}
 #endif
@@ -420,35 +547,105 @@ namespace Aoba {
 
 		void BatchNorm2d::backwardOnGPU()
 		{
-			dim3 block(16);
-			dim3 grid((mDataShape.channel + block.x - 1) / block.x);
-#if TIME_DEBUG
 			{
-				std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+				dim3 block(16, 16);
+				dim3 grid(
+					(mDataShape.channel + block.x - 1) / block.x,
+					((mDataShape.height * mDataShape.width) + block.y - 1) / block.y);
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 #endif
-				BatchNorm2d_backwardOnGPU << <grid, block >> > (
-					mDInputDataOnGPU->address,
-					mIntermediateResultOnGPU.address,
-					mBackwardResultOnGPU.address,
-					mParametersPtrOnGPU[0].address,
-					mDParametersPtrOnGPU[0].address,
-					mDParametersPtrOnGPU[1].address,
-					mSigmaOnGPU.address,
-					mBatchSize,
-					mDataShape.channel,
-					mDataShape.height,
-					mDataShape.width);
+					BatchNorm2d_backwardOnGPU_computeBlock << <grid, block >> > (
+						mDInputDataOnGPU->address,
+						mIntermediateResultOnGPU.address,
+						mBlockDGammaOnGPU.address,
+						mBlockDBetaOnGPU.address,
+						mBlockDMeanOnGPU.address,
+						mBlockDIMeanOnGPU.address,
+						mBatchSize,
+						mDataShape.channel,
+						mDataShape.height,
+						mDataShape.width);
 
 #if GPU_SYNC_DEBUG
-				CHECK(cudaDeviceSynchronize());
+					CHECK(cudaDeviceSynchronize());
 #endif
 #if TIME_DEBUG
-				f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
-				std::string name = "";
-				(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backward";
-				timers[name] = elapsedTime;
-			}
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : computeBlock";
+					timers[name] = elapsedTime;
+				}
 #endif
+			}
+
+			{
+				dim3 block(16);
+				dim3 grid((mDataShape.channel + block.x - 1) / block.x);
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					BatchNorm2d_backwardOnGPU_computeDValue << <grid, block >> > (
+						mDParametersPtrOnGPU[0].address,
+						mBlockDGammaOnGPU.address,
+						mDParametersPtrOnGPU[1].address,
+						mBlockDBetaOnGPU.address,
+						mDMeanOnGPU.address,
+						mBlockDMeanOnGPU.address,
+						mDIMeanOnGPU.address,
+						mBlockDIMeanOnGPU.address,
+						mBatchSize,
+						mDataShape.channel,
+						mDataShape.height,
+						mDataShape.width);
+
+#if GPU_SYNC_DEBUG
+					CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : computeDValue";
+					timers[name] = elapsedTime;
+				}
+#endif
+			}
+
+			{
+				dim3 block(16, 16);
+				dim3 grid(
+					(mBatchSize + block.x - 1) / block.x,
+					(mDataShape.getDataSize() + block.x - 1) / block.y);
+#if TIME_DEBUG
+				{
+					std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+#endif
+					BatchNorm2d_backwardOnGPU2 << <grid, block >> > (
+						mDInputDataOnGPU->address,
+						mIntermediateResultOnGPU.address,
+						mBackwardResultOnGPU.address,
+						mParametersPtrOnGPU[0].address,
+						mSigmaOnGPU.address,
+						mDMeanOnGPU.address,
+						mDIMeanOnGPU.address,
+						mBatchSize,
+						mDataShape.channel,
+						mDataShape.height,
+						mDataShape.width);
+
+#if GPU_SYNC_DEBUG
+					CHECK(cudaDeviceSynchronize());
+#endif
+#if TIME_DEBUG
+					f32 elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start).count() / 1000.0f;
+					std::string name = "";
+					(((name += __FUNCTION__) += " : ") += std::to_string(mInstanceID)) += " : backward";
+					timers[name] = elapsedTime;
+				}
+#endif
+			}
 		}
 
 		void BatchNorm2d::terminateOnGPU()
