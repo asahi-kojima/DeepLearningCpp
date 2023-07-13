@@ -55,6 +55,9 @@
     <Filter Include="ソース ファイル\AI\Layer\MaxPooling">
       <UniqueIdentifier>{452a067f-d69e-45da-90d1-d28a7de51291}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\Render">
+      <UniqueIdentifier>{aa29508b-d60f-4745-9288-3f5f25dc8bea}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="main.cpp">

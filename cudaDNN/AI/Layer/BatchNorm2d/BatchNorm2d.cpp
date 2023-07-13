@@ -2,6 +2,8 @@
 #include <cassert>
 #include "BatchNorm2d.h"
 
+#define EP 1e-7
+
 namespace Aoba::layer
 {
 	u32 BatchNorm2d::InstanceCounter = 0;
@@ -102,7 +104,7 @@ namespace Aoba::layer
 				//•Î·‚ðŒvŽZ
 				//------------------------------------------------------------------
 				f32 ep = 1e-7;
-				sigma = std::sqrt(sqMean - mean * mean) + ep;
+				sigma = std::sqrt(sqMean - mean * mean) + EP;
 
 				//------------------------------------------------------------------
 				//•W€‰»
@@ -116,7 +118,7 @@ namespace Aoba::layer
 						u32 index = N * dataSize + c * hXw + hw;
 						f32 normalizeResult = (mInputDataOnCPU->address[index] - mean) / sigma;
 						mIntermediateResultOnCPU.address[index] = normalizeResult;
-						mForwardResultOnCPU.address[index] = gamma * normalizeResult + beta;
+						mForwardResultOnCPU.address[index] = gamma* normalizeResult + beta;
 					}
 				}
 
@@ -178,7 +180,9 @@ namespace Aoba::layer
 					for (u32 hw = 0; hw < hXw; hw++)
 					{
 						u32 index = N * mDataShape.getDataSize() + c * hXw + hw;
-						mBackwardResultOnCPU[index] = (mParametersPtrOnCPU[0][c] / (mSigmaOnCPU[c] + 1e-7)) * (dout[index] - dMean - mIntermediateResultOnCPU[index] * diMean);
+						mBackwardResultOnCPU[index]
+							=
+							(mParametersPtrOnCPU[0][c] / mSigmaOnCPU[c]) *(dout[index] - dMean - mIntermediateResultOnCPU[index] * diMean);
 					}
 				}
 			}

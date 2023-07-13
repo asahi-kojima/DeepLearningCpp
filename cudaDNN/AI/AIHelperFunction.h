@@ -11,9 +11,9 @@
 #include "AIDataStructure.h"
 #include "AIMacro.h"
 
+#pragma warning(disable:4996)
 
 #define LINE_WIDTH 100
-
 
 namespace Aoba
 {
@@ -135,7 +135,7 @@ namespace Aoba
 
 	inline void print2dProperty(std::string s, u32 value0, u32 value1)
 	{
-		std::cout << std::string("	") + addSpace2String(s) + std::string(" = (")  << value0 << ", " << value1 << ")" << std::endl;
+		std::cout << std::string("	") + addSpace2String(s) + std::string(" = (") << value0 << ", " << value1 << ")" << std::endl;
 	}
 
 	inline void print3dProperty(std::string s, u32 value0, u32 value1, u32 value2)
@@ -148,8 +148,13 @@ namespace Aoba
 		std::cout << std::string("	") + addSpace2String(s) + std::string(" = (") << shape.channel << ", " << shape.height << ", " << shape.width << ")" << std::endl;
 	}
 
+	inline f32 sigmoid(f32 x)
+	{
+		return 1 / (1 + exp(-x));
+	}
 
 
+#pragma pack(1)
 	struct BMPHeader
 	{
 		using U8 = unsigned char;
@@ -174,14 +179,13 @@ namespace Aoba
 		U32 Palet;
 		U32 PaletImpotant;
 	};
-
-
-	inline void makeBMP(f32* pData, u32 height, u32 width)
+#pragma pack()
+	inline void makeBMP(const char* path, const unsigned char* pData, u32 height, u32 width)
 	{
 		BMPHeader header;
 		{
 			header.HeadType = 19778;//unsigned char[2] = "BM"‚Æ“¯‚¶
-			header.DataSize = 14 + 40 + 3 * height * width;
+			header.DataSize = 14 + 40 + height * width * 3;
 			header.Reserve0 = 0;
 			header.Reserve1 = 0;
 			header.Offset = 14 + 40;
@@ -192,19 +196,71 @@ namespace Aoba
 			header.Plane = 1;
 			header.BitCount = 24;
 			header.IsCompression = 0;
-			header.ImageSize = 3 * height * width;
+			header.ImageSize = height * width * 3;
 			header.HorizontalResolution = 0;
 			header.VerticalResolution = 0;
 			header.Palet = 0;
 			header.PaletImpotant = 0;
 		}
 
-		//CreateFile(TEXT("test.bmp"), GENERIC_READ, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		//auto handle = CreateFileW(TEXT("test.bmp"), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		//CloseHandle(handle);
+		std::ofstream ofs;
+		ofs.open(path, std::ios::out);
+		ofs.close();
 
-		//auto fp = fopen("test.bmp", "wb");
-		//fwrite(&header, sizeof(BMPHeader), 1, fp);
-		//fwrite(pData, height * width * sizeof(*pData), 1, fp);
-		//fclose(fp);
+		auto fp = fopen(path, "wb");
+		fwrite(&header, sizeof(BMPHeader), 1, fp);
+		fwrite(pData, 3 * height * width * sizeof(*pData), 1, fp);
+		fclose(fp);
 	}
 
+
+	inline void makeMonoBMP(const char* path, const f32* pData, u32 height, u32 width)
+	{
+		unsigned char* p = new unsigned char[height * width * 3];
+		for (u32 h = 0; h < height; h++)
+		{
+			for (u32 w = 0; w < width; w++)
+			{
+				u32 index = h * width + w;
+				p[3 * index + 0] = static_cast<unsigned char>(255 * sigmoid(pData[index]));
+				p[3 * index + 1] = static_cast<unsigned char>(255 * sigmoid(pData[index]));
+				p[3 * index + 2] = static_cast<unsigned char>(255 * sigmoid(pData[index]));
+			}
+		}
+
+		BMPHeader header;
+		{
+			header.HeadType = 19778;//unsigned char[2] = "BM"‚Æ“¯‚¶
+			header.DataSize = 14 + 40 + height * width * 3;
+			header.Reserve0 = 0;
+			header.Reserve1 = 0;
+			header.Offset = 14 + 40;
+
+			header.HeadSize = 40;
+			header.Height = height;
+			header.Width = width;
+			header.Plane = 1;
+			header.BitCount = 24;
+			header.IsCompression = 0;
+			header.ImageSize = height * width * 3;
+			header.HorizontalResolution = 0;
+			header.VerticalResolution = 0;
+			header.Palet = 0;
+			header.PaletImpotant = 0;
+		}
+
+		//std::ofstream ofs;
+		//ofs.open(path, std::ios::out);
+		//ofs.close();
+
+
+		auto fp = fopen(path, "wb");
+		fwrite(&header, sizeof(BMPHeader), 1, fp);
+		fwrite(p, 3 * height * width * sizeof(*pData), 1, fp);
+		fclose(fp);
+
+		delete[] p;
+	}
 }

@@ -4,6 +4,8 @@
 
 #include "BatchNorm2d.h"
 
+#define EP 1e-7
+
 namespace Aoba {
 	namespace layer
 	{
@@ -63,7 +65,6 @@ namespace Aoba {
 					return;
 				}
 
-				f32 ep = 1e-7;
 				u32 mIhIw = height * width;
 
 				f32 mean = 0.0f;
@@ -85,7 +86,7 @@ namespace Aoba {
 				//ïŒç∑ÇåvéZ
 				//------------------------------------------------------------------
 				Mean[Ic] = mean;
-				Sigma[Ic] = std::sqrt(sqMean - mean * mean) + ep;
+				Sigma[Ic] = std::sqrt(sqMean - mean * mean) + EP;
 			}
 
 			__global__ void BatchNorm2d_forwardOnGPU(
@@ -127,7 +128,7 @@ namespace Aoba {
 					u32 index = N * mIcIhIw + Ic * mIhIw + IhIw;
 					f32 normalizeResult = (input[index] - mean) / sigma;
 					intermediateResult[index] = normalizeResult;
-					forwardResult[index] = gamma * normalizeResult + beta;
+					forwardResult[index] = gamma* normalizeResult + beta;
 				}
 			}
 
@@ -288,7 +289,7 @@ namespace Aoba {
 					for (u32 hw = 0; hw < hXw; hw++)
 					{
 						u32 index = N * cXhXw + c * hXw + hw;
-						backwardResult[index] = (Gamma[c] / (Sigma[c] + 1e-7)) * (dout[index] - dMean - intermediateResult[index] * diMean);
+						backwardResult[index] = (Gamma[c] / Sigma[c])* (dout[index] - dMean - intermediateResult[index] * diMean);
 					}
 				}
 			}
@@ -322,7 +323,7 @@ namespace Aoba {
 
 				backwardResult[index]
 					= 
-					(Gamma[Ic] / (Sigma[Ic] + 1e-7)) * (dout[index] - DMean[Ic] - intermediateResult[index] * DIMean[Ic]);
+					(Gamma[Ic] / Sigma[Ic]) * (dout[index] - DMean[Ic] - intermediateResult[index] * DIMean[Ic]);
 			}
 		}
 

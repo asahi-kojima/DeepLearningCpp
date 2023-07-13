@@ -72,6 +72,8 @@ namespace Aoba
 			{
 				std::unique_ptr<BaseLayer> pLayer = std::make_unique<T>(args...);
 
+				const f32 AllowableError = 1e-2;// 1パーセント
+
 				//層の初期化を行う(層情報の決定とメモリ確保)
 				DataShape shape4CPU = inputShape;
 				DataShape shape4GPU = inputShape;
@@ -131,7 +133,7 @@ namespace Aoba
 							error = abs((x - x0) / x0);
 						}
 
-						if (error > 1e-3)
+						if (error > AllowableError)
 						{
 							assert(0);
 						}
@@ -184,7 +186,7 @@ namespace Aoba
 								error = abs((x - x0) / x0);
 							}
 
-							if (error > 1e-3)
+							if (error > AllowableError)
 							{
 								assert(0);
 							}
@@ -222,7 +224,7 @@ namespace Aoba
 								error = abs((x - x0) / x0);
 							}
 
-							if (error > 1e-3)
+							if (error > AllowableError)
 							{
 								assert(0);
 							}

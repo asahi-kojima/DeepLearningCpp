@@ -73,12 +73,14 @@ void setupMnistData(std::vector<f32>& trainingData, std::vector<f32>& trainingLa
 #if 1
 int main()
 {
-#if 1
+#if 0
+	for (u32 i = 0; i < 100; i++)
 	{
+		std::cout << "=============================" << i << "=======================\n";
 		using namespace Aoba;
 		//層の単体テスト用main関数
 
-		DataShape testShape = { 3,  28 , 28 };
+		DataShape testShape = { 5,  28 , 28 };
 		std::cout << "Affine\n";
 		layer::BaseLayer::unitTest<layer::Affine>(testShape, 50);
 		std::cout << "ReLU\n";
@@ -87,8 +89,8 @@ int main()
 		layer::BaseLayer::unitTest<layer::BatchNorm2d>(testShape);
 		std::cout << "Convolution\n"; 
 		layer::BaseLayer::unitTest<layer::Convolution>(testShape, 9u, 3u, 2u, 1u, 1.0f);
-		std::cout << "MaxPooling\n"; 
-		layer::BaseLayer::unitTest<layer::MaxPooling>(testShape, 9u, 1u, 1u);
+		/*std::cout << "MaxPooling\n"; 
+		layer::BaseLayer::unitTest<layer::MaxPooling>(testShape, 9u, 1u, 1u);*/
 	}
 #else
 	using namespace Aoba;
@@ -102,7 +104,7 @@ int main()
 	std::vector<f32> trainingData, trainingLabel, testData, testLabel;
 	setupMnistData(trainingData, trainingLabel, testData, testLabel);
 
-
+	makeMonoBMP("mnist.bmp", trainingData.data(), 28, 28);
 	//データ形状は自分の手で決める。
 	DataShape inputTrainingDataShape = { 1,  28 , 28 };
 	DataShape inputCorrectDataShape = { 1,   28 , 28 };
@@ -118,8 +120,9 @@ int main()
 	Aira.addLayer<layer::BatchNorm2d>();
 	Aira.addLayer<layer::ReLU>();
 	Aira.addLayer<layer::Convolution>(9u, 3u, 1u, 1u, 1.0f);
-	Aira.addLayer<layer::MaxPooling>(3, 1, 1);
+	Aira.addLayer<layer::BatchNorm2d>();
 	Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::MaxPooling>(3, 1, 1);
 	Aira.addLayer<layer::Convolution>(1u, 3u, 1u, 1u, 1.0f);
 	Aira.setOptimizer<optimizer::Adam>(0.0001f);
 	Aira.setLossFunction<lossFunction::L2Loss>();

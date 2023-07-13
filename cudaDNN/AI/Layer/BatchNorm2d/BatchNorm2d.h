@@ -40,6 +40,8 @@ namespace Aoba
 			static u32 InstanceCounter;
 			u32 mInstanceID;
 
+			const f32 ep = 1e-7;
+
 			u32 mBatchSize;
 			DataShape mDataShape;
 
