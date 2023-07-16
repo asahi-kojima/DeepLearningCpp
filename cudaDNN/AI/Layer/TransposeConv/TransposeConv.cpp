@@ -304,33 +304,7 @@ namespace Aoba::layer
 				}
 			}
 #else
-			//for (u32 N = 0; N < mBatchSize; N++)
-			//{
-			//	for (u32 IcIhIw = 0; IcIhIw < mIcIhIw; IcIhIw++)
-			//	{
-			//		const u32 c = IcIhIw / mIhIw;
-			//		const u32 h = (IcIhIw - c * mIhIw) / mIw;
-			//		const u32 w = IcIhIw % mIw;
-			//
-			//		const u32 exH = mFh - 1 - mPh + h * mSh;
-			//		const u32 exW = mFw - 1 - mPw + w * mSw;
-			//
-			//		f32 result = 0.0f;
-			//		for (u32 Oh = (exH < mFh ? 0 : 1 + (exH - mFh) / mSh), endOh = std::min(1 + (exH / mSh), mOh); Oh < endOh; Oh++)
-			//		{
-			//			for (u32 Ow = (exW < mFw ? 0 : 1 + (exW - mFw) / mSw), endOw = std::min(1 + (exW / mSw), mOw); Ow < endOw; Ow++)
-			//			{
-			//				const u32 row = Oh * mOw + Ow;
-			//				const u32 col = c * mFhFw + (exH - Oh * mSh) * mFw + (exW - Ow * mSw);
-			//				for (u32 Fc = 0; Fc < mOc; Fc++)
-			//				{
-			//					result += dout(N, Fc, row) * convMatrix(Fc, col);
-			//				}
-			//			}
-			//		}
-			//		mBackwardResultOnCPU(N, IcIhIw) = result;
-			//	}
-			//}
+
 
 			for (u32 N = 0; N < mBatchSize; N++)
 			{

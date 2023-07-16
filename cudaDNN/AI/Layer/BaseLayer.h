@@ -155,7 +155,7 @@ namespace Aoba
 				{
 					//インプットデータの生成
 					dInputDataOnCPU.setSizeAs4D(10, shape4CPU);
-					dInputDataOnGPU.setSizeAs4D(10, shape4GPU);
+					dInputDataOnGPU.setSizeAs4D(10, shape4CPU);
 					MALLOC_AND_INITIALIZE_NORMAL_ON_CPU(dInputDataOnCPU, 10, 1.0f);
 					MALLOC_ON_GPU(dInputDataOnGPU);
 					CHECK(cudaMemcpy(dInputDataOnGPU.address, dInputDataOnCPU.address, dInputDataOnCPU.size * sizeof(f32), cudaMemcpyHostToDevice));

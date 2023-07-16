@@ -205,7 +205,7 @@ namespace Aoba {
 				const u32 mIcFhFw = info.IcFhFw;
 				
 				const u32 exH = mFh - 1 - info.Ph + h * mSh;
-				const u32 exW = mFw - 1 - info.Pw + h * mSw;
+				const u32 exW = mFw - 1 - info.Pw + w * mSw;
 
 				f32 result = 0.0f;
 				for (u32 oh = (exH < mFh ? 0 : 1 + (exH - mFh) / 1), endOh = min(1 + (exH / 1), mOh); oh < endOh; oh++)

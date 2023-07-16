@@ -81,14 +81,17 @@ int main()
 		//層の単体テスト用main関数
 
 		DataShape testShape = { 5,  28 , 28 };
-		std::cout << "Affine\n";
+		std::cout << "------Affine\n";
 		layer::BaseLayer::unitTest<layer::Affine>(testShape, 50);
-		std::cout << "ReLU\n";
+		std::cout << "------ReLU\n";
 		layer::BaseLayer::unitTest<layer::ReLU>(testShape);
-		std::cout << "BatchNorm2d\n";
+		std::cout << "------BatchNorm2d\n";
 		layer::BaseLayer::unitTest<layer::BatchNorm2d>(testShape);
-		std::cout << "Convolution\n";
+		std::cout << "------Convolution\n";
 		layer::BaseLayer::unitTest<layer::Convolution>(testShape, 9u, 3u, 2u, 1u, 1.0f);
+
+		std::cout << "------TransposeConv\n";
+		layer::BaseLayer::unitTest<layer::TransposeConv>(testShape, 9, 3, 2, 1, 1.0f);
 		/*std::cout << "MaxPooling\n";
 		layer::BaseLayer::unitTest<layer::MaxPooling>(testShape, 9u, 1u, 1u);*/
 	}
