@@ -4,7 +4,7 @@ CUDAコンパイラが無いとコンパイル出来ません。
 
 ### 今後の開発予定（横棒は完了）
 ・~~BatchNorm層の高速化~~  
-・TransposedConvolution層の実装  
+・~~TransposedConvolution層の実装~~  
 ・~~単体テストの追加~~  
 ・~~MaxPooling層の実装~~  
 ・convolutionなどのフィルターをテクスチャ化して変化をGIF化  
