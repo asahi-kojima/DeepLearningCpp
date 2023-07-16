@@ -34,6 +34,7 @@ namespace Aoba
 				print3dProperty("InputSize", mInputShape);
 				print3dProperty("OutputSize", mOutputShape);
 				printProperty("ParamWeight", mAffineParamWeight);
+				printProperty("ParamSize", getTotalParameterNum(mForwardResultOnGPU.size != 0));
 			}
 
 		private:

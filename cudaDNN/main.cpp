@@ -85,11 +85,11 @@ int main()
 		layer::BaseLayer::unitTest<layer::Affine>(testShape, 50);
 		std::cout << "ReLU\n";
 		layer::BaseLayer::unitTest<layer::ReLU>(testShape);
-		std::cout << "BatchNorm2d\n"; 
+		std::cout << "BatchNorm2d\n";
 		layer::BaseLayer::unitTest<layer::BatchNorm2d>(testShape);
-		std::cout << "Convolution\n"; 
+		std::cout << "Convolution\n";
 		layer::BaseLayer::unitTest<layer::Convolution>(testShape, 9u, 3u, 2u, 1u, 1.0f);
-		/*std::cout << "MaxPooling\n"; 
+		/*std::cout << "MaxPooling\n";
 		layer::BaseLayer::unitTest<layer::MaxPooling>(testShape, 9u, 1u, 1u);*/
 	}
 #else
@@ -116,14 +116,37 @@ int main()
 	//////////////////////////////////////////
 
 	AI Aira{};
-	Aira.addLayer<layer::Convolution>(3u, 3u, 1u, 1u, 1.0f);
+	//Aira.addLayer<layer::Convolution>(3u, 3u, 1u, 1u, 1.0f);
+	//Aira.addLayer<layer::BatchNorm2d>();
+	//Aira.addLayer<layer::ReLU>();
+	//Aira.addLayer<layer::Convolution>(9u, 3u, 1u, 1u, 1.0f);
+	//Aira.addLayer<layer::BatchNorm2d>();
+	//Aira.addLayer<layer::ReLU>();
+	//Aira.addLayer<layer::MaxPooling>(3, 1, 1);
+	//Aira.addLayer<layer::Convolution>(1u, 3u, 1u, 1u, 1.0f);
+
+	Aira.addLayer<layer::Convolution>(3, 4, 2, 2, 1.0f);
 	Aira.addLayer<layer::BatchNorm2d>();
 	Aira.addLayer<layer::ReLU>();
-	Aira.addLayer<layer::Convolution>(9u, 3u, 1u, 1u, 1.0f);
+	Aira.addLayer<layer::Convolution>(9, 4, 2, 2, 1.0f);
 	Aira.addLayer<layer::BatchNorm2d>();
 	Aira.addLayer<layer::ReLU>();
-	Aira.addLayer<layer::MaxPooling>(3, 1, 1);
-	Aira.addLayer<layer::Convolution>(1u, 3u, 1u, 1u, 1.0f);
+	Aira.addLayer<layer::TransposeConv>(3, 4, 2, 2, 1.0f);
+	Aira.addLayer<layer::BatchNorm2d>();
+	Aira.addLayer<layer::ReLU>();
+	Aira.addLayer<layer::TransposeConv>(1, 4, 2, 1, 1.0f);
+
+	//‚±‚ê‚Í‚¤‚Ü‚­‚¢‚­
+	//Aira.addLayer<layer::Convolution>(1, 3, 1, 1, 1.0f);
+	//Aira.addLayer<layer::BatchNorm2d>();
+	//Aira.addLayer<layer::ReLU>();
+	//Aira.addLayer<layer::Convolution>(1, 3, 1, 1, 1.0f);
+	//Aira.addLayer<layer::BatchNorm2d>();
+	//Aira.addLayer<layer::ReLU>();
+	//Aira.addLayer<layer::TransposeConv>(1, 3, 1, 1, 1.0f);
+	//Aira.addLayer<layer::BatchNorm2d>();
+	//Aira.addLayer<layer::ReLU>();
+	//Aira.addLayer<layer::TransposeConv>(1, 3, 1, 1, 1.0f);
 	Aira.setOptimizer<optimizer::Adam>(0.0001f);
 	Aira.setLossFunction<lossFunction::L2Loss>();
 
@@ -183,7 +206,7 @@ int main()
 		//////////////////////////////////////////
 
 		Aira.deepLearning(trainingData.data(), trainingLabel.data());
-	}
+}
 	return 0;
 }
 #endif

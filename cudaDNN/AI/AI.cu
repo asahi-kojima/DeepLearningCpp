@@ -98,11 +98,9 @@ namespace Aoba
 		//‘w‚Ìî•ñ‚ð•\Ž¦
 		//------------------------------------------------------------------
 		informationFormat("Layer Information");
-		u32 index = 0;
 		for (auto& layer : mLayerList)
 		{
 			layer->printLayerInfo();
-			index++;
 		}
 		std::cout << std::endl;
 
@@ -277,6 +275,22 @@ namespace Aoba
 			std::cout << "AI build not yet done!!";
 			assert(0);
 		}
+		//mInputTrainingDataStartAddressOnCPU = inputData;
+
+		//if (mIsGpuAvailable)
+		//{
+		//	for (auto& layer : mLayerList)
+		//	{
+		//		layer->forwardOnGPU();
+		//	}
+		//}
+		//else
+		//{
+		//	for (auto& layer : mLayerList)
+		//	{
+		//		layer->forwardOnCPU();
+		//	}
+		//}
 		return DataArray();
 	}
 

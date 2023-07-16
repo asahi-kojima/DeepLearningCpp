@@ -50,6 +50,7 @@ namespace Aoba
 					print2dProperty("Padding", mPh, mPw);
 				}
 				printProperty("ParamWeight", mConvolutionParamWeight);
+				printProperty("ParamSize", getTotalParameterNum(mForwardResultOnGPU.size != 0));
 			}
 
 

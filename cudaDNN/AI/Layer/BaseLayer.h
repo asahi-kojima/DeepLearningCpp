@@ -64,6 +64,7 @@ namespace Aoba
 						parameterNum += parameters.size;
 					}
 				}
+				return parameterNum;
 			}
 
 
