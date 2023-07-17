@@ -7,7 +7,7 @@ CUDAコンパイラが無いとコンパイル出来ません。
 ・~~TransposedConvolution層の実装~~  
 ・~~単体テストの追加~~  
 ・~~MaxPooling層の実装~~  
-・convolutionなどのフィルターをテクスチャ化して変化をGIF化  
+・OpenCVを使ってフィルター行列の可視化などを行う  
 ・リファクタリング  
 ・CPU計算をマルチスレッド化もしくはSIMD化  
 ・CPU計算の最適化  
