@@ -2,6 +2,10 @@
 このレポジトリにはC++/CUDAで自作しているAIのコードを置いています。  
 CUDAコンパイラが無いとコンパイル出来ません。
 
+# 重要
+柔軟性を上げるためにアーキテクチャを改良する予定だが、画像処理エンジンと連携させたいので、  
+今後は https://github.com/asahi-kojima/ImageProcessingEngine に作業を移行しようと考えている。
+
 ### 今後の開発予定（横棒は完了）
 ・~~BatchNorm層の高速化~~  
 ・~~TransposedConvolution層の実装~~  
